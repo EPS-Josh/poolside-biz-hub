@@ -77,12 +77,24 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess }: CustomerFormProp
     }
 
     try {
+      // Explicitly type the insert data to match the database schema
+      const insertData = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        email: data.email,
+        phone: data.phone || null,
+        company: data.company || null,
+        address: data.address || null,
+        city: data.city || null,
+        state: data.state || null,
+        zip_code: data.zip_code || null,
+        notes: data.notes || null,
+        user_id: user.id,
+      };
+
       const { error } = await supabase
         .from('customers')
-        .insert({
-          ...data,
-          user_id: user.id,
-        });
+        .insert(insertData);
 
       if (error) {
         throw error;
