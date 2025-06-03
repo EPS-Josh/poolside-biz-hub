@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Waves, Droplets, Settings, Shield } from 'lucide-react';
@@ -24,12 +26,26 @@ interface CustomerServiceDetails {
   special_notes?: string;
 }
 
+interface PoolEquipment {
+  pump?: string;
+  filter?: string;
+  heater?: string;
+  valve_1?: string;
+  valve_2?: string;
+  valve_3?: string;
+  valve_4?: string;
+  time_clock?: boolean;
+  controller?: boolean;
+  water_valve?: boolean;
+}
+
 interface CustomerServiceFormProps {
   customerId: string;
 }
 
 export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) => {
   const [details, setDetails] = useState<CustomerServiceDetails>({});
+  const [poolEquipment, setPoolEquipment] = useState<PoolEquipment>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -48,6 +64,16 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
 
       if (data) {
         setDetails(data);
+        // Parse pool equipment JSON if it exists
+        if (data.pool_equipment) {
+          try {
+            const parsed = JSON.parse(data.pool_equipment);
+            setPoolEquipment(parsed);
+          } catch {
+            // If it's not JSON, treat as legacy text
+            setPoolEquipment({});
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching service details:', error);
@@ -73,6 +99,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
       const serviceData = {
         customer_id: customerId,
         ...details,
+        pool_equipment: JSON.stringify(poolEquipment),
         updated_at: new Date().toISOString(),
       };
 
@@ -112,6 +139,10 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
 
   const updateField = (field: keyof CustomerServiceDetails, value: string) => {
     setDetails(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updatePoolEquipment = (field: keyof PoolEquipment, value: string | boolean) => {
+    setPoolEquipment(prev => ({ ...prev, [field]: value }));
   };
 
   if (loading) {
@@ -160,15 +191,156 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="pool_equipment">Pool Equipment</Label>
-              <Textarea
-                id="pool_equipment"
-                value={details.pool_equipment || ''}
-                onChange={(e) => updateField('pool_equipment', e.target.value)}
-                placeholder="List pumps, filters, heaters, automation systems, etc."
-                rows={3}
-              />
+
+            {/* Pool Equipment Section */}
+            <div className="space-y-4">
+              <h4 className="text-md font-medium">Pool Equipment</h4>
+              
+              {/* Dropdowns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="pump">Pump</Label>
+                  <Select value={poolEquipment.pump || ''} onValueChange={(value) => updatePoolEquipment('pump', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select pump type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single-speed">Single Speed</SelectItem>
+                      <SelectItem value="dual-speed">Dual Speed</SelectItem>
+                      <SelectItem value="variable-speed">Variable Speed</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="filter">Filter</Label>
+                  <Select value={poolEquipment.filter || ''} onValueChange={(value) => updatePoolEquipment('filter', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select filter type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sand">Sand Filter</SelectItem>
+                      <SelectItem value="cartridge">Cartridge Filter</SelectItem>
+                      <SelectItem value="de">DE Filter</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="heater">Heater</Label>
+                  <Select value={poolEquipment.heater || ''} onValueChange={(value) => updatePoolEquipment('heater', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select heater type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gas">Gas Heater</SelectItem>
+                      <SelectItem value="electric">Electric Heater</SelectItem>
+                      <SelectItem value="heat-pump">Heat Pump</SelectItem>
+                      <SelectItem value="solar">Solar Heater</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="valve_1">Valve 1</Label>
+                  <Select value={poolEquipment.valve_1 || ''} onValueChange={(value) => updatePoolEquipment('valve_1', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select valve type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jandy">Jandy Valve</SelectItem>
+                      <SelectItem value="pentair">Pentair Valve</SelectItem>
+                      <SelectItem value="hayward">Hayward Valve</SelectItem>
+                      <SelectItem value="manual">Manual Valve</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="valve_2">Valve 2</Label>
+                  <Select value={poolEquipment.valve_2 || ''} onValueChange={(value) => updatePoolEquipment('valve_2', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select valve type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jandy">Jandy Valve</SelectItem>
+                      <SelectItem value="pentair">Pentair Valve</SelectItem>
+                      <SelectItem value="hayward">Hayward Valve</SelectItem>
+                      <SelectItem value="manual">Manual Valve</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="valve_3">Valve 3</Label>
+                  <Select value={poolEquipment.valve_3 || ''} onValueChange={(value) => updatePoolEquipment('valve_3', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select valve type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jandy">Jandy Valve</SelectItem>
+                      <SelectItem value="pentair">Pentair Valve</SelectItem>
+                      <SelectItem value="hayward">Hayward Valve</SelectItem>
+                      <SelectItem value="manual">Manual Valve</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="valve_4">Valve 4</Label>
+                  <Select value={poolEquipment.valve_4 || ''} onValueChange={(value) => updatePoolEquipment('valve_4', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select valve type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="jandy">Jandy Valve</SelectItem>
+                      <SelectItem value="pentair">Pentair Valve</SelectItem>
+                      <SelectItem value="hayward">Hayward Valve</SelectItem>
+                      <SelectItem value="manual">Manual Valve</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Checkboxes */}
+              <div className="space-y-3">
+                <h5 className="text-sm font-medium">Additional Equipment</h5>
+                <div className="flex flex-wrap gap-6">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="time_clock"
+                      checked={poolEquipment.time_clock || false}
+                      onCheckedChange={(checked) => updatePoolEquipment('time_clock', checked)}
+                    />
+                    <Label htmlFor="time_clock">Time Clock</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="controller"
+                      checked={poolEquipment.controller || false}
+                      onCheckedChange={(checked) => updatePoolEquipment('controller', checked)}
+                    />
+                    <Label htmlFor="controller">Controller</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="water_valve"
+                      checked={poolEquipment.water_valve || false}
+                      onCheckedChange={(checked) => updatePoolEquipment('water_valve', checked)}
+                    />
+                    <Label htmlFor="water_valve">Water Valve</Label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
