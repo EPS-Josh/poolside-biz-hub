@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -40,15 +40,31 @@ const customerSchema = z.object({
 
 type CustomerFormData = z.infer<typeof customerSchema>;
 
+interface Customer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  notes?: string;
+}
+
 interface CustomerFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  customer?: Customer | null;
 }
 
-export const CustomerForm = ({ open, onOpenChange, onSuccess }: CustomerFormProps) => {
+export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: CustomerFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isEditing = !!customer;
   
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -66,53 +82,115 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess }: CustomerFormProp
     },
   });
 
+  // Reset form when customer changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      if (customer) {
+        form.reset({
+          first_name: customer.first_name,
+          last_name: customer.last_name,
+          email: customer.email,
+          phone: customer.phone || '',
+          company: customer.company || '',
+          address: customer.address || '',
+          city: customer.city || '',
+          state: customer.state || '',
+          zip_code: customer.zip_code || '',
+          notes: customer.notes || '',
+        });
+      } else {
+        form.reset({
+          first_name: '',
+          last_name: '',
+          email: '',
+          phone: '',
+          company: '',
+          address: '',
+          city: '',
+          state: '',
+          zip_code: '',
+          notes: '',
+        });
+      }
+    }
+  }, [open, customer, form]);
+
   const onSubmit = async (data: CustomerFormData) => {
     if (!user) {
       toast({
         title: 'Error',
-        description: 'You must be logged in to add customers',
+        description: 'You must be logged in to manage customers',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      // Explicitly type the insert data to match the database schema
-      const insertData = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        phone: data.phone || null,
-        company: data.company || null,
-        address: data.address || null,
-        city: data.city || null,
-        state: data.state || null,
-        zip_code: data.zip_code || null,
-        notes: data.notes || null,
-        user_id: user.id,
-      };
+      if (isEditing && customer) {
+        // Update existing customer
+        const updateData = {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone || null,
+          company: data.company || null,
+          address: data.address || null,
+          city: data.city || null,
+          state: data.state || null,
+          zip_code: data.zip_code || null,
+          notes: data.notes || null,
+        };
 
-      const { error } = await supabase
-        .from('customers')
-        .insert(insertData);
+        const { error } = await supabase
+          .from('customers')
+          .update(updateData)
+          .eq('id', customer.id);
 
-      if (error) {
-        throw error;
+        if (error) {
+          throw error;
+        }
+
+        toast({
+          title: 'Success',
+          description: 'Customer updated successfully!',
+        });
+      } else {
+        // Create new customer
+        const insertData = {
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone || null,
+          company: data.company || null,
+          address: data.address || null,
+          city: data.city || null,
+          state: data.state || null,
+          zip_code: data.zip_code || null,
+          notes: data.notes || null,
+          user_id: user.id,
+        };
+
+        const { error } = await supabase
+          .from('customers')
+          .insert(insertData);
+
+        if (error) {
+          throw error;
+        }
+
+        toast({
+          title: 'Success',
+          description: 'Customer added successfully!',
+        });
       }
 
-      toast({
-        title: 'Success',
-        description: 'Customer added successfully!',
-      });
-
-      form.reset();
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error('Error adding customer:', error);
+      console.error('Error managing customer:', error);
       toast({
         title: 'Error',
-        description: 'Failed to add customer. Please try again.',
+        description: `Failed to ${isEditing ? 'update' : 'add'} customer. Please try again.`,
         variant: 'destructive',
       });
     }
@@ -122,9 +200,9 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess }: CustomerFormProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Customer</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
           <DialogDescription>
-            Fill in the customer information below. Required fields are marked with *.
+            {isEditing ? 'Update the customer information below.' : 'Fill in the customer information below. Required fields are marked with *.'}
           </DialogDescription>
         </DialogHeader>
         
@@ -289,7 +367,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess }: CustomerFormProp
                 Cancel
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Adding...' : 'Add Customer'}
+                {form.formState.isSubmitting 
+                  ? (isEditing ? 'Updating...' : 'Adding...') 
+                  : (isEditing ? 'Update Customer' : 'Add Customer')
+                }
               </Button>
             </div>
           </form>

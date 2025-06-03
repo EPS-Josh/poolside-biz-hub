@@ -14,7 +14,7 @@ import { CustomerForm } from '@/components/CustomerForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Mail, Phone, Building } from 'lucide-react';
+import { Plus, Mail, Phone, Building, Pencil } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -35,6 +35,7 @@ export const CustomerList = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -72,6 +73,21 @@ export const CustomerList = () => {
     fetchCustomers();
   };
 
+  const handleAddCustomer = () => {
+    setEditingCustomer(null);
+    setShowForm(true);
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingCustomer(null);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -86,7 +102,7 @@ export const CustomerList = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle>Customers</CardTitle>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={handleAddCustomer}>
           <Plus className="h-4 w-4 mr-2" />
           Add Customer
         </Button>
@@ -95,7 +111,7 @@ export const CustomerList = () => {
         {customers.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">No customers found</p>
-            <Button onClick={() => setShowForm(true)}>
+            <Button onClick={handleAddCustomer}>
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Customer
             </Button>
@@ -110,6 +126,7 @@ export const CustomerList = () => {
                   <TableHead>Company</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Added</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -157,6 +174,15 @@ export const CustomerList = () => {
                         {new Date(customer.created_at).toLocaleDateString()}
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCustomer(customer)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -167,8 +193,9 @@ export const CustomerList = () => {
 
       <CustomerForm
         open={showForm}
-        onOpenChange={setShowForm}
+        onOpenChange={handleCloseForm}
         onSuccess={handleFormSuccess}
+        customer={editingCustomer}
       />
     </Card>
   );
