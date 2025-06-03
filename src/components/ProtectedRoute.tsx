@@ -1,19 +1,19 @@
 
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
-const Index = () => {
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        navigate('/');
-      } else {
-        navigate('/auth');
-      }
+    if (!loading && !user) {
+      navigate('/auth');
     }
   }, [user, loading, navigate]);
 
@@ -25,7 +25,9 @@ const Index = () => {
     );
   }
 
-  return null;
-};
+  if (!user) {
+    return null;
+  }
 
-export default Index;
+  return <>{children}</>;
+};
