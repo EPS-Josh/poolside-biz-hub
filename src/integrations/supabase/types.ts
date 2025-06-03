@@ -9,6 +9,109 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      customer_photos: {
+        Row: {
+          created_at: string
+          customer_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_photos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_service_details: {
+        Row: {
+          access_instructions: string | null
+          chemical_preferences: string | null
+          created_at: string
+          customer_id: string
+          gate_code: string | null
+          id: string
+          pool_equipment: string | null
+          pool_size: string | null
+          pool_type: string | null
+          service_frequency: string | null
+          spa_equipment: string | null
+          spa_type: string | null
+          special_notes: string | null
+          updated_at: string
+          water_features: string | null
+        }
+        Insert: {
+          access_instructions?: string | null
+          chemical_preferences?: string | null
+          created_at?: string
+          customer_id: string
+          gate_code?: string | null
+          id?: string
+          pool_equipment?: string | null
+          pool_size?: string | null
+          pool_type?: string | null
+          service_frequency?: string | null
+          spa_equipment?: string | null
+          spa_type?: string | null
+          special_notes?: string | null
+          updated_at?: string
+          water_features?: string | null
+        }
+        Update: {
+          access_instructions?: string | null
+          chemical_preferences?: string | null
+          created_at?: string
+          customer_id?: string
+          gate_code?: string | null
+          id?: string
+          pool_equipment?: string | null
+          pool_size?: string | null
+          pool_type?: string | null
+          service_frequency?: string | null
+          spa_equipment?: string | null
+          spa_type?: string | null
+          special_notes?: string | null
+          updated_at?: string
+          water_features?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_service_details_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null

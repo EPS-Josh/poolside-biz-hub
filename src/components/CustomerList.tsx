@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -32,6 +32,7 @@ interface Customer {
 }
 
 export const CustomerList = () => {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -88,6 +89,10 @@ export const CustomerList = () => {
     setEditingCustomer(null);
   };
 
+  const handleCustomerClick = (customerId: string) => {
+    navigate(`/customer/${customerId}`);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -133,9 +138,12 @@ export const CustomerList = () => {
                 {customers.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell>
-                      <div className="font-medium">
+                      <button
+                        onClick={() => handleCustomerClick(customer.id)}
+                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                      >
                         {customer.first_name} {customer.last_name}
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">

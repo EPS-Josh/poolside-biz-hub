@@ -1,0 +1,265 @@
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
+
+interface CustomerPhoto {
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_size?: number;
+  file_type?: string;
+  description?: string;
+  created_at: string;
+}
+
+interface CustomerPhotosProps {
+  customerId: string;
+}
+
+export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
+  const [photos, setPhotos] = useState<CustomerPhoto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  const fetchPhotos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customer_photos')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setPhotos(data || []);
+    } catch (error) {
+      console.error('Error fetching photos:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load photos',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPhotos();
+  }, [customerId]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+
+    try {
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${customerId}/${Date.now()}.${fileExt}`;
+
+        // Upload file to storage
+        const { error: uploadError } = await supabase.storage
+          .from('customer-photos')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('customer-photos')
+          .getPublicUrl(fileName);
+
+        // Save photo record to database
+        const { error: dbError } = await supabase
+          .from('customer_photos')
+          .insert({
+            customer_id: customerId,
+            file_name: file.name,
+            file_path: publicUrl,
+            file_size: file.size,
+            file_type: file.type,
+          });
+
+        if (dbError) throw dbError;
+      }
+
+      toast({
+        title: 'Success',
+        description: `${files.length} photo(s) uploaded successfully`,
+      });
+
+      // Refresh photos
+      fetchPhotos();
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to upload photos',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string, filePath: string) => {
+    try {
+      // Extract file path from URL for storage deletion
+      const fileName = filePath.split('/').pop();
+      if (fileName) {
+        await supabase.storage
+          .from('customer-photos')
+          .remove([`${customerId}/${fileName}`]);
+      }
+
+      // Delete from database
+      const { error } = await supabase
+        .from('customer_photos')
+        .delete()
+        .eq('id', photoId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Photo deleted successfully',
+      });
+
+      // Refresh photos
+      fetchPhotos();
+    } catch (error) {
+      console.error('Error deleting photo:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete photo',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const updatePhotoDescription = async (photoId: string, description: string) => {
+    try {
+      const { error } = await supabase
+        .from('customer_photos')
+        .update({ description })
+        .eq('id', photoId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Photo description updated',
+      });
+
+      // Update local state
+      setPhotos(prev => prev.map(photo => 
+        photo.id === photoId ? { ...photo, description } : photo
+      ));
+    } catch (error) {
+      console.error('Error updating photo description:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update description',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <div>Loading photos...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Camera className="h-5 w-5" />
+          <span>Customer Photos</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Upload Section */}
+        <div className="mb-6">
+          <Label htmlFor="photo-upload" className="block mb-2">
+            Upload Photos
+          </Label>
+          <div className="flex items-center space-x-4">
+            <Input
+              id="photo-upload"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="flex-1"
+            />
+            <Button disabled={uploading}>
+              <Upload className="h-4 w-4 mr-2" />
+              {uploading ? 'Uploading...' : 'Upload'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Photos Grid */}
+        {photos.length === 0 ? (
+          <div className="text-center py-8">
+            <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No photos uploaded yet</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {photos.map((photo) => (
+              <div key={photo.id} className="border rounded-lg overflow-hidden">
+                <div className="relative">
+                  <img
+                    src={photo.file_path}
+                    alt={photo.file_name}
+                    className="w-full h-48 object-cover"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => handleDeletePhoto(photo.id, photo.file_path)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="p-3">
+                  <p className="text-sm font-medium mb-2">{photo.file_name}</p>
+                  <Input
+                    placeholder="Add description..."
+                    value={photo.description || ''}
+                    onChange={(e) => updatePhotoDescription(photo.id, e.target.value)}
+                    className="text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    {new Date(photo.created_at).toLocaleDateString()}
+                    {photo.file_size && ` • ${Math.round(photo.file_size / 1024)} KB`}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
