@@ -79,12 +79,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess }: CustomerFormProp
     try {
       const { error } = await supabase
         .from('customers')
-        .insert([
-          {
-            ...data,
-            user_id: user.id,
-          },
-        ]);
+        .insert({
+          ...data,
+          user_id: user.id,
+        });
 
       if (error) {
         throw error;
