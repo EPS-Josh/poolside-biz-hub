@@ -2,7 +2,6 @@
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MetricsCard } from '@/components/MetricsCard';
-import { CustomerList } from '@/components/CustomerList';
 import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
@@ -54,11 +53,6 @@ const Dashboard = () => {
                   icon={metric.icon}
                 />
               ))}
-            </div>
-
-            {/* Customer List */}
-            <div className="mb-8">
-              <CustomerList />
             </div>
 
             {/* Placeholder for future content */}
