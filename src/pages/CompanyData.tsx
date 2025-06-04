@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ValveDataScraper } from '@/components/ValveDataScraper';
 import { useToast } from '@/hooks/use-toast';
-import { Building, Mail, Phone, MapPin, Globe, Save, Edit3 } from 'lucide-react';
+import { Building, Mail, Phone, MapPin, Globe, Save, Edit3, Settings } from 'lucide-react';
 
 const CompanyData = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [valveData, setValveData] = useState<{ [manufacturer: string]: string[] }>({});
   const [companyData, setCompanyData] = useState({
     companyName: 'AquaPro Pool Services',
     email: 'info@aquapro.com',
@@ -50,6 +51,11 @@ const CompanyData = () => {
       title: 'Cancelled',
       description: 'Changes cancelled',
     });
+  };
+
+  const handleValveDataFetched = (valves: { [manufacturer: string]: string[] }) => {
+    setValveData(valves);
+    console.log('Valve data updated:', valves);
   };
 
   return (
@@ -270,6 +276,37 @@ const CompanyData = () => {
                       disabled={!isEditing}
                       className={!isEditing ? 'bg-gray-50' : ''}
                     />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Product Data Management */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Settings className="h-5 w-5" />
+                    <span>Product Data Management</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Valve Data</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Load product data from manufacturer websites to use in service forms.
+                    </p>
+                    <ValveDataScraper onValveDataFetched={handleValveDataFetched} />
+                    
+                    {Object.keys(valveData).length > 0 && (
+                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-medium text-gray-900 mb-2">Loaded Valve Data:</h4>
+                        {Object.entries(valveData).map(([manufacturer, valves]) => (
+                          <div key={manufacturer} className="mb-2">
+                            <span className="font-medium text-gray-700">{manufacturer}:</span>
+                            <span className="ml-2 text-gray-600">{valves.length} valves loaded</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
