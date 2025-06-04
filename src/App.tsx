@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Splash from "./pages/Splash";
-import Dashboard from "./pages/Dashboard";
+import BPA from "./pages/BPA";
 import Auth from "./pages/Auth";
 import CustomerDetails from "./pages/CustomerDetails";
 import Menu from "./pages/Menu";
@@ -22,7 +22,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Splash />} />
           <Route path="/menu" element={<Menu />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/bpa" element={<BPA />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/customer/:id" element={<CustomerDetails />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

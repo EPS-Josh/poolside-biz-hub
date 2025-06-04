@@ -1,10 +1,9 @@
-
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MetricsCard } from '@/components/MetricsCard';
 import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 
-const Dashboard = () => {
+const BPA = () => {
   // Mock data - in a real app, this would come from your API
   const metrics = [
     {
@@ -37,7 +36,7 @@ const Dashboard = () => {
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">BPA Overview</h1>
               <p className="text-gray-600">Monitor your business performance and key metrics</p>
             </div>
             
@@ -73,4 +72,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default BPA;
