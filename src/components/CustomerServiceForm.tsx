@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ValveDataScraper } from '@/components/ValveDataScraper';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Waves, Droplets, Settings, Shield, ChevronDown, ChevronRight, Beaker, FileText } from 'lucide-react';
@@ -61,6 +61,15 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  // Add state for valve options
+  const [valveOptions, setValveOptions] = useState<string[]>([
+    'Jandy Valve',
+    'Pentair Valve',
+    'Hayward Valve',
+    'Manual Valve',
+    'None'
+  ]);
 
   // Collapsible section states
   const [poolOpen, setPoolOpen] = useState(true);
@@ -165,6 +174,13 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
     setPoolEquipment(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleValveDataFetched = (newValves: string[]) => {
+    // Merge new valves with existing options, keeping "None" at the end
+    const existingValves = valveOptions.filter(valve => valve !== 'None');
+    const mergedValves = [...new Set([...existingValves, ...newValves])];
+    setValveOptions([...mergedValves, 'None']);
+  };
+
   if (loading) {
     return (
       <Card className="mb-6">
@@ -216,7 +232,10 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
 
               {/* Pool Equipment Section */}
               <div className="space-y-4">
-                <h4 className="text-md font-medium">Pool Equipment</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-md font-medium">Pool Equipment</h4>
+                  <ValveDataScraper onValveDataFetched={handleValveDataFetched} />
+                </div>
                 
                 {/* Dropdowns */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -273,11 +292,11 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                         <SelectValue placeholder="Select valve type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="jandy">Jandy Valve</SelectItem>
-                        <SelectItem value="pentair">Pentair Valve</SelectItem>
-                        <SelectItem value="hayward">Hayward Valve</SelectItem>
-                        <SelectItem value="manual">Manual Valve</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
+                        {valveOptions.map((valve) => (
+                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
+                            {valve}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -289,11 +308,11 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                         <SelectValue placeholder="Select valve type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="jandy">Jandy Valve</SelectItem>
-                        <SelectItem value="pentair">Pentair Valve</SelectItem>
-                        <SelectItem value="hayward">Hayward Valve</SelectItem>
-                        <SelectItem value="manual">Manual Valve</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
+                        {valveOptions.map((valve) => (
+                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
+                            {valve}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -305,11 +324,11 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                         <SelectValue placeholder="Select valve type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="jandy">Jandy Valve</SelectItem>
-                        <SelectItem value="pentair">Pentair Valve</SelectItem>
-                        <SelectItem value="hayward">Hayward Valve</SelectItem>
-                        <SelectItem value="manual">Manual Valve</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
+                        {valveOptions.map((valve) => (
+                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
+                            {valve}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -321,11 +340,11 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                         <SelectValue placeholder="Select valve type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="jandy">Jandy Valve</SelectItem>
-                        <SelectItem value="pentair">Pentair Valve</SelectItem>
-                        <SelectItem value="hayward">Hayward Valve</SelectItem>
-                        <SelectItem value="manual">Manual Valve</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
+                        {valveOptions.map((valve) => (
+                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
+                            {valve}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
