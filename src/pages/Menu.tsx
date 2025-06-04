@@ -32,18 +32,24 @@ const Menu = () => {
           action: () => navigate('/bpa'),
         },
         {
-          title: "Customer Dashboard", 
-          description: "Manage customers and view customer data",
-          icon: Users,
-          color: "bg-blue-500",
-          action: () => navigate('/bpa'),
-        },
-        {
           title: "Analytics & Reports",
           description: "Detailed analytics and business reports",
           icon: BarChart3,
           color: "bg-purple-500",
           action: () => console.log('Analytics coming soon'),
+        },
+      ]
+    },
+    {
+      title: "Customers",
+      description: "Customer management and information",
+      items: [
+        {
+          title: "Customer Dashboard", 
+          description: "Manage customers and view customer data",
+          icon: Users,
+          color: "bg-blue-500",
+          action: () => navigate('/bpa'),
         },
       ]
     },
