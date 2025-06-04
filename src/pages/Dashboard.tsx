@@ -3,18 +3,11 @@ import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MetricsCard } from '@/components/MetricsCard';
 import { CustomerList } from '@/components/CustomerList';
-import { Users, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
   // Mock data - in a real app, this would come from your API
   const metrics = [
-    {
-      title: 'Total Customers',
-      value: '2,543',
-      change: '+12% from last month',
-      changeType: 'positive' as const,
-      icon: Users,
-    },
     {
       title: 'Revenue',
       value: '$45,231',
@@ -50,7 +43,7 @@ const Dashboard = () => {
             </div>
             
             {/* Metrics Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {metrics.map((metric, index) => (
                 <MetricsCard
                   key={index}
