@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,17 @@ interface PoolEquipment {
   time_clock?: boolean;
   controller?: boolean;
   water_valve?: boolean;
+  // Time Clock details
+  time_clock_on_hour?: string;
+  time_clock_off_hour?: string;
+  // Controller details
+  controller_model?: string;
+  controller_notes?: string;
+  // Water Valve details
+  water_valve_manufacturer?: string;
+  water_valve_ports?: string;
+  water_valve_return_port?: string;
+  water_valve_bypass_port?: string;
 }
 
 interface CustomerServiceFormProps {
@@ -320,34 +332,131 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                 </div>
 
                 {/* Checkboxes */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <h5 className="text-sm font-medium">Additional Equipment</h5>
-                  <div className="flex flex-wrap gap-6">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="time_clock"
-                        checked={poolEquipment.time_clock || false}
-                        onCheckedChange={(checked) => updatePoolEquipment('time_clock', checked)}
-                      />
-                      <Label htmlFor="time_clock">Time Clock</Label>
+                  <div className="space-y-4">
+                    {/* Time Clock */}
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="time_clock"
+                          checked={poolEquipment.time_clock || false}
+                          onCheckedChange={(checked) => updatePoolEquipment('time_clock', checked)}
+                        />
+                        <Label htmlFor="time_clock">Time Clock</Label>
+                      </div>
+                      
+                      {poolEquipment.time_clock && (
+                        <div className="ml-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="time_clock_on_hour">On Hour</Label>
+                            <Input
+                              id="time_clock_on_hour"
+                              value={poolEquipment.time_clock_on_hour || ''}
+                              onChange={(e) => updatePoolEquipment('time_clock_on_hour', e.target.value)}
+                              placeholder="e.g., 8:00 AM"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="time_clock_off_hour">Off Hour</Label>
+                            <Input
+                              id="time_clock_off_hour"
+                              value={poolEquipment.time_clock_off_hour || ''}
+                              onChange={(e) => updatePoolEquipment('time_clock_off_hour', e.target.value)}
+                              placeholder="e.g., 6:00 PM"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="controller"
-                        checked={poolEquipment.controller || false}
-                        onCheckedChange={(checked) => updatePoolEquipment('controller', checked)}
-                      />
-                      <Label htmlFor="controller">Controller</Label>
+                    {/* Controller */}
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="controller"
+                          checked={poolEquipment.controller || false}
+                          onCheckedChange={(checked) => updatePoolEquipment('controller', checked)}
+                        />
+                        <Label htmlFor="controller">Controller</Label>
+                      </div>
+                      
+                      {poolEquipment.controller && (
+                        <div className="ml-6 space-y-4">
+                          <div>
+                            <Label htmlFor="controller_model">Model</Label>
+                            <Input
+                              id="controller_model"
+                              value={poolEquipment.controller_model || ''}
+                              onChange={(e) => updatePoolEquipment('controller_model', e.target.value)}
+                              placeholder="Controller model"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="controller_notes">Notes</Label>
+                            <Textarea
+                              id="controller_notes"
+                              value={poolEquipment.controller_notes || ''}
+                              onChange={(e) => updatePoolEquipment('controller_notes', e.target.value)}
+                              placeholder="Additional controller notes"
+                              rows={2}
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="water_valve"
-                        checked={poolEquipment.water_valve || false}
-                        onCheckedChange={(checked) => updatePoolEquipment('water_valve', checked)}
-                      />
-                      <Label htmlFor="water_valve">Water Valve</Label>
+                    {/* Water Valve */}
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="water_valve"
+                          checked={poolEquipment.water_valve || false}
+                          onCheckedChange={(checked) => updatePoolEquipment('water_valve', checked)}
+                        />
+                        <Label htmlFor="water_valve">Water Valve</Label>
+                      </div>
+                      
+                      {poolEquipment.water_valve && (
+                        <div className="ml-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="water_valve_manufacturer">Manufacturer</Label>
+                            <Input
+                              id="water_valve_manufacturer"
+                              value={poolEquipment.water_valve_manufacturer || ''}
+                              onChange={(e) => updatePoolEquipment('water_valve_manufacturer', e.target.value)}
+                              placeholder="Valve manufacturer"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="water_valve_ports">Number of Ports</Label>
+                            <Input
+                              id="water_valve_ports"
+                              value={poolEquipment.water_valve_ports || ''}
+                              onChange={(e) => updatePoolEquipment('water_valve_ports', e.target.value)}
+                              placeholder="e.g., 3, 6"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="water_valve_return_port">Return Port #</Label>
+                            <Input
+                              id="water_valve_return_port"
+                              value={poolEquipment.water_valve_return_port || ''}
+                              onChange={(e) => updatePoolEquipment('water_valve_return_port', e.target.value)}
+                              placeholder="Return port number"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="water_valve_bypass_port">Bypass Port #</Label>
+                            <Input
+                              id="water_valve_bypass_port"
+                              value={poolEquipment.water_valve_bypass_port || ''}
+                              onChange={(e) => updatePoolEquipment('water_valve_bypass_port', e.target.value)}
+                              placeholder="Bypass port number"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
