@@ -95,9 +95,9 @@ const CustomerDetails = () => {
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">
                   Customer not found
                 </h2>
-                <Button onClick={() => navigate('/')}>
+                <Button onClick={() => navigate('/customers')}>
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Dashboard
+                  Back to Customers
                 </Button>
               </div>
             </div>
@@ -116,11 +116,11 @@ const CustomerDetails = () => {
             <div className="mb-6">
               <Button 
                 variant="ghost" 
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/customers')}
                 className="mb-4"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+                Back to Customers
               </Button>
               
               <div className="flex items-center space-x-4 mb-6">
