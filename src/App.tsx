@@ -8,6 +8,7 @@ import Splash from "./pages/Splash";
 import BPA from "./pages/BPA";
 import Auth from "./pages/Auth";
 import CustomerDetails from "./pages/CustomerDetails";
+import Customers from "./pages/Customers";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Splash />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/bpa" element={<BPA />} />
+          <Route path="/customers" element={<Customers />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/customer/:id" element={<CustomerDetails />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
