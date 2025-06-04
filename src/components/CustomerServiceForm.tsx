@@ -31,10 +31,14 @@ interface PoolEquipment {
   pump?: string;
   filter?: string;
   heater?: string;
-  valve_1?: string;
-  valve_2?: string;
-  valve_3?: string;
-  valve_4?: string;
+  valve_1_manufacturer?: string;
+  valve_1_specific?: string;
+  valve_2_manufacturer?: string;
+  valve_2_specific?: string;
+  valve_3_manufacturer?: string;
+  valve_3_specific?: string;
+  valve_4_manufacturer?: string;
+  valve_4_specific?: string;
   time_clock?: boolean;
   controller?: boolean;
   water_valve?: boolean;
@@ -70,6 +74,11 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
     'Manual Valve',
     'None'
   ]);
+
+  // Add state for valve data
+  const [valveData, setValveData] = useState<{ [manufacturer: string]: string[] }>({
+    'Jandy': []
+  });
 
   // Collapsible section states
   const [poolOpen, setPoolOpen] = useState(true);
@@ -174,11 +183,8 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
     setPoolEquipment(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleValveDataFetched = (newValves: string[]) => {
-    // Merge new valves with existing options, keeping "None" at the end
-    const existingValves = valveOptions.filter(valve => valve !== 'None');
-    const mergedValves = [...new Set([...existingValves, ...newValves])];
-    setValveOptions([...mergedValves, 'None']);
+  const handleValveDataFetched = (newValveData: { [manufacturer: string]: string[] }) => {
+    setValveData(prev => ({ ...prev, ...newValveData }));
   };
 
   if (loading) {
@@ -284,70 +290,45 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
 
-                  <div>
-                    <Label htmlFor="valve_1">Valve 1</Label>
-                    <Select value={poolEquipment.valve_1 || ''} onValueChange={(value) => updatePoolEquipment('valve_1', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select valve type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {valveOptions.map((valve) => (
-                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
-                            {valve}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Valve Selectors */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <ValveSelector
+                    label="Valve 1"
+                    manufacturer={poolEquipment.valve_1_manufacturer || ''}
+                    specificValve={poolEquipment.valve_1_specific || ''}
+                    onManufacturerChange={(value) => updatePoolEquipment('valve_1_manufacturer', value)}
+                    onSpecificValveChange={(value) => updatePoolEquipment('valve_1_specific', value)}
+                    valveData={valveData}
+                  />
 
-                  <div>
-                    <Label htmlFor="valve_2">Valve 2</Label>
-                    <Select value={poolEquipment.valve_2 || ''} onValueChange={(value) => updatePoolEquipment('valve_2', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select valve type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {valveOptions.map((valve) => (
-                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
-                            {valve}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <ValveSelector
+                    label="Valve 2"
+                    manufacturer={poolEquipment.valve_2_manufacturer || ''}
+                    specificValve={poolEquipment.valve_2_specific || ''}
+                    onManufacturerChange={(value) => updatePoolEquipment('valve_2_manufacturer', value)}
+                    onSpecificValveChange={(value) => updatePoolEquipment('valve_2_specific', value)}
+                    valveData={valveData}
+                  />
 
-                  <div>
-                    <Label htmlFor="valve_3">Valve 3</Label>
-                    <Select value={poolEquipment.valve_3 || ''} onValueChange={(value) => updatePoolEquipment('valve_3', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select valve type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {valveOptions.map((valve) => (
-                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
-                            {valve}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <ValveSelector
+                    label="Valve 3"
+                    manufacturer={poolEquipment.valve_3_manufacturer || ''}
+                    specificValve={poolEquipment.valve_3_specific || ''}
+                    onManufacturerChange={(value) => updatePoolEquipment('valve_3_manufacturer', value)}
+                    onSpecificValveChange={(value) => updatePoolEquipment('valve_3_specific', value)}
+                    valveData={valveData}
+                  />
 
-                  <div>
-                    <Label htmlFor="valve_4">Valve 4</Label>
-                    <Select value={poolEquipment.valve_4 || ''} onValueChange={(value) => updatePoolEquipment('valve_4', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select valve type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {valveOptions.map((valve) => (
-                          <SelectItem key={valve} value={valve.toLowerCase().replace(/\s+/g, '-')}>
-                            {valve}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <ValveSelector
+                    label="Valve 4"
+                    manufacturer={poolEquipment.valve_4_manufacturer || ''}
+                    specificValve={poolEquipment.valve_4_specific || ''}
+                    onManufacturerChange={(value) => updatePoolEquipment('valve_4_manufacturer', value)}
+                    onSpecificValveChange={(value) => updatePoolEquipment('valve_4_specific', value)}
+                    valveData={valveData}
+                  />
                 </div>
 
                 {/* Checkboxes */}

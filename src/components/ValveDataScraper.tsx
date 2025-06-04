@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Download, Loader2 } from 'lucide-react';
 
 interface ValveDataScraperProps {
-  onValveDataFetched: (valves: string[]) => void;
+  onValveDataFetched: (valves: { [manufacturer: string]: string[] }) => void;
 }
 
 export const ValveDataScraper = ({ onValveDataFetched }: ValveDataScraperProps) => {
@@ -22,6 +22,8 @@ export const ValveDataScraper = ({ onValveDataFetched }: ValveDataScraperProps) 
       const response = await fetch(`https://api.allorigins.org/get?url=${encodeURIComponent(jandyUrl)}`);
       const data = await response.json();
       
+      let jandyValves: string[] = [];
+      
       if (data.contents) {
         // Parse the HTML content to extract valve model names
         const parser = new DOMParser();
@@ -29,7 +31,6 @@ export const ValveDataScraper = ({ onValveDataFetched }: ValveDataScraperProps) 
         
         // Look for product titles, valve model numbers, etc.
         const productElements = doc.querySelectorAll('.product-title, .product-name, h3, h4');
-        const valveModels: string[] = [];
         
         productElements.forEach(element => {
           const text = element.textContent?.trim();
@@ -38,57 +39,65 @@ export const ValveDataScraper = ({ onValveDataFetched }: ValveDataScraperProps) 
             text.toLowerCase().includes('diverter') ||
             text.match(/^[A-Z0-9\-]+$/) // Model number pattern
           )) {
-            valveModels.push(text);
+            jandyValves.push(text);
           }
         });
         
         // Remove duplicates and filter
-        const uniqueValves = [...new Set(valveModels)].filter(valve => 
+        jandyValves = [...new Set(jandyValves)].filter(valve => 
           valve.length > 2 && valve.length < 50
         );
-        
-        if (uniqueValves.length > 0) {
-          onValveDataFetched(uniqueValves);
-          toast({
-            title: 'Success',
-            description: `Found ${uniqueValves.length} Jandy valve models`,
-          });
-        } else {
-          // Fallback with common Jandy valve models
-          const fallbackValves = [
-            'Jandy NeverLube 2-Way Valve',
-            'Jandy NeverLube 3-Way Valve',
-            'Jandy Gray 2-Way Valve',
-            'Jandy Gray 3-Way Valve',
-            'Jandy Caretaker Valve',
-            'Jandy TruUnion Ball Valve',
-            'Jandy 2" Diverter Valve',
-            'Jandy 1.5" Diverter Valve',
-            'Jandy Multiport Valve'
-          ];
-          onValveDataFetched(fallbackValves);
-          toast({
-            title: 'Fallback Data Used',
-            description: `Used ${fallbackValves.length} common Jandy valve models`,
-          });
-        }
       }
+      
+      if (jandyValves.length === 0) {
+        // Fallback with common Jandy valve models
+        jandyValves = [
+          'NeverLube 2-Way Valve',
+          'NeverLube 3-Way Valve',
+          'Gray 2-Way Valve',
+          'Gray 3-Way Valve',
+          'Caretaker Valve',
+          'TruUnion Ball Valve',
+          '2" Diverter Valve',
+          '1.5" Diverter Valve',
+          'Multiport Valve',
+          'Pro Series 2-Way',
+          'Pro Series 3-Way'
+        ];
+      }
+      
+      const valveData = {
+        'Jandy': jandyValves
+      };
+      
+      onValveDataFetched(valveData);
+      
+      toast({
+        title: 'Success',
+        description: `Found ${jandyValves.length} Jandy valve models`,
+      });
+      
     } catch (error) {
       console.error('Error scraping Jandy valves:', error);
       
       // Use fallback data on error
       const fallbackValves = [
-        'Jandy NeverLube 2-Way Valve',
-        'Jandy NeverLube 3-Way Valve',
-        'Jandy Gray 2-Way Valve',
-        'Jandy Gray 3-Way Valve',
-        'Jandy Caretaker Valve',
-        'Jandy TruUnion Ball Valve',
-        'Jandy 2" Diverter Valve',
-        'Jandy 1.5" Diverter Valve',
-        'Jandy Multiport Valve'
+        'NeverLube 2-Way Valve',
+        'NeverLube 3-Way Valve',
+        'Gray 2-Way Valve',
+        'Gray 3-Way Valve',
+        'Caretaker Valve',
+        'TruUnion Ball Valve',
+        '2" Diverter Valve',
+        '1.5" Diverter Valve',
+        'Multiport Valve'
       ];
-      onValveDataFetched(fallbackValves);
+      
+      const valveData = {
+        'Jandy': fallbackValves
+      };
+      
+      onValveDataFetched(valveData);
       
       toast({
         title: 'Using Fallback Data',
