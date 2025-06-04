@@ -88,7 +88,7 @@ const Menu = () => {
           description: "Company settings and configuration",
           icon: Building,
           color: "bg-gray-500",
-          action: () => console.log('Company Data coming soon'),
+          action: () => navigate('/company-data'),
         },
       ]
     }
