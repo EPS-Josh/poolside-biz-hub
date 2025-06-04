@@ -1,4 +1,3 @@
-
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,14 +28,14 @@ const Menu = () => {
           description: "View overall business performance and KPIs",
           icon: DollarSign,
           color: "bg-green-500",
-          action: () => navigate('/'),
+          action: () => navigate('/dashboard'),
         },
         {
           title: "Customer Dashboard", 
           description: "Manage customers and view customer data",
           icon: Users,
           color: "bg-blue-500",
-          action: () => navigate('/'),
+          action: () => navigate('/dashboard'),
         },
         {
           title: "Analytics & Reports",
