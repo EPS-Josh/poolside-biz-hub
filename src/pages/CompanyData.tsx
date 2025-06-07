@@ -2,14 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ValveDataScraper } from '@/components/ValveDataScraper';
+import { CompanyDataForm } from '@/components/company/CompanyDataForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Building, Mail, Phone, MapPin, Globe, Save, Edit3, Settings } from 'lucide-react';
+import { Save, Edit3 } from 'lucide-react';
 
 const CompanyData = () => {
   const { toast } = useToast();
@@ -240,228 +238,13 @@ const CompanyData = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Basic Company Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Building className="h-5 w-5" />
-                    <span>Basic Information</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Company Name
-                    </label>
-                    <Input
-                      value={companyData.companyName}
-                      onChange={(e) => handleInputChange('companyName', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address
-                    </label>
-                    <Input
-                      type="email"
-                      value={companyData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
-                    </label>
-                    <Input
-                      value={companyData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Website
-                    </label>
-                    <Input
-                      value={companyData.website}
-                      onChange={(e) => handleInputChange('website', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Address Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <MapPin className="h-5 w-5" />
-                    <span>Address Information</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Street Address
-                    </label>
-                    <Input
-                      value={companyData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        City
-                      </label>
-                      <Input
-                        value={companyData.city}
-                        onChange={(e) => handleInputChange('city', e.target.value)}
-                        disabled={!isEditing}
-                        className={!isEditing ? 'bg-gray-50' : ''}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        State
-                      </label>
-                      <Input
-                        value={companyData.state}
-                        onChange={(e) => handleInputChange('state', e.target.value)}
-                        disabled={!isEditing}
-                        className={!isEditing ? 'bg-gray-50' : ''}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ZIP Code
-                    </label>
-                    <Input
-                      value={companyData.zipCode}
-                      onChange={(e) => handleInputChange('zipCode', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Business Details */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Globe className="h-5 w-5" />
-                    <span>Business Details</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tax ID / EIN
-                    </label>
-                    <Input
-                      value={companyData.taxId}
-                      onChange={(e) => handleInputChange('taxId', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Business License Number
-                    </label>
-                    <Input
-                      value={companyData.licenseNumber}
-                      onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Insurance Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Building className="h-5 w-5" />
-                    <span>Insurance Information</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Insurance Provider
-                    </label>
-                    <Input
-                      value={companyData.insuranceProvider}
-                      onChange={(e) => handleInputChange('insuranceProvider', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Policy Number
-                    </label>
-                    <Input
-                      value={companyData.insurancePolicyNumber}
-                      onChange={(e) => handleInputChange('insurancePolicyNumber', e.target.value)}
-                      disabled={!isEditing}
-                      className={!isEditing ? 'bg-gray-50' : ''}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Product Data Management */}
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Settings className="h-5 w-5" />
-                    <span>Product Data Management</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Valve Data</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Load product data from manufacturer websites to use in service forms.
-                    </p>
-                    <ValveDataScraper onValveDataFetched={handleValveDataFetched} />
-                    
-                    {Object.keys(valveData).length > 0 && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium text-gray-900 mb-2">Loaded Valve Data:</h4>
-                        {Object.entries(valveData).map(([manufacturer, valves]) => (
-                          <div key={manufacturer} className="mb-2">
-                            <span className="font-medium text-gray-700">{manufacturer}:</span>
-                            <span className="ml-2 text-gray-600">{valves.length} valves loaded</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <CompanyDataForm
+              companyData={companyData}
+              isEditing={isEditing}
+              valveData={valveData}
+              onInputChange={handleInputChange}
+              onValveDataFetched={handleValveDataFetched}
+            />
 
             {/* Status Banner */}
             {isEditing && (
