@@ -9,6 +9,63 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      company_data: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          insurance_policy_number: string | null
+          insurance_provider: string | null
+          license_number: string | null
+          phone: string | null
+          state: string | null
+          tax_id: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          license_number?: string | null
+          phone?: string | null
+          state?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          license_number?: string | null
+          phone?: string | null
+          state?: string | null
+          tax_id?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       customer_photos: {
         Row: {
           created_at: string
