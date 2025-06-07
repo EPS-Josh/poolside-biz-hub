@@ -100,7 +100,7 @@ const Splash = () => {
               <div className="flex flex-col space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">(555) 123-POOL</span>
+                  <span className="text-gray-700">(520) 314-1015</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-blue-600" />
@@ -108,7 +108,7 @@ const Splash = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Serving the Greater Metro Area</span>
+                  <span className="text-gray-700">Serving the Greater Tucson Area</span>
                 </div>
               </div>
             </div>
