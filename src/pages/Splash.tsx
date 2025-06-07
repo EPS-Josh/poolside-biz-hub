@@ -192,7 +192,7 @@ const Splash = () => {
               variant="outline"
               className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50"
             >
-              Call (555) 123-POOL
+              Call (520) 314-1015
             </Button>
           </div>
         </div>
@@ -214,22 +214,22 @@ const Splash = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
               <div className="space-y-2 text-gray-400">
-                <p>(555) 123-POOL</p>
+                <p>(520) 314-1015</p>
                 <p>info@parkdrachmanpools.com</p>
-                <p>Serving the Greater Metro Area</p>
+                <p>Serving the Greater Tucson Area</p>
               </div>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">Business Hours</h3>
               <div className="space-y-2 text-gray-400">
-                <p>Monday - Friday: 8:00 AM - 6:00 PM</p>
+                <p>Monday - Friday: 7:00 AM - 5:00 PM</p>
                 <p>Saturday: 9:00 AM - 4:00 PM</p>
                 <p>Sunday: Emergency Service Only</p>
               </div>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2024 Park & Drachman Pool Service. Keeping your pool perfect, one service at a time.</p>
+            <p>© 2025 Park & Drachman Pool Service. Keeping your pool perfect, one service at a time.</p>
           </div>
         </div>
       </footer>
