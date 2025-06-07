@@ -40,10 +40,16 @@ const Splash = () => {
               <Waves className="h-8 w-8 text-blue-600" />
               <h1 className="text-xl font-bold text-gray-900">Park & Drachman Pool Service</h1>
             </div>
-            <Button onClick={() => navigate('/auth')} className="flex items-center space-x-2">
-              <span>Client Portal</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center space-x-3">
+              <Button variant="outline" className="flex items-center space-x-2">
+                <span>Client Portal</span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button onClick={() => navigate('/auth')} className="flex items-center space-x-2">
+                <span>Technician Portal</span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -122,7 +128,6 @@ const Splash = () => {
           </div>
         </div>
 
-        {/* Services Grid */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
             Our Professional Services
@@ -144,7 +149,6 @@ const Splash = () => {
           </div>
         </div>
 
-        {/* Why Choose Us Section */}
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl shadow-xl p-8 mb-16 text-white">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-4">
@@ -170,7 +174,6 @@ const Splash = () => {
           </div>
         </div>
 
-        {/* Call to Action */}
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Ready for Crystal Clear Water?
@@ -198,7 +201,6 @@ const Splash = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
