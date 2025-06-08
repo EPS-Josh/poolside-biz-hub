@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,16 +57,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Force the date to be treated as local time and format as YYYY-MM-DD
-      const localDate = new Date(appointmentData.date.getTime() - (appointmentData.date.getTimezoneOffset() * 60000));
-      const year = localDate.getUTCFullYear();
-      const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(localDate.getUTCDate()).padStart(2, '0');
+      // Format date as YYYY-MM-DD using local date values (no timezone conversion)
+      const year = appointmentData.date.getFullYear();
+      const month = String(appointmentData.date.getMonth() + 1).padStart(2, '0');
+      const day = String(appointmentData.date.getDate()).padStart(2, '0');
       const localDateString = `${year}-${month}-${day}`;
       
       console.log('Creating appointment with date:', localDateString);
       console.log('Original date object:', appointmentData.date);
-      console.log('Local adjusted date:', localDate);
 
       const { error } = await supabase
         .from('appointments')
@@ -117,10 +114,10 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       return;
     }
     
-    const localDate = new Date(formData.date.getTime() - (formData.date.getTimezoneOffset() * 60000));
-    const year = localDate.getUTCFullYear();
-    const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(localDate.getUTCDate()).padStart(2, '0');
+    // Simple date formatting using local date values
+    const year = formData.date.getFullYear();
+    const month = String(formData.date.getMonth() + 1).padStart(2, '0');
+    const day = String(formData.date.getDate()).padStart(2, '0');
     
     console.log('Form data before submission:', {
       ...formData,
@@ -194,11 +191,10 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 onSelect={(date) => {
                   if (date) {
                     console.log('Date selected:', date);
-                    // Ensure we're working with a clean local date
-                    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
-                    const year = localDate.getUTCFullYear();
-                    const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
-                    const day = String(localDate.getUTCDate()).padStart(2, '0');
+                    // Use the date as-is without any timezone manipulation
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
                     console.log('Date will be formatted as:', `${year}-${month}-${day}`);
                     setFormData(prev => ({ ...prev, date }));
                   }
