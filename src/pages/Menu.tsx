@@ -152,7 +152,7 @@ const Menu = () => {
             <div className="mt-12 p-6 bg-white rounded-lg shadow-sm border">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => navigate('/customers')}>
                   <Users className="h-4 w-4" />
                   <span>Add Customer</span>
                 </Button>
