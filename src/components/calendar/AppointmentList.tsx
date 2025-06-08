@@ -1,10 +1,14 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format, addDays, isSameDay } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { Calendar, Clock, User, MapPin, Phone, Edit, Trash2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface AppointmentListProps {
   limit?: number;
@@ -15,67 +19,70 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
   limit,
   dateFilter
 }) => {
-  // Mock appointments data - in real app, this would come from your backend
-  const allAppointments = [
-    {
-      id: '1',
-      date: new Date(),
-      time: '10:00 AM',
-      customer: 'John Smith',
-      customerPhone: '(520) 555-0123',
-      address: '123 Main St, Tucson, AZ',
-      service: 'Weekly Pool Cleaning',
-      status: 'scheduled',
-      notes: 'Check pool filter'
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: appointments = [], isLoading } = useQuery({
+    queryKey: ['appointments', user?.id, dateFilter],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      let query = supabase
+        .from('appointments')
+        .select(`
+          *,
+          customers (
+            first_name,
+            last_name,
+            phone,
+            address,
+            city,
+            state
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('appointment_date', { ascending: true })
+        .order('appointment_time', { ascending: true });
+
+      if (dateFilter) {
+        const dateString = format(dateFilter, 'yyyy-MM-dd');
+        query = query.eq('appointment_date', dateString);
+      }
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        throw error;
+      }
+      
+      return data || [];
     },
-    {
-      id: '2',
-      date: addDays(new Date(), 1),
-      time: '2:00 PM',
-      customer: 'Jane Doe',
-      customerPhone: '(520) 555-0456',
-      address: '456 Oak Ave, Tucson, AZ',
-      service: 'Equipment Repair',
-      status: 'confirmed',
-      notes: 'Pool pump making noise'
+    enabled: !!user?.id
+  });
+
+  const deleteAppointmentMutation = useMutation({
+    mutationFn: async (appointmentId: string) => {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId);
+      
+      if (error) throw error;
     },
-    {
-      id: '3',
-      date: addDays(new Date(), 2),
-      time: '9:00 AM',
-      customer: 'Bob Johnson',
-      customerPhone: '(520) 555-0789',
-      address: '789 Pine Rd, Tucson, AZ',
-      service: 'Chemical Balancing',
-      status: 'scheduled',
-      notes: ''
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast.success('Appointment deleted successfully');
     },
-    {
-      id: '4',
-      date: addDays(new Date(), 3),
-      time: '11:00 AM',
-      customer: 'Sarah Wilson',
-      customerPhone: '(520) 555-0321',
-      address: '321 Cedar Ln, Tucson, AZ',
-      service: 'Pool Opening',
-      status: 'confirmed',
-      notes: 'First service of the season'
+    onError: (error) => {
+      console.error('Error deleting appointment:', error);
+      toast.error('Failed to delete appointment');
     }
-  ];
-
-  let appointments = allAppointments;
-
-  // Filter by date if provided
-  if (dateFilter) {
-    appointments = appointments.filter(apt => 
-      isSameDay(apt.date, dateFilter)
-    );
-  }
-
-  // Apply limit if provided
-  if (limit) {
-    appointments = appointments.slice(0, limit);
-  }
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,6 +101,20 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
     }
   };
 
+  const handleDelete = (appointmentId: string) => {
+    if (window.confirm('Are you sure you want to delete this appointment?')) {
+      deleteAppointmentMutation.mutate(appointmentId);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        Loading appointments...
+      </div>
+    );
+  }
+
   if (appointments.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -104,72 +125,81 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
 
   return (
     <div className="space-y-4">
-      {appointments.map(appointment => (
-        <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm font-medium">
-                    {format(appointment.date, 'MMM d, yyyy')}
-                  </span>
+      {appointments.map(appointment => {
+        const customer = appointment.customers;
+        const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
+        const customerAddress = customer ? `${customer.address || ''}, ${customer.city || ''}, ${customer.state || ''}`.replace(/^,\s*|,\s*$/g, '') : '';
+        
+        return (
+          <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium">
+                      {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{appointment.appointment_time}</span>
+                  </div>
                 </div>
+                <Badge className={getStatusColor(appointment.status)}>
+                  {appointment.status}
+                </Badge>
+              </div>
+
+              <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm">{appointment.time}</span>
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">{customerName}</span>
+                  {customer?.phone && (
+                    <>
+                      <Phone className="h-4 w-4 text-gray-500 ml-4" />
+                      <span className="text-sm text-gray-600">{customer.phone}</span>
+                    </>
+                  )}
                 </div>
-              </div>
-              <Badge className={getStatusColor(appointment.status)}>
-                {appointment.status}
-              </Badge>
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">{appointment.customer}</span>
-                <Phone className="h-4 w-4 text-gray-500 ml-4" />
-                <span className="text-sm text-gray-600">{appointment.customerPhone}</span>
-              </div>
+                {customerAddress && (
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">{customerAddress}</span>
+                  </div>
+                )}
 
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-600">{appointment.address}</span>
-              </div>
-
-              <div className="text-sm">
-                <span className="font-medium">Service:</span> {appointment.service}
-              </div>
-
-              {appointment.notes && (
                 <div className="text-sm">
-                  <span className="font-medium">Notes:</span> {appointment.notes}
+                  <span className="font-medium">Service:</span> {appointment.service_type}
                 </div>
-              )}
-            </div>
 
-            <div className="flex justify-end space-x-2 mt-4">
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
-              <Button variant="outline" size="sm">
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+                {appointment.notes && (
+                  <div className="text-sm">
+                    <span className="font-medium">Notes:</span> {appointment.notes}
+                  </div>
+                )}
+              </div>
 
-      {limit && allAppointments.length > limit && (
-        <div className="text-center">
-          <Button variant="outline" className="mt-4">
-            View All Appointments
-          </Button>
-        </div>
-      )}
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDelete(appointment.id)}
+                  disabled={deleteAppointmentMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

@@ -1,8 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, addWeeks, subWeeks } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CalendarViewProps {
   viewType: 'month' | 'week' | 'day';
@@ -17,25 +20,59 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onDateChange,
   onDateSelect,
 }) => {
-  // Mock appointments data - in real app, this would come from your backend
-  const appointments = [
-    {
-      id: '1',
-      date: new Date(),
-      time: '10:00 AM',
-      customer: 'John Smith',
-      service: 'Weekly Cleaning',
-      status: 'scheduled'
+  const { user } = useAuth();
+
+  const { data: appointments = [] } = useQuery({
+    queryKey: ['appointments', user?.id, viewType, currentDate],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      // Calculate date range based on view type
+      let startDate: Date;
+      let endDate: Date;
+
+      switch (viewType) {
+        case 'month':
+          startDate = startOfWeek(startOfMonth(currentDate));
+          endDate = endOfWeek(endOfMonth(currentDate));
+          break;
+        case 'week':
+          startDate = startOfWeek(currentDate);
+          endDate = endOfWeek(currentDate);
+          break;
+        case 'day':
+          startDate = currentDate;
+          endDate = currentDate;
+          break;
+        default:
+          startDate = currentDate;
+          endDate = currentDate;
+      }
+
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          customers (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('user_id', user.id)
+        .gte('appointment_date', format(startDate, 'yyyy-MM-dd'))
+        .lte('appointment_date', format(endDate, 'yyyy-MM-dd'))
+        .order('appointment_date')
+        .order('appointment_time');
+      
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        throw error;
+      }
+      
+      return data || [];
     },
-    {
-      id: '2',
-      date: addDays(new Date(), 1),
-      time: '2:00 PM',
-      customer: 'Jane Doe',
-      service: 'Equipment Repair',
-      status: 'confirmed'
-    }
-  ];
+    enabled: !!user?.id
+  });
 
   const navigateDate = (direction: 'prev' | 'next') => {
     let newDate: Date;
@@ -57,6 +94,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     onDateChange(newDate);
   };
 
+  const getAppointmentsForDate = (date: Date) => {
+    return appointments.filter(apt => 
+      isSameDay(new Date(apt.appointment_date), date)
+    );
+  };
+
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -69,9 +112,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
-        const dayAppointments = appointments.filter(apt => 
-          isSameDay(apt.date, day)
-        );
+        const dayAppointments = getAppointmentsForDate(day);
 
         days.push(
           <div
@@ -83,14 +124,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           >
             <div className="font-medium mb-1">{format(day, 'd')}</div>
             <div className="space-y-1">
-              {dayAppointments.map(apt => (
-                <div
-                  key={apt.id}
-                  className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded truncate"
-                >
-                  {apt.time} - {apt.customer}
-                </div>
-              ))}
+              {dayAppointments.map(apt => {
+                const customer = apt.customers;
+                const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
+                
+                return (
+                  <div
+                    key={apt.id}
+                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded truncate"
+                  >
+                    {apt.appointment_time} - {customerName}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
@@ -141,9 +187,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         {/* Week Body */}
         <div className="grid grid-cols-7 gap-0">
           {days.map(day => {
-            const dayAppointments = appointments.filter(apt => 
-              isSameDay(apt.date, day)
-            );
+            const dayAppointments = getAppointmentsForDate(day);
             
             return (
               <div
@@ -152,16 +196,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onClick={() => onDateSelect(day)}
               >
                 <div className="space-y-2">
-                  {dayAppointments.map(apt => (
-                    <div
-                      key={apt.id}
-                      className="bg-blue-100 text-blue-800 p-2 rounded text-sm"
-                    >
-                      <div className="font-medium">{apt.time}</div>
-                      <div>{apt.customer}</div>
-                      <div className="text-xs">{apt.service}</div>
-                    </div>
-                  ))}
+                  {dayAppointments.map(apt => {
+                    const customer = apt.customers;
+                    const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
+                    
+                    return (
+                      <div
+                        key={apt.id}
+                        className="bg-blue-100 text-blue-800 p-2 rounded text-sm"
+                      >
+                        <div className="font-medium">{apt.appointment_time}</div>
+                        <div>{customerName}</div>
+                        <div className="text-xs">{apt.service_type}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -172,9 +221,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const renderDayView = () => {
-    const dayAppointments = appointments.filter(apt => 
-      isSameDay(apt.date, currentDate)
-    );
+    const dayAppointments = getAppointmentsForDate(currentDate);
 
     return (
       <div className="p-6">
@@ -186,27 +233,32 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
         <div className="space-y-4">
           {dayAppointments.length > 0 ? (
-            dayAppointments.map(apt => (
-              <div
-                key={apt.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium text-lg">{apt.customer}</div>
-                    <div className="text-gray-600">{apt.service}</div>
-                    <div className="text-sm text-gray-500">{apt.time}</div>
-                  </div>
-                  <div className={`px-2 py-1 rounded text-xs font-medium ${
-                    apt.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    apt.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {apt.status}
+            dayAppointments.map(apt => {
+              const customer = apt.customers;
+              const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
+              
+              return (
+                <div
+                  key={apt.id}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-lg">{customerName}</div>
+                      <div className="text-gray-600">{apt.service_type}</div>
+                      <div className="text-sm text-gray-500">{apt.appointment_time}</div>
+                    </div>
+                    <div className={`px-2 py-1 rounded text-xs font-medium ${
+                      apt.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                      apt.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {apt.status}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-center py-12 text-gray-500">
               No appointments scheduled for this day

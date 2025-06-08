@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface AppointmentFormProps {
   onSuccess: () => void;
@@ -20,6 +23,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   onSuccess,
   selectedDate
 }) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
   const [formData, setFormData] = useState({
     customerId: '',
     date: selectedDate || new Date(),
@@ -29,12 +35,56 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     status: 'scheduled'
   });
 
-  // Mock customers data - in real app, this would come from your backend
-  const customers = [
-    { id: '1', name: 'John Smith', address: '123 Main St' },
-    { id: '2', name: 'Jane Doe', address: '456 Oak Ave' },
-    { id: '3', name: 'Bob Johnson', address: '789 Pine Rd' }
-  ];
+  // Fetch customers for the dropdown
+  const { data: customers = [] } = useQuery({
+    queryKey: ['customers', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, address, city, state')
+        .eq('user_id', user.id)
+        .order('first_name');
+      
+      if (error) {
+        console.error('Error fetching customers:', error);
+        throw error;
+      }
+      
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (appointmentData: any) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('appointments')
+        .insert({
+          user_id: user.id,
+          customer_id: appointmentData.customerId || null,
+          appointment_date: format(appointmentData.date, 'yyyy-MM-dd'),
+          appointment_time: appointmentData.time,
+          service_type: appointmentData.service,
+          status: appointmentData.status,
+          notes: appointmentData.notes || null
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast.success('Appointment created successfully!');
+      onSuccess();
+    },
+    onError: (error) => {
+      console.error('Error creating appointment:', error);
+      toast.error('Failed to create appointment');
+    }
+  });
 
   const services = [
     'Weekly Pool Cleaning',
@@ -54,14 +104,12 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Here you would typically save to your backend
-    console.log('Creating appointment:', formData);
+    if (!formData.service || !formData.time) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
     
-    // Show success message
-    alert('Appointment created successfully!');
-    
-    // Call success callback
-    onSuccess();
+    createAppointmentMutation.mutate(formData);
   };
 
   return (
@@ -74,12 +122,12 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             setFormData(prev => ({ ...prev, customerId: value }))
           }>
             <SelectTrigger>
-              <SelectValue placeholder="Select a customer" />
+              <SelectValue placeholder="Select a customer (optional)" />
             </SelectTrigger>
             <SelectContent>
               {customers.map(customer => (
                 <SelectItem key={customer.id} value={customer.id}>
-                  {customer.name} - {customer.address}
+                  {customer.first_name} {customer.last_name} - {customer.address}, {customer.city}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -88,7 +136,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
         {/* Service Selection */}
         <div className="space-y-2">
-          <Label htmlFor="service">Service</Label>
+          <Label htmlFor="service">Service *</Label>
           <Select value={formData.service} onValueChange={(value) => 
             setFormData(prev => ({ ...prev, service: value }))
           }>
@@ -107,7 +155,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
         {/* Date Selection */}
         <div className="space-y-2">
-          <Label>Date</Label>
+          <Label>Date *</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -135,7 +183,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
         {/* Time Selection */}
         <div className="space-y-2">
-          <Label htmlFor="time">Time</Label>
+          <Label htmlFor="time">Time *</Label>
           <Select value={formData.time} onValueChange={(value) => 
             setFormData(prev => ({ ...prev, time: value }))
           }>
@@ -189,8 +237,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         <Button type="button" variant="outline" onClick={onSuccess}>
           Cancel
         </Button>
-        <Button type="submit">
-          Create Appointment
+        <Button 
+          type="submit" 
+          disabled={createAppointmentMutation.isPending}
+        >
+          {createAppointmentMutation.isPending ? 'Creating...' : 'Create Appointment'}
         </Button>
       </div>
     </form>
