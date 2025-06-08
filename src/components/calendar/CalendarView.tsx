@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, addWeeks, subWeeks } from 'date-fns';
@@ -6,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
+import { EditAppointmentDialog } from './EditAppointmentDialog';
 
 interface CalendarViewProps {
   viewType: 'month' | 'week' | 'day';
@@ -21,6 +23,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onDateSelect,
 }) => {
   const { user } = useAuth();
+  const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
   const { data: appointments = [] } = useQuery({
     queryKey: ['appointments', viewType, currentDate],
@@ -98,6 +101,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     });
   };
 
+  const handleAppointmentClick = (appointment: any, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setEditingAppointment(appointment);
+  };
+
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
@@ -129,7 +137,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 return (
                   <div
                     key={apt.id}
-                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded truncate"
+                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded truncate cursor-pointer hover:bg-blue-200 transition-colors"
+                    onClick={(e) => handleAppointmentClick(apt, e)}
+                    title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}`}
                   >
                     {apt.appointment_time} - {customerName}
                   </div>
@@ -201,7 +211,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     return (
                       <div
                         key={apt.id}
-                        className="bg-blue-100 text-blue-800 p-2 rounded text-sm"
+                        className="bg-blue-100 text-blue-800 p-2 rounded text-sm cursor-pointer hover:bg-blue-200 transition-colors"
+                        onClick={(e) => handleAppointmentClick(apt, e)}
+                        title={`Click to edit appointment`}
                       >
                         <div className="font-medium">{apt.appointment_time}</div>
                         <div>{customerName}</div>
@@ -238,7 +250,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               return (
                 <div
                   key={apt.id}
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => setEditingAppointment(apt)}
+                  title="Click to edit appointment"
                 >
                   <div className="flex justify-between items-start">
                     <div>
@@ -268,28 +282,39 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   return (
-    <div>
-      {/* Navigation Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        
-        <h2 className="text-xl font-semibold">
-          {viewType === 'month' && format(currentDate, 'MMMM yyyy')}
-          {viewType === 'week' && `Week of ${format(startOfWeek(currentDate), 'MMM d, yyyy')}`}
-          {viewType === 'day' && format(currentDate, 'MMMM d, yyyy')}
-        </h2>
-        
-        <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+    <>
+      <div>
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <h2 className="text-xl font-semibold">
+            {viewType === 'month' && format(currentDate, 'MMMM yyyy')}
+            {viewType === 'week' && `Week of ${format(startOfWeek(currentDate), 'MMM d, yyyy')}`}
+            {viewType === 'day' && format(currentDate, 'MMMM d, yyyy')}
+          </h2>
+          
+          <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Calendar Content */}
+        {viewType === 'month' && renderMonthView()}
+        {viewType === 'week' && renderWeekView()}
+        {viewType === 'day' && renderDayView()}
       </div>
 
-      {/* Calendar Content */}
-      {viewType === 'month' && renderMonthView()}
-      {viewType === 'week' && renderWeekView()}
-      {viewType === 'day' && renderDayView()}
-    </div>
+      {/* Edit Appointment Dialog */}
+      {editingAppointment && (
+        <EditAppointmentDialog
+          appointment={editingAppointment}
+          isOpen={!!editingAppointment}
+          onOpenChange={(open) => !open && setEditingAppointment(null)}
+        />
+      )}
+    </>
   );
 };
