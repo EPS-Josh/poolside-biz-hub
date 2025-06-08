@@ -57,12 +57,17 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      // Format date as YYYY-MM-DD in local timezone
+      const localDateString = format(appointmentData.date, 'yyyy-MM-dd');
+      
+      console.log('Creating appointment with date:', localDateString);
+
       const { error } = await supabase
         .from('appointments')
         .insert({
           user_id: user.id,
           customer_id: appointmentData.customerId || null,
-          appointment_date: format(appointmentData.date, 'yyyy-MM-dd'),
+          appointment_date: localDateString,
           appointment_time: appointmentData.time,
           service_type: appointmentData.service,
           status: appointmentData.status,
@@ -104,6 +109,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       toast.error('Please fill in all required fields');
       return;
     }
+    
+    console.log('Form data before submission:', {
+      ...formData,
+      dateString: format(formData.date, 'yyyy-MM-dd')
+    });
     
     createAppointmentMutation.mutate(formData);
   };
@@ -169,7 +179,13 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               <Calendar
                 mode="single"
                 selected={formData.date}
-                onSelect={(date) => date && setFormData(prev => ({ ...prev, date }))}
+                onSelect={(date) => {
+                  if (date) {
+                    console.log('Date selected:', date);
+                    console.log('Date formatted:', format(date, 'yyyy-MM-dd'));
+                    setFormData(prev => ({ ...prev, date }));
+                  }
+                }}
                 initialFocus
                 className="pointer-events-auto"
               />
