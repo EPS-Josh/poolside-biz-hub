@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,10 +22,8 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
   const queryClient = useQueryClient();
 
   const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ['appointments', user?.id, dateFilter],
+    queryKey: ['appointments', dateFilter],
     queryFn: async () => {
-      if (!user?.id) return [];
-
       let query = supabase
         .from('appointments')
         .select(`
@@ -40,7 +37,6 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
             state
           )
         `)
-        .eq('user_id', user.id)
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true });
 
@@ -62,7 +58,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
       
       return data || [];
     },
-    enabled: !!user?.id
+    enabled: !!user
   });
 
   const deleteAppointmentMutation = useMutation({

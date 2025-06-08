@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,14 +36,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   // Fetch customers for the dropdown
   const { data: customers = [] } = useQuery({
-    queryKey: ['customers', user?.id],
+    queryKey: ['customers'],
     queryFn: async () => {
-      if (!user?.id) return [];
-
       const { data, error } = await supabase
         .from('customers')
         .select('id, first_name, last_name, address, city, state')
-        .eq('user_id', user.id)
         .order('first_name');
       
       if (error) {
@@ -54,7 +50,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       
       return data || [];
     },
-    enabled: !!user?.id
+    enabled: !!user
   });
 
   const createAppointmentMutation = useMutation({

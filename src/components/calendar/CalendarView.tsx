@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -23,10 +22,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const { user } = useAuth();
 
   const { data: appointments = [] } = useQuery({
-    queryKey: ['appointments', user?.id, viewType, currentDate],
+    queryKey: ['appointments', viewType, currentDate],
     queryFn: async () => {
-      if (!user?.id) return [];
-
       // Calculate date range based on view type
       let startDate: Date;
       let endDate: Date;
@@ -58,7 +55,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             last_name
           )
         `)
-        .eq('user_id', user.id)
         .gte('appointment_date', format(startDate, 'yyyy-MM-dd'))
         .lte('appointment_date', format(endDate, 'yyyy-MM-dd'))
         .order('appointment_date')
@@ -71,7 +67,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       
       return data || [];
     },
-    enabled: !!user?.id
+    enabled: !!user
   });
 
   const navigateDate = (direction: 'prev' | 'next') => {
