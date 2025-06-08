@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -75,7 +76,7 @@ const CompanyData = () => {
         setCompanyData({
           companyName: 'Finest Pools & Spas LLC',
           email: 'info@finestpools.com',
-          phone: '(555) 123-4567',
+          phone: '(520) 314-1015',
           address: '123 Pool Service Lane',
           city: 'Miami',
           state: 'FL',

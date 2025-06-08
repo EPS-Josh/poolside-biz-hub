@@ -106,7 +106,7 @@ const Splash = () => {
               <div className="flex flex-col space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">(555) 123-4567</span>
+                  <span className="text-gray-700">(520) 314-1015</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-blue-600" />
@@ -195,7 +195,7 @@ const Splash = () => {
               variant="outline"
               className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50"
             >
-              Call (555) 123-4567
+              Call (520) 314-1015
             </Button>
           </div>
         </div>
@@ -216,7 +216,7 @@ const Splash = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
               <div className="space-y-2 text-gray-400">
-                <p>(555) 123-4567</p>
+                <p>(520) 314-1015</p>
                 <p>info@finestpools.com</p>
                 <p>Serving the Greater Miami Area</p>
               </div>
