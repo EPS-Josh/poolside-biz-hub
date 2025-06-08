@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 const customerSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   company: z.string().optional(),
   address: z.string().optional(),
@@ -131,7 +131,7 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
         const updateData = {
           first_name: data.first_name,
           last_name: data.last_name,
-          email: data.email,
+          email: data.email || null,
           phone: data.phone || null,
           company: data.company || null,
           address: data.address || null,
@@ -159,7 +159,7 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
         const insertData = {
           first_name: data.first_name,
           last_name: data.last_name,
-          email: data.email,
+          email: data.email || null,
           phone: data.phone || null,
           company: data.company || null,
           address: data.address || null,
@@ -243,7 +243,7 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email *</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="john.doe@example.com" {...field} />
                   </FormControl>
