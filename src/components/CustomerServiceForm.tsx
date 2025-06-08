@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,6 +54,8 @@ interface PoolEquipment {
   water_valve_ports?: string;
   water_valve_return_port?: string;
   water_valve_bypass_port?: string;
+  cleaning_head_color?: string;
+  number_of_heads?: string;
 }
 
 interface CustomerServiceFormProps {
@@ -455,6 +456,24 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                               value={poolEquipment.water_valve_bypass_port || ''}
                               onChange={(e) => updatePoolEquipment('water_valve_bypass_port', e.target.value)}
                               placeholder="Bypass port number"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="cleaning_head_color">Cleaning Head Color</Label>
+                            <Input
+                              id="cleaning_head_color"
+                              value={poolEquipment.cleaning_head_color || ''}
+                              onChange={(e) => updatePoolEquipment('cleaning_head_color', e.target.value)}
+                              placeholder="e.g., Blue, White, Gray"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="number_of_heads"># of Heads</Label>
+                            <Input
+                              id="number_of_heads"
+                              value={poolEquipment.number_of_heads || ''}
+                              onChange={(e) => updatePoolEquipment('number_of_heads', e.target.value)}
+                              placeholder="e.g., 1, 2, 3"
                             />
                           </div>
                         </div>
