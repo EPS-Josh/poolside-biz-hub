@@ -61,9 +61,14 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const localDateString = format(appointmentData.date, 'yyyy-MM-dd');
+      // Create a date string in YYYY-MM-DD format using local timezone
+      const year = appointmentData.date.getFullYear();
+      const month = String(appointmentData.date.getMonth() + 1).padStart(2, '0');
+      const day = String(appointmentData.date.getDate()).padStart(2, '0');
+      const localDateString = `${year}-${month}-${day}`;
       
       console.log('Updating appointment with date:', localDateString);
+      console.log('Original date object:', appointmentData.date);
 
       const { error } = await supabase
         .from('appointments')
@@ -115,7 +120,7 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
     
     console.log('Form data before update:', {
       ...formData,
-      dateString: format(formData.date, 'yyyy-MM-dd')
+      localDateString: `${formData.date.getFullYear()}-${String(formData.date.getMonth() + 1).padStart(2, '0')}-${String(formData.date.getDate()).padStart(2, '0')}`
     });
     
     updateAppointmentMutation.mutate(formData);
@@ -190,7 +195,10 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
                     onSelect={(date) => {
                       if (date) {
                         console.log('Date selected:', date);
-                        console.log('Date formatted:', format(date, 'yyyy-MM-dd'));
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        console.log('Date will be formatted as:', `${year}-${month}-${day}`);
                         setFormData(prev => ({ ...prev, date }));
                       }
                     }}
