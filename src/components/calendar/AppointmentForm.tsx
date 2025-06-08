@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,9 +26,17 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
+  // Create a proper local date that represents today or the selected date
+  const getLocalDate = (date?: Date | null) => {
+    if (!date) return new Date();
+    // Create a new date using the year, month, and day from the selected date
+    // but ensure it's in local timezone
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
   const [formData, setFormData] = useState({
     customerId: '',
-    date: selectedDate || new Date(),
+    date: getLocalDate(selectedDate),
     time: '',
     service: '',
     notes: '',
@@ -57,14 +66,19 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Format date as YYYY-MM-DD using local date values (no timezone conversion)
+      // Create date string using local date components to avoid timezone issues
       const year = appointmentData.date.getFullYear();
       const month = String(appointmentData.date.getMonth() + 1).padStart(2, '0');
       const day = String(appointmentData.date.getDate()).padStart(2, '0');
       const localDateString = `${year}-${month}-${day}`;
       
       console.log('Creating appointment with date:', localDateString);
-      console.log('Original date object:', appointmentData.date);
+      console.log('Date object components:', {
+        year,
+        month: appointmentData.date.getMonth() + 1,
+        day: appointmentData.date.getDate(),
+        fullYear: appointmentData.date.getFullYear()
+      });
 
       const { error } = await supabase
         .from('appointments')
@@ -114,14 +128,15 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       return;
     }
     
-    // Simple date formatting using local date values
-    const year = formData.date.getFullYear();
-    const month = String(formData.date.getMonth() + 1).padStart(2, '0');
-    const day = String(formData.date.getDate()).padStart(2, '0');
-    
     console.log('Form data before submission:', {
       ...formData,
-      localDateString: `${year}-${month}-${day}`
+      dateInfo: {
+        year: formData.date.getFullYear(),
+        month: formData.date.getMonth() + 1,
+        day: formData.date.getDate(),
+        toString: formData.date.toString(),
+        toISOString: formData.date.toISOString()
+      }
     });
     
     createAppointmentMutation.mutate(formData);
@@ -190,13 +205,26 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 selected={formData.date}
                 onSelect={(date) => {
                   if (date) {
-                    console.log('Date selected:', date);
-                    // Use the date as-is without any timezone manipulation
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    console.log('Date will be formatted as:', `${year}-${month}-${day}`);
-                    setFormData(prev => ({ ...prev, date }));
+                    console.log('Calendar date selected:', date);
+                    console.log('Calendar date details:', {
+                      year: date.getFullYear(),
+                      month: date.getMonth() + 1,
+                      day: date.getDate(),
+                      toString: date.toString(),
+                      toISOString: date.toISOString()
+                    });
+                    
+                    // Create a new local date to avoid timezone issues
+                    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                    console.log('Local date created:', localDate);
+                    console.log('Local date details:', {
+                      year: localDate.getFullYear(),
+                      month: localDate.getMonth() + 1,
+                      day: localDate.getDate(),
+                      toString: localDate.toString()
+                    });
+                    
+                    setFormData(prev => ({ ...prev, date: localDate }));
                   }
                 }}
                 initialFocus
