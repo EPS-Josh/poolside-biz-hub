@@ -38,7 +38,7 @@ const Splash = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <Waves className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">Park & Drachman Pool Service</h1>
+              <h1 className="text-xl font-bold text-gray-900">Finest Pools & Spas LLC</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" className="flex items-center space-x-2">
@@ -91,10 +91,10 @@ const Splash = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                About Park & Drachman Pool Service
+                About Finest Pools & Spas LLC
               </h2>
               <p className="text-gray-600 mb-4">
-                For over 10 years, Park & Drachman Pool Service has been the trusted choice for 
+                For over 10 years, Finest Pools & Spas LLC has been the trusted choice for 
                 residential and commercial pool maintenance in our community. We pride ourselves 
                 on reliability, expertise, and exceptional customer service.
               </p>
@@ -106,15 +106,15 @@ const Splash = () => {
               <div className="flex flex-col space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">(520) 314-1015</span>
+                  <span className="text-gray-700">(555) 123-4567</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">info@parkdrachmanpools.com</span>
+                  <span className="text-gray-700">info@finestpools.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Serving the Greater Tucson Area</span>
+                  <span className="text-gray-700">Serving the Greater Miami Area</span>
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@ const Splash = () => {
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl shadow-xl p-8 mb-16 text-white">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-4">
-              Why Choose Park & Drachman?
+              Why Choose Finest Pools & Spas LLC?
             </h2>
             <p className="text-xl opacity-90">
               Experience the difference that professional pool care makes
@@ -179,7 +179,7 @@ const Splash = () => {
             Ready for Crystal Clear Water?
           </h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Join hundreds of satisfied customers who trust Park & Drachman Pool Service 
+            Join hundreds of satisfied customers who trust Finest Pools & Spas LLC 
             for all their pool maintenance needs. Contact us today for a free consultation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -195,7 +195,7 @@ const Splash = () => {
               variant="outline"
               className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50"
             >
-              Call (520) 314-1015
+              Call (555) 123-4567
             </Button>
           </div>
         </div>
@@ -207,7 +207,7 @@ const Splash = () => {
             <div>
               <div className="flex items-center space-x-3 mb-4">
                 <Waves className="h-6 w-6" />
-                <span className="text-lg font-semibold">Park & Drachman Pool Service</span>
+                <span className="text-lg font-semibold">Finest Pools & Spas LLC</span>
               </div>
               <p className="text-gray-400">
                 Professional pool maintenance services for over a decade.
@@ -216,9 +216,9 @@ const Splash = () => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
               <div className="space-y-2 text-gray-400">
-                <p>(520) 314-1015</p>
-                <p>info@parkdrachmanpools.com</p>
-                <p>Serving the Greater Tucson Area</p>
+                <p>(555) 123-4567</p>
+                <p>info@finestpools.com</p>
+                <p>Serving the Greater Miami Area</p>
               </div>
             </div>
             <div>
@@ -231,7 +231,7 @@ const Splash = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>© 2025 Park & Drachman Pool Service. Keeping your pool perfect, one service at a time.</p>
+            <p>© 2025 Finest Pools & Spas LLC. Keeping your pool perfect, one service at a time.</p>
           </div>
         </div>
       </footer>
