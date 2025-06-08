@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,14 +60,16 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Create a date string in YYYY-MM-DD format using local timezone
-      const year = appointmentData.date.getFullYear();
-      const month = String(appointmentData.date.getMonth() + 1).padStart(2, '0');
-      const day = String(appointmentData.date.getDate()).padStart(2, '0');
+      // Force the date to be treated as local time and format as YYYY-MM-DD
+      const localDate = new Date(appointmentData.date.getTime() - (appointmentData.date.getTimezoneOffset() * 60000));
+      const year = localDate.getUTCFullYear();
+      const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(localDate.getUTCDate()).padStart(2, '0');
       const localDateString = `${year}-${month}-${day}`;
       
       console.log('Updating appointment with date:', localDateString);
       console.log('Original date object:', appointmentData.date);
+      console.log('Local adjusted date:', localDate);
 
       const { error } = await supabase
         .from('appointments')
@@ -118,9 +119,14 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
       return;
     }
     
+    const localDate = new Date(formData.date.getTime() - (formData.date.getTimezoneOffset() * 60000));
+    const year = localDate.getUTCFullYear();
+    const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getUTCDate()).padStart(2, '0');
+    
     console.log('Form data before update:', {
       ...formData,
-      localDateString: `${formData.date.getFullYear()}-${String(formData.date.getMonth() + 1).padStart(2, '0')}-${String(formData.date.getDate()).padStart(2, '0')}`
+      localDateString: `${year}-${month}-${day}`
     });
     
     updateAppointmentMutation.mutate(formData);
@@ -195,9 +201,11 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
                     onSelect={(date) => {
                       if (date) {
                         console.log('Date selected:', date);
-                        const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const day = String(date.getDate()).padStart(2, '0');
+                        // Ensure we're working with a clean local date
+                        const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+                        const year = localDate.getUTCFullYear();
+                        const month = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+                        const day = String(localDate.getUTCDate()).padStart(2, '0');
                         console.log('Date will be formatted as:', `${year}-${month}-${day}`);
                         setFormData(prev => ({ ...prev, date }));
                       }
