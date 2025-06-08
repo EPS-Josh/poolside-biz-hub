@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -460,12 +461,21 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                           </div>
                           <div>
                             <Label htmlFor="cleaning_head_color">Cleaning Head Color</Label>
-                            <Input
-                              id="cleaning_head_color"
-                              value={poolEquipment.cleaning_head_color || ''}
-                              onChange={(e) => updatePoolEquipment('cleaning_head_color', e.target.value)}
-                              placeholder="e.g., Blue, White, Gray"
-                            />
+                            <Select value={poolEquipment.cleaning_head_color || ''} onValueChange={(value) => updatePoolEquipment('cleaning_head_color', value)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select cleaning head color" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="light-cream">Light Cream</SelectItem>
+                                <SelectItem value="bright-white">Bright White</SelectItem>
+                                <SelectItem value="charcoal-gray">Charcoal Gray</SelectItem>
+                                <SelectItem value="dark-blue">Dark Blue</SelectItem>
+                                <SelectItem value="jet-black">Jet Black</SelectItem>
+                                <SelectItem value="light-blue">Light Blue</SelectItem>
+                                <SelectItem value="light-gray">Light Gray</SelectItem>
+                                <SelectItem value="tan">Tan</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                           <div>
                             <Label htmlFor="number_of_heads"># of Heads</Label>
