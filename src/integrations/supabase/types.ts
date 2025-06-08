@@ -291,6 +291,83 @@ export type Database = {
         }
         Relationships: []
       }
+      service_records: {
+        Row: {
+          after_readings: Json | null
+          before_readings: Json | null
+          chemicals_added: string | null
+          created_at: string
+          customer_id: string
+          customer_notes: string | null
+          equipment_serviced: string | null
+          id: string
+          next_service_date: string | null
+          photos_taken: string[] | null
+          service_date: string
+          service_status: string | null
+          service_time: string | null
+          service_type: string
+          technician_name: string | null
+          technician_notes: string | null
+          total_time_minutes: number | null
+          updated_at: string
+          user_id: string
+          work_performed: string | null
+        }
+        Insert: {
+          after_readings?: Json | null
+          before_readings?: Json | null
+          chemicals_added?: string | null
+          created_at?: string
+          customer_id: string
+          customer_notes?: string | null
+          equipment_serviced?: string | null
+          id?: string
+          next_service_date?: string | null
+          photos_taken?: string[] | null
+          service_date: string
+          service_status?: string | null
+          service_time?: string | null
+          service_type: string
+          technician_name?: string | null
+          technician_notes?: string | null
+          total_time_minutes?: number | null
+          updated_at?: string
+          user_id: string
+          work_performed?: string | null
+        }
+        Update: {
+          after_readings?: Json | null
+          before_readings?: Json | null
+          chemicals_added?: string | null
+          created_at?: string
+          customer_id?: string
+          customer_notes?: string | null
+          equipment_serviced?: string | null
+          id?: string
+          next_service_date?: string | null
+          photos_taken?: string[] | null
+          service_date?: string
+          service_status?: string | null
+          service_time?: string | null
+          service_type?: string
+          technician_name?: string | null
+          technician_notes?: string | null
+          total_time_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+          work_performed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

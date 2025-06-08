@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { CustomerServiceForm } from '@/components/CustomerServiceForm';
 import { CustomerPhotos } from '@/components/CustomerPhotos';
+import { ServiceHistory } from '@/components/ServiceHistory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -194,6 +195,11 @@ const CustomerDetails = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Service History */}
+            <div className="mb-6">
+              <ServiceHistory customerId={customer.id} />
+            </div>
 
             {/* Service Details Form */}
             <CustomerServiceForm customerId={customer.id} />
