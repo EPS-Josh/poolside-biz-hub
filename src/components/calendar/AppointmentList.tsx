@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
+import { parseDateFromDatabase } from '@/utils/dateUtils';
 
 interface AppointmentListProps {
   limit?: number;
@@ -132,6 +133,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
           const customer = appointment.customers;
           const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
           const customerAddress = customer ? `${customer.address || ''}, ${customer.city || ''}, ${customer.state || ''}`.replace(/^,\s*|,\s*$/g, '') : '';
+          const appointmentDate = parseDateFromDatabase(appointment.appointment_date);
           
           return (
             <Card key={appointment.id} className="hover:shadow-md transition-shadow">
@@ -141,7 +143,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <span className="text-sm font-medium">
-                        {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
+                        {format(appointmentDate, 'MMM d, yyyy')}
                       </span>
                     </div>
                     <div className="flex items-center space-x-2">

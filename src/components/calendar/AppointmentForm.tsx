@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { createMSTDate, formatDateForDatabase, getCurrentMSTDate } from '@/utils/dateUtils';
 
 interface AppointmentFormProps {
   onSuccess: () => void;
@@ -36,7 +36,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   const [formData, setFormData] = useState({
     customerId: '',
-    date: getLocalDate(selectedDate),
+    date: selectedDate || getCurrentMSTDate(),
     time: '',
     service: '',
     notes: '',
@@ -66,26 +66,17 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Create date string using local date components to avoid timezone issues
-      const year = appointmentData.date.getFullYear();
-      const month = String(appointmentData.date.getMonth() + 1).padStart(2, '0');
-      const day = String(appointmentData.date.getDate()).padStart(2, '0');
-      const localDateString = `${year}-${month}-${day}`;
+      const dateString = formatDateForDatabase(appointmentData.date);
       
-      console.log('Creating appointment with date:', localDateString);
-      console.log('Date object components:', {
-        year,
-        month: appointmentData.date.getMonth() + 1,
-        day: appointmentData.date.getDate(),
-        fullYear: appointmentData.date.getFullYear()
-      });
+      console.log('Creating appointment with MST date:', dateString);
+      console.log('Original date object:', appointmentData.date);
 
       const { error } = await supabase
         .from('appointments')
         .insert({
           user_id: user.id,
           customer_id: appointmentData.customerId || null,
-          appointment_date: localDateString,
+          appointment_date: dateString,
           appointment_time: appointmentData.time,
           service_type: appointmentData.service,
           status: appointmentData.status,
@@ -128,16 +119,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       return;
     }
     
-    console.log('Form data before submission:', {
-      ...formData,
-      dateInfo: {
-        year: formData.date.getFullYear(),
-        month: formData.date.getMonth() + 1,
-        day: formData.date.getDate(),
-        toString: formData.date.toString(),
-        toISOString: formData.date.toISOString()
-      }
-    });
+    console.log('Submitting appointment with MST date:', formData.date);
     
     createAppointmentMutation.mutate(formData);
   };
@@ -205,26 +187,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                 selected={formData.date}
                 onSelect={(date) => {
                   if (date) {
-                    console.log('Calendar date selected:', date);
-                    console.log('Calendar date details:', {
-                      year: date.getFullYear(),
-                      month: date.getMonth() + 1,
-                      day: date.getDate(),
-                      toString: date.toString(),
-                      toISOString: date.toISOString()
-                    });
-                    
-                    // Create a new local date to avoid timezone issues
-                    const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                    console.log('Local date created:', localDate);
-                    console.log('Local date details:', {
-                      year: localDate.getFullYear(),
-                      month: localDate.getMonth() + 1,
-                      day: localDate.getDate(),
-                      toString: localDate.toString()
-                    });
-                    
-                    setFormData(prev => ({ ...prev, date: localDate }));
+                    console.log('Calendar date selected (MST):', date);
+                    setFormData(prev => ({ ...prev, date }));
                   }
                 }}
                 initialFocus

@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSa
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { parseDateFromDatabase } from '@/utils/dateUtils';
 
 interface CalendarViewProps {
   viewType: 'month' | 'week' | 'day';
@@ -91,9 +92,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter(apt => 
-      isSameDay(new Date(apt.appointment_date), date)
-    );
+    return appointments.filter(apt => {
+      const appointmentDate = parseDateFromDatabase(apt.appointment_date);
+      return isSameDay(appointmentDate, date);
+    });
   };
 
   const renderMonthView = () => {

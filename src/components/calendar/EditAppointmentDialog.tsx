@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { parseDateFromDatabase, formatDateForDatabase } from '@/utils/dateUtils';
 
 interface EditAppointmentDialogProps {
   appointment: any;
@@ -36,7 +37,7 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
 
   const [formData, setFormData] = useState({
     customerId: appointment.customer_id || '',
-    date: createLocalDateFromString(appointment.appointment_date),
+    date: parseDateFromDatabase(appointment.appointment_date),
     time: appointment.appointment_time,
     service: appointment.service_type,
     notes: appointment.notes || '',
@@ -66,25 +67,16 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Create date string using local date components to avoid timezone issues
-      const year = appointmentData.date.getFullYear();
-      const month = String(appointmentData.date.getMonth() + 1).padStart(2, '0');
-      const day = String(appointmentData.date.getDate()).padStart(2, '0');
-      const localDateString = `${year}-${month}-${day}`;
+      const dateString = formatDateForDatabase(appointmentData.date);
       
-      console.log('Updating appointment with date:', localDateString);
-      console.log('Date object components:', {
-        year,
-        month: appointmentData.date.getMonth() + 1,
-        day: appointmentData.date.getDate(),
-        fullYear: appointmentData.date.getFullYear()
-      });
+      console.log('Updating appointment with MST date:', dateString);
+      console.log('Original date object:', appointmentData.date);
 
       const { error } = await supabase
         .from('appointments')
         .update({
           customer_id: appointmentData.customerId || null,
-          appointment_date: localDateString,
+          appointment_date: dateString,
           appointment_time: appointmentData.time,
           service_type: appointmentData.service,
           status: appointmentData.status,
@@ -210,26 +202,8 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
                     selected={formData.date}
                     onSelect={(date) => {
                       if (date) {
-                        console.log('Calendar date selected for edit:', date);
-                        console.log('Calendar date details:', {
-                          year: date.getFullYear(),
-                          month: date.getMonth() + 1,
-                          day: date.getDate(),
-                          toString: date.toString(),
-                          toISOString: date.toISOString()
-                        });
-                        
-                        // Create a new local date to avoid timezone issues
-                        const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                        console.log('Local date created for edit:', localDate);
-                        console.log('Local date details:', {
-                          year: localDate.getFullYear(),
-                          month: localDate.getMonth() + 1,
-                          day: localDate.getDate(),
-                          toString: localDate.toString()
-                        });
-                        
-                        setFormData(prev => ({ ...prev, date: localDate }));
+                        console.log('Calendar date selected for edit (MST):', date);
+                        setFormData(prev => ({ ...prev, date }));
                       }
                     }}
                     initialFocus
