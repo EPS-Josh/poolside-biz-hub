@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -74,14 +73,14 @@ const CompanyData = () => {
       } else {
         // Set default values if no data exists
         setCompanyData({
-          companyName: 'AquaPro Pool Services',
-          email: 'info@aquapro.com',
+          companyName: 'Finest Pools & Spas LLC',
+          email: 'info@finestpools.com',
           phone: '(555) 123-4567',
           address: '123 Pool Service Lane',
           city: 'Miami',
           state: 'FL',
           zipCode: '33101',
-          website: 'www.aquapro.com',
+          website: 'www.finestpools.com',
           taxId: '12-3456789',
           licenseNumber: 'PSL-2024-001',
           insuranceProvider: 'Pool Service Insurance Co.',
