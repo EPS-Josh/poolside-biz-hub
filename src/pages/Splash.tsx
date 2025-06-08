@@ -38,7 +38,7 @@ const Splash = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <Waves className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">Finest Pools & Spas LLC</h1>
+              <h1 className="text-xl font-bold text-gray-900">Finest Pools & Spas</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" className="flex items-center space-x-2">
@@ -91,11 +91,11 @@ const Splash = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                About Finest Pools & Spas LLC
+                About Finest Pools & Spas
               </h2>
               <p className="text-gray-600 mb-4">
-                For over 10 years, Finest Pools & Spas LLC has been the trusted choice for 
-                residential and commercial pool maintenance in our community. We pride ourselves 
+                For over 35 years, Finest Pools & Spas has been the trusted choice for 
+                residential and commercial pool maintenance in southern Arizona. We pride ourselves 
                 on reliability, expertise, and exceptional customer service.
               </p>
               <p className="text-gray-600 mb-6">
@@ -114,7 +114,7 @@ const Splash = () => {
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Serving the Greater Miami Area</span>
+                  <span className="text-gray-700">Serving the Greater Tucson Area</span>
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@ const Splash = () => {
         <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl shadow-xl p-8 mb-16 text-white">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-4">
-              Why Choose Finest Pools & Spas LLC?
+              Why Choose Finest Pools & Spas?
             </h2>
             <p className="text-xl opacity-90">
               Experience the difference that professional pool care makes
@@ -160,7 +160,7 @@ const Splash = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold mb-2">10+</div>
+              <div className="text-4xl font-bold mb-2">35+</div>
               <div className="text-lg">Years of Experience</div>
             </div>
             <div>
@@ -207,7 +207,7 @@ const Splash = () => {
             <div>
               <div className="flex items-center space-x-3 mb-4">
                 <Waves className="h-6 w-6" />
-                <span className="text-lg font-semibold">Finest Pools & Spas LLC</span>
+                <span className="text-lg font-semibold">Finest Pools & Spas</span>
               </div>
               <p className="text-gray-400">
                 Professional pool maintenance services for over a decade.
@@ -218,7 +218,7 @@ const Splash = () => {
               <div className="space-y-2 text-gray-400">
                 <p>(520) 314-1015</p>
                 <p>info@finestpools.com</p>
-                <p>Serving the Greater Miami Area</p>
+                <p>Serving the Greater Tucson Area</p>
               </div>
             </div>
             <div>
