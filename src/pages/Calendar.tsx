@@ -8,7 +8,8 @@ import { CalendarView } from '@/components/calendar/CalendarView';
 import { AppointmentForm } from '@/components/calendar/AppointmentForm';
 import { AppointmentList } from '@/components/calendar/AppointmentList';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Plus, List, Grid } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, List, Grid, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 type ViewType = 'month' | 'week' | 'day' | 'list';
 
@@ -17,6 +18,7 @@ const Calendar = () => {
   const [viewType, setViewType] = useState<ViewType>('month');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const navigate = useNavigate();
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -132,6 +134,10 @@ const Calendar = () => {
                     <CardTitle className="text-lg">Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/customers')}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Add Customer
+                    </Button>
                     <Button variant="outline" className="w-full justify-start">
                       <CalendarIcon className="h-4 w-4 mr-2" />
                       View All Appointments
