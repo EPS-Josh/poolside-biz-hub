@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { EditAppointmentDialog } from './EditAppointmentDialog';
 
 interface AppointmentListProps {
   limit?: number;
@@ -20,6 +21,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [editingAppointment, setEditingAppointment] = useState<any>(null);
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['appointments', dateFilter],
@@ -103,6 +105,10 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
     }
   };
 
+  const handleEdit = (appointment: any) => {
+    setEditingAppointment(appointment);
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -120,82 +126,96 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      {appointments.map(appointment => {
-        const customer = appointment.customers;
-        const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
-        const customerAddress = customer ? `${customer.address || ''}, ${customer.city || ''}, ${customer.state || ''}`.replace(/^,\s*|,\s*$/g, '') : '';
-        
-        return (
-          <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm font-medium">
-                      {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
-                    </span>
+    <>
+      <div className="space-y-4">
+        {appointments.map(appointment => {
+          const customer = appointment.customers;
+          const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
+          const customerAddress = customer ? `${customer.address || ''}, ${customer.city || ''}, ${customer.state || ''}`.replace(/^,\s*|,\s*$/g, '') : '';
+          
+          return (
+            <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium">
+                        {format(new Date(appointment.appointment_date), 'MMM d, yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{appointment.appointment_time}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{appointment.appointment_time}</span>
-                  </div>
+                  <Badge className={getStatusColor(appointment.status)}>
+                    {appointment.status}
+                  </Badge>
                 </div>
-                <Badge className={getStatusColor(appointment.status)}>
-                  {appointment.status}
-                </Badge>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{customerName}</span>
-                  {customer?.phone && (
-                    <>
-                      <Phone className="h-4 w-4 text-gray-500 ml-4" />
-                      <span className="text-sm text-gray-600">{customer.phone}</span>
-                    </>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <span className="font-medium">{customerName}</span>
+                    {customer?.phone && (
+                      <>
+                        <Phone className="h-4 w-4 text-gray-500 ml-4" />
+                        <span className="text-sm text-gray-600">{customer.phone}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {customerAddress && (
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">{customerAddress}</span>
+                    </div>
+                  )}
+
+                  <div className="text-sm">
+                    <span className="font-medium">Service:</span> {appointment.service_type}
+                  </div>
+
+                  {appointment.notes && (
+                    <div className="text-sm">
+                      <span className="font-medium">Notes:</span> {appointment.notes}
+                    </div>
                   )}
                 </div>
 
-                {customerAddress && (
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">{customerAddress}</span>
-                  </div>
-                )}
-
-                <div className="text-sm">
-                  <span className="font-medium">Service:</span> {appointment.service_type}
+                <div className="flex justify-end space-x-2 mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleEdit(appointment)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDelete(appointment.id)}
+                    disabled={deleteAppointmentMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
                 </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
-                {appointment.notes && (
-                  <div className="text-sm">
-                    <span className="font-medium">Notes:</span> {appointment.notes}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button variant="outline" size="sm">
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleDelete(appointment.id)}
-                  disabled={deleteAppointmentMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+      {editingAppointment && (
+        <EditAppointmentDialog
+          appointment={editingAppointment}
+          isOpen={!!editingAppointment}
+          onOpenChange={(open) => !open && setEditingAppointment(null)}
+        />
+      )}
+    </>
   );
 };
