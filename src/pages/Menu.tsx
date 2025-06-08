@@ -1,3 +1,4 @@
+
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,7 +69,7 @@ const Menu = () => {
           description: "Schedule and manage appointments",
           icon: Calendar,
           color: "bg-red-500",
-          action: () => console.log('Calendar coming soon'),
+          action: () => navigate('/calendar'),
         },
       ]
     },
@@ -155,7 +156,7 @@ const Menu = () => {
                   <Users className="h-4 w-4" />
                   <span>Add Customer</span>
                 </Button>
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => navigate('/calendar')}>
                   <Calendar className="h-4 w-4" />
                   <span>Schedule Service</span>
                 </Button>

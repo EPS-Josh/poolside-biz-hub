@@ -11,6 +11,7 @@ import CustomerDetails from "./pages/CustomerDetails";
 import Customers from "./pages/Customers";
 import Menu from "./pages/Menu";
 import CompanyData from "./pages/CompanyData";
+import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/customer/:id" element={<CustomerDetails />} />
           <Route path="/company-data" element={<CompanyData />} />
+          <Route path="/calendar" element={<Calendar />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
