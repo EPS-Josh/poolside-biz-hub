@@ -15,7 +15,9 @@ export type Database = {
           appointment_time: string
           created_at: string
           customer_id: string | null
+          external_event_id: string | null
           id: string
+          last_synced_at: string | null
           notes: string | null
           service_type: string
           status: string
@@ -27,7 +29,9 @@ export type Database = {
           appointment_time: string
           created_at?: string
           customer_id?: string | null
+          external_event_id?: string | null
           id?: string
+          last_synced_at?: string | null
           notes?: string | null
           service_type: string
           status?: string
@@ -39,7 +43,9 @@ export type Database = {
           appointment_time?: string
           created_at?: string
           customer_id?: string | null
+          external_event_id?: string | null
           id?: string
+          last_synced_at?: string | null
           notes?: string | null
           service_type?: string
           status?: string
@@ -52,6 +58,99 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_integrations: {
+        Row: {
+          access_token: string
+          calendar_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          provider: string
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          provider: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          calendar_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          provider?: string
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calendar_sync_log: {
+        Row: {
+          appointment_id: string | null
+          created_at: string
+          error_message: string | null
+          external_event_id: string | null
+          id: string
+          integration_id: string
+          sync_direction: string
+          sync_status: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          external_event_id?: string | null
+          id?: string
+          integration_id: string
+          sync_direction: string
+          sync_status: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          external_event_id?: string | null
+          id?: string
+          integration_id?: string
+          sync_direction?: string
+          sync_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_sync_log_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_sync_log_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_integrations"
             referencedColumns: ["id"]
           },
         ]

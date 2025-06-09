@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { AppointmentForm } from '@/components/calendar/AppointmentForm';
 import { AppointmentList } from '@/components/calendar/AppointmentList';
+import { CalendarIntegrations } from '@/components/calendar/CalendarIntegrations';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar as CalendarIcon, Plus, List, Grid, Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar as CalendarIcon, Plus, List, Grid, Users, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 type ViewType = 'month' | 'week' | 'day' | 'list';
@@ -96,60 +98,79 @@ const Calendar = () => {
               </div>
             </div>
 
-            {/* Calendar Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Main Calendar View */}
-              <div className="lg:col-span-3">
-                <Card>
-                  <CardContent className="p-0">
-                    {viewType === 'list' ? (
-                      <AppointmentList />
-                    ) : (
-                      <CalendarView
-                        viewType={viewType}
-                        currentDate={currentDate}
-                        onDateChange={setCurrentDate}
-                        onDateSelect={handleDateSelect}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+            {/* Main Content with Tabs */}
+            <Tabs defaultValue="calendar" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="calendar" className="flex items-center space-x-2">
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>Calendar</span>
+                </TabsTrigger>
+                <TabsTrigger value="integrations" className="flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Integrations</span>
+                </TabsTrigger>
+              </TabsList>
 
-              {/* Sidebar */}
-              <div className="space-y-6">
-                {/* Today's Appointments */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Today's Appointments</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <AppointmentList limit={5} dateFilter={new Date()} />
-                  </CardContent>
-                </Card>
+              <TabsContent value="calendar">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  {/* Main Calendar View */}
+                  <div className="lg:col-span-3">
+                    <Card>
+                      <CardContent className="p-0">
+                        {viewType === 'list' ? (
+                          <AppointmentList />
+                        ) : (
+                          <CalendarView
+                            viewType={viewType}
+                            currentDate={currentDate}
+                            onDateChange={setCurrentDate}
+                            onDateSelect={handleDateSelect}
+                          />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
 
-                {/* Quick Actions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/customers')}>
-                      <Users className="h-4 w-4 mr-2" />
-                      Add Customer
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      View All Appointments
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Grid className="h-4 w-4 mr-2" />
-                      Service Routes
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                  {/* Sidebar */}
+                  <div className="space-y-6">
+                    {/* Today's Appointments */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Today's Appointments</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <AppointmentList limit={5} dateFilter={new Date()} />
+                      </CardContent>
+                    </Card>
+
+                    {/* Quick Actions */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Quick Actions</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/customers')}>
+                          <Users className="h-4 w-4 mr-2" />
+                          Add Customer
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          View All Appointments
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start">
+                          <Grid className="h-4 w-4 mr-2" />
+                          Service Routes
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="integrations">
+                <CalendarIntegrations />
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
       </div>
