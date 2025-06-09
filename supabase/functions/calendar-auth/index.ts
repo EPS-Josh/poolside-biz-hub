@@ -36,7 +36,7 @@ serve(async (req) => {
     }
 
     let authUrl = ''
-    const redirectUri = 'https://7f4b5ab0-60de-43fe-96cc-93f94d955704.lovableproject.com/calendar'
+    const redirectUri = 'https://fsqztictdjcguzchlcdf.supabase.co/functions/v1/calendar-auth-callback'
 
     if (provider === 'google') {
       const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID')
