@@ -11,7 +11,7 @@ serve(async (req) => {
 
     if (error) {
       console.error('OAuth error:', error)
-      return Response.redirect(`${Deno.env.get('SUPABASE_URL')}/calendar?error=oauth_error`)
+      return Response.redirect('https://7f4b5ab0-60de-43fe-96cc-93f94d955704.lovableproject.com/calendar?error=oauth_error')
     }
 
     if (!code || !state) {
@@ -26,7 +26,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/calendar-auth-callback`
+    const redirectUri = 'https://7f4b5ab0-60de-43fe-96cc-93f94d955704.lovableproject.com/calendar'
     let tokenData
 
     if (provider === 'google') {
@@ -90,10 +90,10 @@ serve(async (req) => {
     }
 
     console.log('Calendar integration saved successfully')
-    return Response.redirect(`${Deno.env.get('SUPABASE_URL')}/calendar?success=integration_added`)
+    return Response.redirect('https://7f4b5ab0-60de-43fe-96cc-93f94d955704.lovableproject.com/calendar?success=integration_added')
 
   } catch (error) {
     console.error('Callback error:', error)
-    return Response.redirect(`${Deno.env.get('SUPABASE_URL')}/calendar?error=callback_failed`)
+    return Response.redirect('https://7f4b5ab0-60de-43fe-96cc-93f94d955704.lovableproject.com/calendar?error=callback_failed')
   }
 })
