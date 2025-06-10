@@ -35,6 +35,10 @@ const customerSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   zip_code: z.string().optional(),
+  billing_address: z.string().optional(),
+  billing_city: z.string().optional(),
+  billing_state: z.string().optional(),
+  billing_zip_code: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -51,6 +55,10 @@ interface Customer {
   city?: string;
   state?: string;
   zip_code?: string;
+  billing_address?: string;
+  billing_city?: string;
+  billing_state?: string;
+  billing_zip_code?: string;
   notes?: string;
 }
 
@@ -78,6 +86,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
       city: '',
       state: '',
       zip_code: '',
+      billing_address: '',
+      billing_city: '',
+      billing_state: '',
+      billing_zip_code: '',
       notes: '',
     },
   });
@@ -96,6 +108,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: customer.city || '',
           state: customer.state || '',
           zip_code: customer.zip_code || '',
+          billing_address: customer.billing_address || '',
+          billing_city: customer.billing_city || '',
+          billing_state: customer.billing_state || '',
+          billing_zip_code: customer.billing_zip_code || '',
           notes: customer.notes || '',
         });
       } else {
@@ -109,6 +125,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: '',
           state: '',
           zip_code: '',
+          billing_address: '',
+          billing_city: '',
+          billing_state: '',
+          billing_zip_code: '',
           notes: '',
         });
       }
@@ -138,6 +158,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: data.city || null,
           state: data.state || null,
           zip_code: data.zip_code || null,
+          billing_address: data.billing_address || null,
+          billing_city: data.billing_city || null,
+          billing_state: data.billing_state || null,
+          billing_zip_code: data.billing_zip_code || null,
           notes: data.notes || null,
         };
 
@@ -166,6 +190,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: data.city || null,
           state: data.state || null,
           zip_code: data.zip_code || null,
+          billing_address: data.billing_address || null,
+          billing_city: data.billing_city || null,
+          billing_state: data.billing_state || null,
+          billing_zip_code: data.billing_zip_code || null,
           notes: data.notes || null,
           user_id: user.id,
         };
@@ -198,7 +226,7 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
           <DialogDescription>
@@ -207,156 +235,229 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Basic Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="first_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="last_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="first_name"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>First Name *</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="John" {...field} />
+                      <Input type="email" placeholder="john.doe@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(555) 123-4567" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="company"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Acme Inc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Service Address */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Service Address</h3>
               <FormField
                 control={form.control}
-                name="last_name"
+                name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Last Name *</FormLabel>
+                    <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="Doe" {...field} />
+                      <Input placeholder="123 Main St" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input placeholder="New York" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State</FormLabel>
+                      <FormControl>
+                        <Input placeholder="NY" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="zip_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Zip Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="10001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Billing Address */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Billing Address</h3>
+              <FormField
+                control={form.control}
+                name="billing_address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Billing Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="456 Business Ave" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="billing_city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing City</FormLabel>
+                      <FormControl>
+                        <Input placeholder="New York" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="billing_state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing State</FormLabel>
+                      <FormControl>
+                        <Input placeholder="NY" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="billing_zip_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Billing Zip Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="10001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Additional notes about the customer..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="john.doe@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(555) 123-4567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="company"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Acme Inc." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123 Main St" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="New York" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="NY" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="zip_code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Zip Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="10001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Additional notes about the customer..."
-                      className="min-h-[80px]"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button
