@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { Waves, Users, Calendar, Shield, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Splash = () => {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ const Splash = () => {
               <h1 className="text-xl font-bold text-foreground">Finest Pools & Spas</h1>
             </div>
             <div className="flex items-center space-x-3">
+              <ThemeToggle />
               <Button variant="outline" className="flex items-center space-x-2">
                 <span>Client Portal</span>
                 <ArrowRight className="h-4 w-4" />
