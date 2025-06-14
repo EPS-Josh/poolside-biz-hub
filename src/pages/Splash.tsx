@@ -31,14 +31,14 @@ const Splash = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-background shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <Waves className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-900">Finest Pools & Spas</h1>
+              <h1 className="text-xl font-bold text-foreground">Finest Pools & Spas</h1>
             </div>
             <div className="flex items-center space-x-3">
               <Button variant="outline" className="flex items-center space-x-2">
@@ -87,18 +87,18 @@ const Splash = () => {
         </div>
 
         {/* About Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-16">
+        <div className="bg-card rounded-2xl shadow-xl p-8 mb-16 border border-border">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">
+              <h2 className="text-3xl font-bold text-foreground mb-6">
                 About Finest Pools & Spas
               </h2>
-              <p className="text-gray-600 mb-4">
+              <p className="text-muted-foreground mb-4">
                 For over 35 years, Finest Pools & Spas has been the trusted choice for 
                 residential and commercial pool maintenance in southern Arizona. We pride ourselves 
                 on reliability, expertise, and exceptional customer service.
               </p>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Our team of certified pool professionals ensures your pool is always ready for 
                 enjoyment, handling everything from routine cleaning to complex equipment repairs 
                 with the highest standards of quality and care.
@@ -106,15 +106,15 @@ const Splash = () => {
               <div className="flex flex-col space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">(520) 314-1015</span>
+                  <span className="text-foreground">(520) 314-1015</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">info@finestpools.com</span>
+                  <span className="text-foreground">info@finestpools.com</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <MapPin className="h-5 w-5 text-blue-600" />
-                  <span className="text-gray-700">Serving the Greater Tucson Area</span>
+                  <span className="text-foreground">Serving the Greater Tucson Area</span>
                 </div>
               </div>
             </div>
@@ -129,14 +129,14 @@ const Splash = () => {
         </div>
 
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-12">
             Our Professional Services
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((service, index) => (
               <Card key={index} className="text-center hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
                     <service.icon className="h-6 w-6 text-blue-600" />
                   </div>
                   <CardTitle className="text-lg">{service.title}</CardTitle>
@@ -174,11 +174,11 @@ const Splash = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <div className="bg-card rounded-2xl shadow-xl p-8 text-center border border-border">
+          <h2 className="text-3xl font-bold text-foreground mb-4">
             Ready for Crystal Clear Water?
           </h2>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
             Join hundreds of satisfied customers who trust Finest Pools & Spas LLC 
             for all their pool maintenance needs. Contact us today for a free consultation.
           </p>
@@ -193,7 +193,7 @@ const Splash = () => {
             <Button 
               size="lg" 
               variant="outline"
-              className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50"
+              className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950"
             >
               Call (520) 314-1015
             </Button>
@@ -201,7 +201,7 @@ const Splash = () => {
         </div>
       </main>
 
-      <footer className="bg-gray-900 text-white py-8 mt-16">
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
