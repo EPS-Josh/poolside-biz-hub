@@ -1,3 +1,4 @@
+
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MetricsCard } from '@/components/MetricsCard';
@@ -31,13 +32,13 @@ const BPA = () => {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Header />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">BPA Overview</h1>
-              <p className="text-gray-600">Monitor your business performance and key metrics</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">BPA Overview</h1>
+              <p className="text-muted-foreground">Monitor your business performance and key metrics</p>
             </div>
             
             {/* Metrics Cards Grid */}
@@ -55,12 +56,12 @@ const BPA = () => {
             </div>
 
             {/* Placeholder for future content */}
-            <div className="border-4 border-dashed border-gray-200 rounded-lg h-96 flex items-center justify-center">
+            <div className="border-4 border-dashed border-border rounded-lg h-96 flex items-center justify-center bg-card">
               <div className="text-center">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-2xl font-semibold text-foreground mb-2">
                   Analytics & Reports
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Charts and detailed analytics will be added here.
                 </p>
               </div>
