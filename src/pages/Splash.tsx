@@ -73,8 +73,8 @@ const Splash = () => {
                   <span className="text-cyan-400 block">Our Passion</span>
                 </h1>
                 <p className="text-xl mb-8 max-w-3xl mx-auto">
-                  Professional pool cleaning and maintenance services you can trust. 
-                  Serving the community with excellence for over a decade.
+                  Professional pool maintenance services you can trust. 
+                  Serving the community with excellence for over 3 decades.
                 </p>
                 <Button 
                   size="lg" 
@@ -108,7 +108,7 @@ const Splash = () => {
               <div className="flex flex-col space-y-3">
                 <div className="flex items-center space-x-3">
                   <Phone className="h-5 w-5 text-blue-600" />
-                  <span className="text-foreground">(520) 314-1015</span>
+                  <span className="text-foreground">(520) 728-3002</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-blue-600" />
@@ -181,7 +181,7 @@ const Splash = () => {
             Ready for Crystal Clear Water?
           </h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Join hundreds of satisfied customers who trust Finest Pools & Spas LLC 
+            Join hundreds of satisfied customers who trust Finest Pools & Spas  
             for all their pool maintenance needs. Contact us today for a free consultation.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -197,7 +197,7 @@ const Splash = () => {
               variant="outline"
               className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950"
             >
-              Call (520) 314-1015
+              Call (520) 728-3002
             </Button>
           </div>
         </div>
@@ -212,14 +212,14 @@ const Splash = () => {
                 <span className="text-lg font-semibold">Finest Pools & Spas</span>
               </div>
               <p className="text-gray-400">
-                Professional pool maintenance services for over a decade.
+                Professional pool maintenance services for over 3 decades.
               </p>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
               <div className="space-y-2 text-gray-400">
-                <p>(520) 314-1015</p>
-                <p>info@finestpools.com</p>
+                <p>(520) 728-3002</p>
+                <p>joshua@finestpoolsandspas.com</p>
                 <p>Serving the Greater Tucson Area</p>
               </div>
             </div>
