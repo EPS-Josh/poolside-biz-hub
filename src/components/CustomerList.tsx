@@ -1,15 +1,7 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -19,11 +11,12 @@ import {
 } from '@/components/ui/dialog';
 import { CustomerForm } from '@/components/CustomerForm';
 import { CustomerBulkUpload } from '@/components/CustomerBulkUpload';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { CustomerCard } from '@/components/customers/CustomerCard';
+import { CustomerTable } from '@/components/customers/CustomerTable';
+import { CustomerListHeader } from '@/components/customers/CustomerListHeader';
+import { EmptyCustomerState } from '@/components/customers/EmptyCustomerState';
+import { useCustomers } from '@/hooks/useCustomers';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Plus, Mail, Phone, Building, Pencil, Upload } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -43,44 +36,10 @@ interface Customer {
 export const CustomerList = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { customers, loading, fetchCustomers } = useCustomers();
   const [showForm, setShowForm] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const fetchCustomers = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true });
-
-      if (error) {
-        throw error;
-      }
-
-      setCustomers(data || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load customers',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCustomers();
-  }, [user]);
 
   const handleFormSuccess = () => {
     fetchCustomers();
@@ -123,183 +82,37 @@ export const CustomerList = () => {
     );
   }
 
-  const CustomerCard = ({ customer }: { customer: Customer }) => (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleCustomerClick(customer.id)}>
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <h3 className="font-semibold text-lg">
-              {customer.first_name} {customer.last_name}
-            </h3>
-            {customer.company && (
-              <div className="flex items-center text-sm text-gray-600 mt-1">
-                <Building className="h-3 w-3 mr-1" />
-                {customer.company}
-              </div>
-            )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditCustomer(customer);
-            }}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="space-y-1">
-          {customer.email && (
-            <div className="flex items-center text-sm">
-              <Mail className="h-3 w-3 mr-2" />
-              {customer.email}
-            </div>
-          )}
-          {customer.phone && (
-            <div className="flex items-center text-sm">
-              <Phone className="h-3 w-3 mr-2" />
-              {customer.phone}
-            </div>
-          )}
-          {(customer.city || customer.state) && (
-            <div className="text-sm text-gray-600">
-              {customer.city && customer.state 
-                ? `${customer.city}, ${customer.state}`
-                : customer.city || customer.state
-              }
-            </div>
-          )}
-        </div>
-        
-        <div className="text-xs text-gray-500 mt-2">
-          Added: {new Date(customer.created_at).toLocaleDateString()}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle>Customers</CardTitle>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleBulkUpload} size={isMobile ? "sm" : "default"}>
-            <Upload className="h-4 w-4 mr-2" />
-            {isMobile ? "Upload" : "Bulk Upload"}
-          </Button>
-          <Button onClick={handleAddCustomer} size={isMobile ? "sm" : "default"}>
-            <Plus className="h-4 w-4 mr-2" />
-            {isMobile ? "Add" : "Add Customer"}
-          </Button>
-        </div>
-      </CardHeader>
+      <CustomerListHeader
+        isMobile={isMobile}
+        onAddCustomer={handleAddCustomer}
+        onBulkUpload={handleBulkUpload}
+      />
+      
       <CardContent>
         {customers.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">No customers found</p>
-            <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={handleBulkUpload}>
-                <Upload className="h-4 w-4 mr-2" />
-                Bulk Upload
-              </Button>
-              <Button onClick={handleAddCustomer}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Customer
-              </Button>
-            </div>
-          </div>
+          <EmptyCustomerState
+            onAddCustomer={handleAddCustomer}
+            onBulkUpload={handleBulkUpload}
+          />
         ) : isMobile ? (
           <div className="space-y-3">
             {customers.map((customer) => (
-              <CustomerCard key={customer.id} customer={customer} />
+              <CustomerCard 
+                key={customer.id} 
+                customer={customer}
+                onCustomerClick={handleCustomerClick}
+                onEditCustomer={handleEditCustomer}
+              />
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>First Name</TableHead>
-                  <TableHead>Last Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Added</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell>
-                      <button
-                        onClick={() => handleCustomerClick(customer.id)}
-                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
-                      >
-                        {customer.first_name}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      <button
-                        onClick={() => handleCustomerClick(customer.id)}
-                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
-                      >
-                        {customer.last_name}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center text-sm">
-                          <Mail className="h-3 w-3 mr-1" />
-                          {customer.email}
-                        </div>
-                        {customer.phone && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Phone className="h-3 w-3 mr-1" />
-                            {customer.phone}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {customer.company && (
-                        <div className="flex items-center text-sm">
-                          <Building className="h-3 w-3 mr-1" />
-                          {customer.company}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {(customer.city || customer.state) && (
-                        <div className="text-sm">
-                          {customer.city && customer.state 
-                            ? `${customer.city}, ${customer.state}`
-                            : customer.city || customer.state
-                          }
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-gray-600">
-                        {new Date(customer.created_at).toLocaleDateString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditCustomer(customer)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <CustomerTable 
+            customers={customers}
+            onCustomerClick={handleCustomerClick}
+            onEditCustomer={handleEditCustomer}
+          />
         )}
       </CardContent>
 
