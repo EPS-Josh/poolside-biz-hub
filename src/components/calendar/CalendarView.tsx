@@ -123,7 +123,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         days.push(
           <div
             key={day.toString()}
-            className={`min-h-24 p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 ${
+            className={`min-h-24 p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
               !isSameMonth(day, monthStart) ? 'bg-gray-100 text-gray-400' : 'bg-white'
             } ${isSameDay(day, new Date()) ? 'bg-blue-50' : ''}`}
             onClick={() => onDateSelect(day)}
@@ -151,7 +151,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         day = addDays(day, 1);
       }
       rows.push(
-        <div key={day.toString()} className="grid grid-cols-7 gap-0">
+        <div key={day.toString()} className="grid grid-cols-7">
           {days}
         </div>
       );
@@ -159,12 +159,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     }
 
     return (
-      <div>
-        {/* Calendar Header */}
-        <div className="grid grid-cols-7 gap-0 border-b border-gray-200">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="p-3 text-center font-medium text-gray-500 bg-gray-50">
-              {day}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        {/* Calendar Header - Days of the Week */}
+        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+            <div key={day} className="p-3 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-r-0">
+              <div className="hidden sm:block">{day}</div>
+              <div className="sm:hidden">{day.substring(0, 3)}</div>
             </div>
           ))}
         </div>
