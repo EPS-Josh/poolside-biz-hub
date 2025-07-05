@@ -33,13 +33,13 @@ export const MonthView: React.FC<MonthViewProps> = ({
       days.push(
         <div
           key={day.toString()}
-          className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+          className={`min-h-20 sm:min-h-32 p-1 sm:p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
             !isSameMonth(day, monthStart) ? 'bg-gray-100 text-gray-400' : 'bg-white'
           } ${isSameDay(day, new Date()) ? 'bg-blue-50' : ''}`}
           onClick={() => onDateSelect(currentDay)}
         >
           <div className="flex flex-col h-full">
-            <div className={`text-sm sm:text-base font-semibold mb-1 sm:mb-2 ${
+            <div className={`text-base sm:text-lg font-bold mb-1 sm:mb-2 leading-tight ${
               isSameDay(currentDay, new Date()) ? 'text-blue-600' : 
               !isSameMonth(currentDay, monthStart) ? 'text-gray-400' : 'text-gray-900'
             }`}>
@@ -87,7 +87,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
         {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
           <div key={day} className="p-2 sm:p-3 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-r-0">
             <div className="hidden sm:block text-sm">{day}</div>
-            <div className="sm:hidden text-xs">{day.substring(0, 3)}</div>
+            <div className="sm:hidden text-xs font-medium">{day.substring(0, 3)}</div>
           </div>
         ))}
       </div>
