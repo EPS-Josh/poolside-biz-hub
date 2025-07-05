@@ -28,45 +28,26 @@ export const useCustomers = (searchTerm: string = '') => {
   const fetchCustomers = async () => {
     if (!user) return;
 
-    console.log('Fetching customers for user:', user.id, user.email);
+    console.log('useCustomers: Fetching customers for user:', user.id, user.email);
 
     try {
-      // Fetch ALL customers using pagination to ensure we get everything
-      let allCustomers = [];
-      let from = 0;
-      const pageSize = 1000;
+      setLoading(true);
       
-      while (true) {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('*')
-          .order('last_name', { ascending: true })
-          .order('first_name', { ascending: true })
-          .range(from, from + pageSize - 1);
+      // Fetch ALL customers in a single query
+      const { data, error, count } = await supabase
+        .from('customers')
+        .select('*', { count: 'exact' })
+        .order('last_name', { ascending: true })
+        .order('first_name', { ascending: true });
 
-        if (error) {
-          throw error;
-        }
-        
-        if (!data || data.length === 0) {
-          break;
-        }
-        
-        allCustomers = [...allCustomers, ...data];
-        
-        // If we got less than pageSize, we've reached the end
-        if (data.length < pageSize) {
-          break;
-        }
-        
-        from += pageSize;
+      if (error) {
+        throw error;
       }
 
-      console.log('Customers data received:', allCustomers.length, 'total customers');
-      console.log('First customer:', allCustomers[0]);
-      console.log('Last customer:', allCustomers[allCustomers.length - 1]);
+      console.log('useCustomers: Total customers found:', count);
+      console.log('useCustomers: Customers data received:', data?.length || 0, 'records');
 
-      setCustomers(allCustomers);
+      setCustomers(data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast({

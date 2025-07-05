@@ -25,45 +25,25 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
   const { user } = useAuth();
 
   const { data: customers = [] } = useQuery({
-    queryKey: ['customers'],
+    queryKey: ['customers-all'],
     queryFn: async () => {
-      // Fetch ALL customers by removing any limits or range restrictions
-      let allCustomers = [];
-      let from = 0;
-      const pageSize = 1000;
+      console.log('CustomerSelect: Fetching all customers...');
       
-      while (true) {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('id, first_name, last_name, address, city, state')
-          .order('last_name', { ascending: true })
-          .order('first_name', { ascending: true })
-          .range(from, from + pageSize - 1);
-        
-        if (error) {
-          console.error('Error fetching customers:', error);
-          throw error;
-        }
-        
-        if (!data || data.length === 0) {
-          break;
-        }
-        
-        allCustomers = [...allCustomers, ...data];
-        
-        // If we got less than pageSize, we've reached the end
-        if (data.length < pageSize) {
-          break;
-        }
-        
-        from += pageSize;
+      const { data, error, count } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, address, city, state', { count: 'exact' })
+        .order('last_name', { ascending: true })
+        .order('first_name', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching customers:', error);
+        throw error;
       }
       
-      console.log('CustomerSelect: Total customers found:', allCustomers.length);
-      console.log('CustomerSelect: First customer:', allCustomers[0]);
-      console.log('CustomerSelect: Last customer:', allCustomers[allCustomers.length - 1]);
+      console.log('CustomerSelect: Total customers found:', count);
+      console.log('CustomerSelect: Customers data:', data?.length || 0, 'records');
       
-      return allCustomers;
+      return data || [];
     },
     enabled: !!user
   });
@@ -75,13 +55,25 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
         <SelectTrigger>
           <SelectValue placeholder="Select a customer (optional)" />
         </SelectTrigger>
-        <SelectContent className="max-h-[400px]">
-          <ScrollArea className="h-[380px] w-full">
+        <SelectContent className="max-h-[300px] w-full">
+          <ScrollArea className="h-[280px] w-full">
             {customers.map(customer => (
-              <SelectItem key={customer.id} value={customer.id}>
-                {customer.last_name}, {customer.first_name} - {customer.address}, {customer.city}
+              <SelectItem key={customer.id} value={customer.id} className="w-full">
+                <div className="w-full truncate">
+                  {customer.last_name}, {customer.first_name}
+                  {customer.address && customer.city && (
+                    <span className="text-sm text-muted-foreground ml-2">
+                      - {customer.address}, {customer.city}
+                    </span>
+                  )}
+                </div>
               </SelectItem>
             ))}
+            {customers.length === 0 && (
+              <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+                No customers found
+              </div>
+            )}
           </ScrollArea>
         </SelectContent>
       </Select>

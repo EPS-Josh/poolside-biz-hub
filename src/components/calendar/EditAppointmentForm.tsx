@@ -46,10 +46,17 @@ export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
             <SelectTrigger>
               <SelectValue placeholder="Select a customer (optional)" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[200px] overflow-y-auto">
               {customers.map(customer => (
                 <SelectItem key={customer.id} value={customer.id}>
-                  {customer.first_name} {customer.last_name} - {customer.address}, {customer.city}
+                  <div className="truncate">
+                    {customer.first_name} {customer.last_name}
+                    {customer.address && customer.city && (
+                      <span className="text-sm text-muted-foreground ml-1">
+                        - {customer.address}, {customer.city}
+                      </span>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
