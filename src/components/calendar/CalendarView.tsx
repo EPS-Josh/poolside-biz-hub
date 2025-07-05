@@ -1,12 +1,12 @@
+
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths, addWeeks, subWeeks } from 'date-fns';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { parseDateFromDatabase } from '@/utils/dateUtils';
+import { useAppointments } from '@/hooks/useAppointments';
+import { useCalendarNavigation } from '@/hooks/useCalendarNavigation';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
+import { CalendarNavigationHeader } from './CalendarNavigationHeader';
+import { MonthView } from './MonthView';
+import { WeekView } from './WeekView';
+import { DayView } from './DayView';
 
 interface CalendarViewProps {
   viewType: 'month' | 'week' | 'day';
@@ -21,303 +21,51 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onDateChange,
   onDateSelect,
 }) => {
-  const { user } = useAuth();
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
+  
+  const { data: appointments = [] } = useAppointments(viewType, currentDate);
+  const { navigateDate } = useCalendarNavigation(viewType, currentDate, onDateChange);
 
-  const { data: appointments = [] } = useQuery({
-    queryKey: ['appointments', viewType, currentDate],
-    queryFn: async () => {
-      // Calculate date range based on view type
-      let startDate: Date;
-      let endDate: Date;
-
-      switch (viewType) {
-        case 'month':
-          startDate = startOfWeek(startOfMonth(currentDate));
-          endDate = endOfWeek(endOfMonth(currentDate));
-          break;
-        case 'week':
-          startDate = startOfWeek(currentDate);
-          endDate = endOfWeek(currentDate);
-          break;
-        case 'day':
-          startDate = currentDate;
-          endDate = currentDate;
-          break;
-        default:
-          startDate = currentDate;
-          endDate = currentDate;
-      }
-
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          customers (
-            first_name,
-            last_name
-          )
-        `)
-        .gte('appointment_date', format(startDate, 'yyyy-MM-dd'))
-        .lte('appointment_date', format(endDate, 'yyyy-MM-dd'))
-        .order('appointment_date')
-        .order('appointment_time');
-      
-      if (error) {
-        console.error('Error fetching appointments:', error);
-        throw error;
-      }
-      
-      return data || [];
-    },
-    enabled: !!user
-  });
-
-  const navigateDate = (direction: 'prev' | 'next') => {
-    let newDate: Date;
-    
-    switch (viewType) {
-      case 'month':
-        newDate = direction === 'next' ? addMonths(currentDate, 1) : subMonths(currentDate, 1);
-        break;
-      case 'week':
-        newDate = direction === 'next' ? addWeeks(currentDate, 1) : subWeeks(currentDate, 1);
-        break;
-      case 'day':
-        newDate = direction === 'next' ? addDays(currentDate, 1) : addDays(currentDate, -1);
-        break;
-      default:
-        return;
+  const handleAppointmentClick = (appointment: any, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
     }
-    
-    onDateChange(newDate);
-  };
-
-  const getAppointmentsForDate = (date: Date) => {
-    return appointments.filter(apt => {
-      const appointmentDate = parseDateFromDatabase(apt.appointment_date);
-      return isSameDay(appointmentDate, date);
-    });
-  };
-
-  const handleAppointmentClick = (appointment: any, event: React.MouseEvent) => {
-    event.stopPropagation();
     setEditingAppointment(appointment);
-  };
-
-  const renderMonthView = () => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-
-    const rows = [];
-    let days = [];
-    let day = startDate;
-
-    while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        const dayAppointments = getAppointmentsForDate(day);
-        const currentDay = new Date(day);
-
-        days.push(
-          <div
-            key={day.toString()}
-            className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-              !isSameMonth(day, monthStart) ? 'bg-gray-100 text-gray-400' : 'bg-white'
-            } ${isSameDay(day, new Date()) ? 'bg-blue-50' : ''}`}
-            onClick={() => onDateSelect(currentDay)}
-          >
-            <div className="flex flex-col h-full">
-              <div className={`text-sm sm:text-base font-semibold mb-1 sm:mb-2 ${
-                isSameDay(currentDay, new Date()) ? 'text-blue-600' : 
-                !isSameMonth(currentDay, monthStart) ? 'text-gray-400' : 'text-gray-900'
-              }`}>
-                {format(currentDay, 'd')}
-              </div>
-              <div className="flex-1 space-y-1 overflow-hidden">
-                {dayAppointments.map(apt => {
-                  const customer = apt.customers;
-                  const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
-                  
-                  return (
-                    <div
-                      key={apt.id}
-                      className="text-xs bg-blue-100 text-blue-800 px-1 sm:px-2 py-1 rounded truncate cursor-pointer hover:bg-blue-200 transition-colors"
-                      onClick={(e) => handleAppointmentClick(apt, e)}
-                      title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}`}
-                    >
-                      <div className="hidden sm:block">
-                        {apt.appointment_time} - {customerName}
-                      </div>
-                      <div className="sm:hidden">
-                        {apt.appointment_time}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-        day = addDays(day, 1);
-      }
-      rows.push(
-        <div key={day.toString()} className="grid grid-cols-7">
-          {days}
-        </div>
-      );
-      days = [];
-    }
-
-    return (
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
-        {/* Calendar Header - Days of the Week */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
-          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-            <div key={day} className="p-2 sm:p-3 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-r-0">
-              <div className="hidden sm:block text-sm">{day}</div>
-              <div className="sm:hidden text-xs">{day.substring(0, 3)}</div>
-            </div>
-          ))}
-        </div>
-        {/* Calendar Body */}
-        <div>{rows}</div>
-      </div>
-    );
-  };
-
-  const renderWeekView = () => {
-    const weekStart = startOfWeek(currentDate);
-    const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-    return (
-      <div>
-        {/* Week Header */}
-        <div className="grid grid-cols-7 gap-0 border-b border-gray-200">
-          {days.map(day => (
-            <div key={day.toString()} className="p-3 text-center bg-gray-50">
-              <div className="font-medium">{format(day, 'EEE')}</div>
-              <div className={`text-2xl ${isSameDay(day, new Date()) ? 'text-blue-600 font-bold' : 'text-gray-900'}`}>
-                {format(day, 'd')}
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Week Body */}
-        <div className="grid grid-cols-7 gap-0">
-          {days.map(day => {
-            const dayAppointments = getAppointmentsForDate(day);
-            
-            return (
-              <div
-                key={day.toString()}
-                className="min-h-96 p-2 border-r border-gray-200 cursor-pointer hover:bg-gray-50"
-                onClick={() => onDateSelect(day)}
-              >
-                <div className="space-y-2">
-                  {dayAppointments.map(apt => {
-                    const customer = apt.customers;
-                    const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
-                    
-                    return (
-                      <div
-                        key={apt.id}
-                        className="bg-blue-100 text-blue-800 p-2 rounded text-sm cursor-pointer hover:bg-blue-200 transition-colors"
-                        onClick={(e) => handleAppointmentClick(apt, e)}
-                        title={`Click to edit appointment`}
-                      >
-                        <div className="font-medium">{apt.appointment_time}</div>
-                        <div>{customerName}</div>
-                        <div className="text-xs">{apt.service_type}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderDayView = () => {
-    const dayAppointments = getAppointmentsForDate(currentDate);
-
-    return (
-      <div className="p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {format(currentDate, 'EEEE, MMMM d, yyyy')}
-          </h2>
-        </div>
-
-        <div className="space-y-4">
-          {dayAppointments.length > 0 ? (
-            dayAppointments.map(apt => {
-              const customer = apt.customers;
-              const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
-              
-              return (
-                <div
-                  key={apt.id}
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => setEditingAppointment(apt)}
-                  title="Click to edit appointment"
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium text-lg">{customerName}</div>
-                      <div className="text-gray-600">{apt.service_type}</div>
-                      <div className="text-sm text-gray-500">{apt.appointment_time}</div>
-                    </div>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${
-                      apt.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                      apt.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {apt.status}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="text-center py-12 text-gray-500">
-              No appointments scheduled for this day
-            </div>
-          )}
-        </div>
-      </div>
-    );
   };
 
   return (
     <>
       <div>
-        {/* Navigation Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <Button variant="outline" size="sm" onClick={() => navigateDate('prev')}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          <h2 className="text-lg sm:text-xl font-semibold text-center">
-            {viewType === 'month' && format(currentDate, 'MMMM yyyy')}
-            {viewType === 'week' && `Week of ${format(startOfWeek(currentDate), 'MMM d, yyyy')}`}
-            {viewType === 'day' && format(currentDate, 'MMMM d, yyyy')}
-          </h2>
-          
-          <Button variant="outline" size="sm" onClick={() => navigateDate('next')}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        <CalendarNavigationHeader
+          viewType={viewType}
+          currentDate={currentDate}
+          onNavigate={navigateDate}
+        />
 
         {/* Calendar Content */}
-        {viewType === 'month' && renderMonthView()}
-        {viewType === 'week' && renderWeekView()}
-        {viewType === 'day' && renderDayView()}
+        {viewType === 'month' && (
+          <MonthView
+            currentDate={currentDate}
+            appointments={appointments}
+            onDateSelect={onDateSelect}
+            onAppointmentClick={handleAppointmentClick}
+          />
+        )}
+        {viewType === 'week' && (
+          <WeekView
+            currentDate={currentDate}
+            appointments={appointments}
+            onDateSelect={onDateSelect}
+            onAppointmentClick={handleAppointmentClick}
+          />
+        )}
+        {viewType === 'day' && (
+          <DayView
+            currentDate={currentDate}
+            appointments={appointments}
+            onAppointmentClick={handleAppointmentClick}
+          />
+        )}
       </div>
 
       {/* Edit Appointment Dialog */}
