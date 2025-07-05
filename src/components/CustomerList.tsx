@@ -14,6 +14,7 @@ import { CustomerBulkUpload } from '@/components/CustomerBulkUpload';
 import { CustomerCard } from '@/components/customers/CustomerCard';
 import { CustomerTable } from '@/components/customers/CustomerTable';
 import { CustomerListHeader } from '@/components/customers/CustomerListHeader';
+import { CustomerSearch } from '@/components/customers/CustomerSearch';
 import { EmptyCustomerState } from '@/components/customers/EmptyCustomerState';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -36,7 +37,8 @@ interface Customer {
 export const CustomerList = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { customers, loading, fetchCustomers } = useCustomers();
+  const [searchTerm, setSearchTerm] = useState('');
+  const { customers, loading, fetchCustomers } = useCustomers(searchTerm);
   const [showForm, setShowForm] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -91,11 +93,21 @@ export const CustomerList = () => {
       />
       
       <CardContent>
-        {customers.length === 0 ? (
+        <CustomerSearch
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          placeholder="Search by name, email, company, or location..."
+        />
+
+        {customers.length === 0 && !searchTerm ? (
           <EmptyCustomerState
             onAddCustomer={handleAddCustomer}
             onBulkUpload={handleBulkUpload}
           />
+        ) : customers.length === 0 && searchTerm ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No customers found matching "{searchTerm}"</p>
+          </div>
         ) : isMobile ? (
           <div className="space-y-3">
             {customers.map((customer) => (

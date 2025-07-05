@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +19,7 @@ interface Customer {
   created_at: string;
 }
 
-export const useCustomers = () => {
+export const useCustomers = (searchTerm: string = '') => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -56,8 +56,33 @@ export const useCustomers = () => {
     fetchCustomers();
   }, [user]);
 
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return customers;
+    }
+
+    const lowercaseSearch = searchTerm.toLowerCase();
+    return customers.filter(customer => {
+      const fullName = `${customer.first_name} ${customer.last_name}`.toLowerCase();
+      const email = customer.email?.toLowerCase() || '';
+      const company = customer.company?.toLowerCase() || '';
+      const city = customer.city?.toLowerCase() || '';
+      const state = customer.state?.toLowerCase() || '';
+      const phone = customer.phone?.toLowerCase() || '';
+
+      return (
+        fullName.includes(lowercaseSearch) ||
+        email.includes(lowercaseSearch) ||
+        company.includes(lowercaseSearch) ||
+        city.includes(lowercaseSearch) ||
+        state.includes(lowercaseSearch) ||
+        phone.includes(lowercaseSearch)
+      );
+    });
+  }, [customers, searchTerm]);
+
   return {
-    customers,
+    customers: filteredCustomers,
     loading,
     fetchCustomers,
   };
