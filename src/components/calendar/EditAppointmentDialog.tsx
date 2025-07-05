@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,16 +30,42 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Create a proper local date from the appointment date string
-  const createLocalDateFromString = (dateString: string) => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day); // month is 0-indexed in Date constructor
+  // Convert time format - handle both HH:MM:SS and HH:MM AM/PM formats
+  const convertTimeToInput = (timeString: string) => {
+    if (!timeString) return '';
+    
+    // If it's already in HH:MM format, return as is
+    if (timeString.match(/^\d{2}:\d{2}$/)) {
+      return timeString;
+    }
+    
+    // If it's in HH:MM:SS format, strip seconds
+    if (timeString.match(/^\d{2}:\d{2}:\d{2}$/)) {
+      return timeString.substring(0, 5);
+    }
+    
+    // If it's in AM/PM format, convert to 24-hour
+    const ampmMatch = timeString.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (ampmMatch) {
+      let [, hours, minutes, ampm] = ampmMatch;
+      let hour24 = parseInt(hours);
+      
+      if (ampm.toUpperCase() === 'PM' && hour24 !== 12) {
+        hour24 += 12;
+      } else if (ampm.toUpperCase() === 'AM' && hour24 === 12) {
+        hour24 = 0;
+      }
+      
+      return `${hour24.toString().padStart(2, '0')}:${minutes}`;
+    }
+    
+    return timeString;
   };
 
   const [formData, setFormData] = useState({
     customerId: appointment.customer_id || '',
     date: parseDateFromDatabase(appointment.appointment_date),
-    time: appointment.appointment_time,
+    time: convertTimeToInput(appointment.appointment_time),
     service: appointment.service_type,
     notes: appointment.notes || '',
     status: appointment.status
@@ -71,6 +98,7 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
       
       console.log('Updating appointment with MST date:', dateString);
       console.log('Original date object:', appointmentData.date);
+      console.log('Time being saved:', appointmentData.time);
 
       const { error } = await supabase
         .from('appointments')
