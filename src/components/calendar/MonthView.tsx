@@ -45,14 +45,13 @@ export const MonthView: React.FC<MonthViewProps> = ({
           onClick={() => onDateSelect(currentDay)}
         >
           <div className="flex flex-col h-full">
-            <div 
-              className="mb-1 sm:mb-2 leading-none"
-              style={{
-                fontSize: isCurrentMonth ? '20px' : '16px',
-                fontWeight: '900',
-                color: isToday ? '#2563eb' : (isCurrentMonth ? '#111827' : '#9ca3af')
-              }}
-            >
+            <div className={`mb-1 sm:mb-2 leading-none font-black ${
+              isToday 
+                ? 'text-blue-600 text-xl sm:text-2xl' 
+                : isCurrentMonth 
+                  ? 'text-gray-900 text-xl sm:text-2xl' 
+                  : 'text-gray-400 text-base sm:text-lg'
+            }`}>
               {format(currentDay, 'd')}
             </div>
             <div className="flex-1 space-y-1 overflow-hidden">
