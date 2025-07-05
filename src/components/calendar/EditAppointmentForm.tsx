@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SERVICES, TIME_SLOTS } from './constants';
 
 interface EditAppointmentFormProps {
   formData: {
@@ -24,21 +25,6 @@ interface EditAppointmentFormProps {
   onCancel: () => void;
   isLoading: boolean;
 }
-
-const services = [
-  'Weekly Pool Cleaning',
-  'Chemical Balancing',
-  'Equipment Repair',
-  'Pool Opening',
-  'Pool Closing',
-  'Equipment Installation',
-  'Emergency Service'
-];
-
-const timeSlots = [
-  '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-  '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
-];
 
 export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
   formData,
@@ -80,7 +66,7 @@ export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
               <SelectValue placeholder="Select a service" />
             </SelectTrigger>
             <SelectContent>
-              {services.map(service => (
+              {SERVICES.map(service => (
                 <SelectItem key={service} value={service}>
                   {service}
                 </SelectItem>
@@ -131,8 +117,8 @@ export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
             <SelectTrigger>
               <SelectValue placeholder="Select a time" />
             </SelectTrigger>
-            <SelectContent>
-              {timeSlots.map(time => (
+            <SelectContent className="max-h-[300px] overflow-y-auto">
+              {TIME_SLOTS.map(time => (
                 <SelectItem key={time} value={time}>
                   {time}
                 </SelectItem>
