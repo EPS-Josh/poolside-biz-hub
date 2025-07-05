@@ -37,8 +37,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
         .from('customers')
         .select('id, first_name, last_name, address, city, state', { count: 'exact' })
         .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true })
-        .limit(5000);
+        .order('first_name', { ascending: true });
       
       if (error) {
         console.error('Error fetching customers:', error);

@@ -33,7 +33,7 @@ export const useCustomers = (searchTerm: string = '') => {
     try {
       setLoading(true);
       
-      // Fetch ALL customers in a single query
+      // Fetch ALL customers without any limit
       const { data, error, count } = await supabase
         .from('customers')
         .select('*', { count: 'exact' })
