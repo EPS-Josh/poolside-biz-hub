@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,14 +44,15 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     status: 'scheduled'
   });
 
-  // Fetch customers for the dropdown
+  // Fetch customers for the dropdown - sorted by last name
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('customers')
         .select('id, first_name, last_name, address, city, state')
-        .order('first_name');
+        .order('last_name', { ascending: true })
+        .order('first_name', { ascending: true });
       
       if (error) {
         console.error('Error fetching customers:', error);
@@ -136,10 +138,10 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             <SelectTrigger>
               <SelectValue placeholder="Select a customer (optional)" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[300px] overflow-y-auto">
               {customers.map(customer => (
                 <SelectItem key={customer.id} value={customer.id}>
-                  {customer.first_name} {customer.last_name} - {customer.address}, {customer.city}
+                  {customer.last_name}, {customer.first_name} - {customer.address}, {customer.city}
                 </SelectItem>
               ))}
             </SelectContent>
