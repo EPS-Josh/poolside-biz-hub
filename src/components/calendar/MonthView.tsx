@@ -39,18 +39,18 @@ export const MonthView: React.FC<MonthViewProps> = ({
       days.push(
         <div
           key={day.toString()}
-          className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-            !isCurrentMonth ? 'bg-gray-100' : 'bg-white'
-          } ${isToday ? 'bg-blue-50' : ''}`}
+          className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border-r border-b border-border cursor-pointer hover:bg-accent ${
+            !isCurrentMonth ? 'bg-muted' : 'bg-background'
+          } ${isToday ? 'bg-primary/10' : ''}`}
           onClick={() => onDateSelect(currentDay)}
         >
           <div className="flex flex-col h-full">
             <div className={`mb-1 sm:mb-2 leading-none font-black ${
               isToday 
-                ? 'text-blue-600 text-xl sm:text-2xl' 
+                ? 'text-primary text-xl sm:text-2xl' 
                 : isCurrentMonth 
-                  ? 'text-gray-900 text-xl sm:text-2xl' 
-                  : 'text-gray-400 text-base sm:text-lg'
+                  ? 'text-foreground text-xl sm:text-2xl' 
+                  : 'text-muted-foreground text-base sm:text-lg'
             }`}>
               {format(currentDay, 'd')}
             </div>
@@ -62,7 +62,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 return (
                   <div
                     key={apt.id}
-                    className="text-xs bg-blue-100 text-blue-800 px-1 sm:px-2 py-1 rounded truncate cursor-pointer hover:bg-blue-200 transition-colors"
+                    className="text-xs bg-primary/10 text-primary px-1 sm:px-2 py-1 rounded truncate cursor-pointer hover:bg-primary/20 transition-colors"
                     onClick={(e) => onAppointmentClick(apt, e)}
                     title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}`}
                   >
@@ -90,11 +90,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-border rounded-lg overflow-hidden">
       {/* Calendar Header - Days of the Week */}
-      <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+      <div className="grid grid-cols-7 bg-muted border-b border-border">
         {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-          <div key={day} className="p-2 sm:p-3 text-center font-semibold text-gray-700 border-r border-gray-200 last:border-r-0">
+          <div key={day} className="p-2 sm:p-3 text-center font-semibold text-muted-foreground border-r border-border last:border-r-0">
             <div className="hidden sm:block text-sm">{day}</div>
             <div className="sm:hidden text-xs font-medium">{day.substring(0, 3)}</div>
           </div>
