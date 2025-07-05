@@ -31,24 +31,42 @@ export const useCustomers = (searchTerm: string = '') => {
     console.log('Fetching customers for user:', user.id, user.email);
 
     try {
-      // Fetch all customers without any limit using range
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true })
-        .range(0, 9999); // Use range to get up to 10,000 records
+      // Fetch ALL customers using pagination to ensure we get everything
+      let allCustomers = [];
+      let from = 0;
+      const pageSize = 1000;
+      
+      while (true) {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .order('last_name', { ascending: true })
+          .order('first_name', { ascending: true })
+          .range(from, from + pageSize - 1);
 
-      if (error) {
-        throw error;
+        if (error) {
+          throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          break;
+        }
+        
+        allCustomers = [...allCustomers, ...data];
+        
+        // If we got less than pageSize, we've reached the end
+        if (data.length < pageSize) {
+          break;
+        }
+        
+        from += pageSize;
       }
 
-      console.log('Customers data received:', data);
-      console.log('Number of customers found:', data?.length || 0);
-      console.log('First customer:', data?.[0]);
-      console.log('Last customer:', data?.[data.length - 1]);
+      console.log('Customers data received:', allCustomers.length, 'total customers');
+      console.log('First customer:', allCustomers[0]);
+      console.log('Last customer:', allCustomers[allCustomers.length - 1]);
 
-      setCustomers(data || []);
+      setCustomers(allCustomers);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast({

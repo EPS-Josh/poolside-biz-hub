@@ -27,24 +27,43 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
-      // Fetch all customers without any limit
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, address, city, state')
-        .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true })
-        .range(0, 9999); // Use range to get up to 10,000 records
+      // Fetch ALL customers by removing any limits or range restrictions
+      let allCustomers = [];
+      let from = 0;
+      const pageSize = 1000;
       
-      if (error) {
-        console.error('Error fetching customers:', error);
-        throw error;
+      while (true) {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, first_name, last_name, address, city, state')
+          .order('last_name', { ascending: true })
+          .order('first_name', { ascending: true })
+          .range(from, from + pageSize - 1);
+        
+        if (error) {
+          console.error('Error fetching customers:', error);
+          throw error;
+        }
+        
+        if (!data || data.length === 0) {
+          break;
+        }
+        
+        allCustomers = [...allCustomers, ...data];
+        
+        // If we got less than pageSize, we've reached the end
+        if (data.length < pageSize) {
+          break;
+        }
+        
+        from += pageSize;
       }
       
-      console.log('CustomerSelect: Total customers found:', data?.length || 0);
-      console.log('CustomerSelect: First customer:', data?.[0]);
-      console.log('CustomerSelect: Last customer:', data?.[data.length - 1]);
+      console.log('CustomerSelect: Total customers found:', allCustomers.length);
+      console.log('CustomerSelect: First customer:', allCustomers[0]);
+      console.log('CustomerSelect: Last customer:', allCustomers[allCustomers.length - 1]);
       
-      return data || [];
+      return allCustomers;
     },
     enabled: !!user
   });
