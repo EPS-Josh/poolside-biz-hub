@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,7 @@ import { CustomerBulkUpload } from '@/components/CustomerBulkUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Plus, Mail, Phone, Building, Pencil, Upload } from 'lucide-react';
 
 interface Customer {
@@ -42,6 +42,7 @@ interface Customer {
 
 export const CustomerList = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -122,18 +123,75 @@ export const CustomerList = () => {
     );
   }
 
+  const CustomerCard = ({ customer }: { customer: Customer }) => (
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleCustomerClick(customer.id)}>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h3 className="font-semibold text-lg">
+              {customer.first_name} {customer.last_name}
+            </h3>
+            {customer.company && (
+              <div className="flex items-center text-sm text-gray-600 mt-1">
+                <Building className="h-3 w-3 mr-1" />
+                {customer.company}
+              </div>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditCustomer(customer);
+            }}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="space-y-1">
+          {customer.email && (
+            <div className="flex items-center text-sm">
+              <Mail className="h-3 w-3 mr-2" />
+              {customer.email}
+            </div>
+          )}
+          {customer.phone && (
+            <div className="flex items-center text-sm">
+              <Phone className="h-3 w-3 mr-2" />
+              {customer.phone}
+            </div>
+          )}
+          {(customer.city || customer.state) && (
+            <div className="text-sm text-gray-600">
+              {customer.city && customer.state 
+                ? `${customer.city}, ${customer.state}`
+                : customer.city || customer.state
+              }
+            </div>
+          )}
+        </div>
+        
+        <div className="text-xs text-gray-500 mt-2">
+          Added: {new Date(customer.created_at).toLocaleDateString()}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle>Customers</CardTitle>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleBulkUpload}>
+          <Button variant="outline" onClick={handleBulkUpload} size={isMobile ? "sm" : "default"}>
             <Upload className="h-4 w-4 mr-2" />
-            Bulk Upload
+            {isMobile ? "Upload" : "Bulk Upload"}
           </Button>
-          <Button onClick={handleAddCustomer}>
+          <Button onClick={handleAddCustomer} size={isMobile ? "sm" : "default"}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Customer
+            {isMobile ? "Add" : "Add Customer"}
           </Button>
         </div>
       </CardHeader>
@@ -151,6 +209,12 @@ export const CustomerList = () => {
                 Add Your First Customer
               </Button>
             </div>
+          </div>
+        ) : isMobile ? (
+          <div className="space-y-3">
+            {customers.map((customer) => (
+              <CustomerCard key={customer.id} customer={customer} />
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
