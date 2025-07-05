@@ -82,11 +82,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
             className="w-full justify-between"
           >
             {selectedCustomer
-              ? `${selectedCustomer.last_name}, ${selectedCustomer.first_name}${
-                  selectedCustomer.address && selectedCustomer.city
-                    ? ` - ${selectedCustomer.address}, ${selectedCustomer.city}`
-                    : ''
-                }`
+              ? `${selectedCustomer.last_name}, ${selectedCustomer.first_name}`
               : "Select a customer (optional)"}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -112,10 +108,10 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
                         value === customer.id ? "opacity-100" : "opacity-0"
                       )}
                     />
-                    <div className="flex flex-col">
-                      <span>{customer.last_name}, {customer.first_name}</span>
+                    <div className="flex flex-col w-full">
+                      <span className="font-medium">{customer.last_name}, {customer.first_name}</span>
                       {customer.address && customer.city && (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs text-muted-foreground mt-1 pl-0">
                           {customer.address}, {customer.city}
                         </span>
                       )}
@@ -127,6 +123,14 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
           </Command>
         </PopoverContent>
       </Popover>
+      
+      {/* Show selected customer address in a separate box */}
+      {selectedCustomer && selectedCustomer.address && selectedCustomer.city && (
+        <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded border">
+          <strong>Address:</strong> {selectedCustomer.address}, {selectedCustomer.city}
+          {selectedCustomer.state && `, ${selectedCustomer.state}`}
+        </div>
+      )}
     </div>
   );
 };
