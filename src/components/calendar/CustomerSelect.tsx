@@ -77,14 +77,14 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
           <Command>
-            <CommandInput placeholder="Search customers..." />
+            <CommandInput placeholder="Search by last name..." />
             <CommandList>
               <CommandEmpty>No customers found.</CommandEmpty>
               <CommandGroup>
                 {customers.map((customer) => (
                   <CommandItem
                     key={customer.id}
-                    value={`${customer.last_name} ${customer.first_name} ${customer.address || ''} ${customer.city || ''} ${customer.state || ''}`.toLowerCase()}
+                    value={customer.last_name.toLowerCase()}
                     onSelect={() => {
                       onChange(customer.id === value ? "" : customer.id);
                       setOpen(false);
