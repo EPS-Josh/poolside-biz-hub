@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -135,35 +134,9 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                     {appointment.appointment_time}
                   </span>
                 </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCreateServiceRecord(appointment)}
-                    className="flex items-center space-x-1"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Service Record</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingAppointment(appointment)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
-                    disabled={deleteAppointmentMutation.isPending}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <User className="h-4 w-4 text-gray-400" />
                   <span className="font-medium">
@@ -185,10 +158,40 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                 </div>
                 
                 {appointment.notes && (
-                  <div className="text-sm text-gray-600 mt-2">
+                  <div className="text-sm text-gray-600">
                     <strong>Notes:</strong> {appointment.notes}
                   </div>
                 )}
+
+                {/* Action buttons positioned at the bottom of the card */}
+                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCreateServiceRecord(appointment)}
+                    className="flex items-center space-x-1 text-xs h-8"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Service Record</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingAppointment(appointment)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
+                    disabled={deleteAppointmentMutation.isPending}
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
