@@ -46,7 +46,9 @@
   }
 
   .dark,
-  [data-theme="dark"] {
+  [data-theme="dark"],
+  body.dark,
+  html.dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
@@ -84,9 +86,23 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
+  /* Mobile-specific dark mode handling */
+  @supports (-webkit-touch-callout: none) {
+    /* iOS Safari */
+    .dark,
+    [data-theme="dark"] {
+      color-scheme: dark;
+    }
+    
+    .light,
+    [data-theme="light"] {
+      color-scheme: light;
+    }
+  }
+
   /* Ensure mobile webkit respects dark mode */
   @media (prefers-color-scheme: dark) {
-    :root:not(.light) {
+    :root:not(.light):not([data-theme="light"]) {
       --background: 222.2 84% 4.9%;
       --foreground: 210 40% 98%;
       --card: 222.2 84% 4.9%;
@@ -117,5 +133,12 @@
 
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  
+  /* Force theme application on mobile */
+  html,
+  body {
+    min-height: 100vh;
   }
 }
