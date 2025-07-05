@@ -10,11 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { CustomerForm } from '@/components/CustomerForm';
+import { CustomerBulkUpload } from '@/components/CustomerBulkUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Mail, Phone, Building, Pencil } from 'lucide-react';
+import { Plus, Mail, Phone, Building, Pencil, Upload } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -36,6 +44,7 @@ export const CustomerList = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -79,6 +88,10 @@ export const CustomerList = () => {
     setShowForm(true);
   };
 
+  const handleBulkUpload = () => {
+    setShowBulkUpload(true);
+  };
+
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
     setShowForm(true);
@@ -87,6 +100,10 @@ export const CustomerList = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingCustomer(null);
+  };
+
+  const handleCloseBulkUpload = () => {
+    setShowBulkUpload(false);
   };
 
   const handleCustomerClick = (customerId: string) => {
@@ -107,19 +124,31 @@ export const CustomerList = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle>Customers</CardTitle>
-        <Button onClick={handleAddCustomer}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Customer
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleBulkUpload}>
+            <Upload className="h-4 w-4 mr-2" />
+            Bulk Upload
+          </Button>
+          <Button onClick={handleAddCustomer}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Customer
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {customers.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 mb-4">No customers found</p>
-            <Button onClick={handleAddCustomer}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Customer
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button variant="outline" onClick={handleBulkUpload}>
+                <Upload className="h-4 w-4 mr-2" />
+                Bulk Upload
+              </Button>
+              <Button onClick={handleAddCustomer}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Customer
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -205,6 +234,18 @@ export const CustomerList = () => {
         onSuccess={handleFormSuccess}
         customer={editingCustomer}
       />
+
+      <Dialog open={showBulkUpload} onOpenChange={handleCloseBulkUpload}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Bulk Upload Customers</DialogTitle>
+            <DialogDescription>
+              Upload multiple customers at once using a CSV file
+            </DialogDescription>
+          </DialogHeader>
+          <CustomerBulkUpload onSuccess={handleFormSuccess} />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
