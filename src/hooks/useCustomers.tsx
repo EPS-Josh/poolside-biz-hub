@@ -31,12 +31,13 @@ export const useCustomers = (searchTerm: string = '') => {
     console.log('Fetching customers for user:', user.id, user.email);
 
     try {
-      // Remove the limit completely and fetch all customers
+      // Set a high limit to ensure we get all customers
       const { data, error, count } = await supabase
         .from('customers')
         .select('*', { count: 'exact' })
         .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true });
+        .order('first_name', { ascending: true })
+        .limit(5000); // Set explicit high limit to get all customers
 
       if (error) {
         throw error;
