@@ -28,6 +28,8 @@ export const useCustomers = (searchTerm: string = '') => {
   const fetchCustomers = async () => {
     if (!user) return;
 
+    console.log('Fetching customers for user:', user.id, user.email);
+
     try {
       const { data, error } = await supabase
         .from('customers')
@@ -38,6 +40,9 @@ export const useCustomers = (searchTerm: string = '') => {
       if (error) {
         throw error;
       }
+
+      console.log('Customers data received:', data);
+      console.log('Number of customers found:', data?.length || 0);
 
       setCustomers(data || []);
     } catch (error) {
