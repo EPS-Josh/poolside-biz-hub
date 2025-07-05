@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -56,7 +57,8 @@ export const CustomerList = () => {
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('last_name', { ascending: true })
+        .order('first_name', { ascending: true });
 
       if (error) {
         throw error;
@@ -155,7 +157,8 @@ export const CustomerList = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>First Name</TableHead>
+                  <TableHead>Last Name</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Location</TableHead>
@@ -171,7 +174,15 @@ export const CustomerList = () => {
                         onClick={() => handleCustomerClick(customer.id)}
                         className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
                       >
-                        {customer.first_name} {customer.last_name}
+                        {customer.first_name}
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => handleCustomerClick(customer.id)}
+                        className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                      >
+                        {customer.last_name}
                       </button>
                     </TableCell>
                     <TableCell>
