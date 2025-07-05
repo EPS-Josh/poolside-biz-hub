@@ -29,9 +29,9 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
   const [open, setOpen] = useState(false);
 
   const { data: customers = [] } = useQuery({
-    queryKey: ['customers-all'],
+    queryKey: ['customers'],
     queryFn: async () => {
-      console.log('CustomerSelect: Fetching all customers...');
+      console.log('CustomerSelect: Fetching customers...');
       
       const { data, error, count } = await supabase
         .from('customers')
