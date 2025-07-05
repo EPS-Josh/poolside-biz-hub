@@ -1,14 +1,16 @@
+
 import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format, isSameDay } from 'date-fns';
-import { Calendar, Clock, User, MapPin, Phone, Edit, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
+import { ServiceRecordForm } from '@/components/ServiceRecordForm';
+import { format, parseISO } from 'date-fns';
+import { Clock, User, Calendar, Edit, Trash2, FileText, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 
 interface AppointmentListProps {
@@ -16,35 +18,32 @@ interface AppointmentListProps {
   dateFilter?: Date;
 }
 
-export const AppointmentList: React.FC<AppointmentListProps> = ({
-  limit,
-  dateFilter
-}) => {
+export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFilter }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
+  const [creatingServiceRecord, setCreatingServiceRecord] = useState<any>(null);
 
   const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ['appointments', dateFilter],
+    queryKey: ['appointments', dateFilter?.toISOString()],
     queryFn: async () => {
       let query = supabase
         .from('appointments')
         .select(`
           *,
           customers (
+            id,
             first_name,
             last_name,
-            phone,
             address,
-            city,
-            state
+            city
           )
         `)
         .order('appointment_date', { ascending: true })
         .order('appointment_time', { ascending: true });
 
       if (dateFilter) {
-        const dateString = format(dateFilter, 'yyyy-MM-dd');
+        const dateString = dateFilter.toISOString().split('T')[0];
         query = query.eq('appointment_date', dateString);
       }
 
@@ -58,7 +57,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
         console.error('Error fetching appointments:', error);
         throw error;
       }
-      
+
       return data || [];
     },
     enabled: !!user
@@ -85,37 +84,26 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'in-progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-gray-100 text-gray-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'in-progress': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleDelete = (appointmentId: string) => {
-    if (window.confirm('Are you sure you want to delete this appointment?')) {
-      deleteAppointmentMutation.mutate(appointmentId);
-    }
+  const handleCreateServiceRecord = (appointment: any) => {
+    setCreatingServiceRecord(appointment);
   };
 
-  const handleEdit = (appointment: any) => {
-    setEditingAppointment(appointment);
+  const handleServiceRecordSuccess = () => {
+    setCreatingServiceRecord(null);
+    toast.success('Service record created successfully!');
   };
 
   if (isLoading) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        Loading appointments...
-      </div>
-    );
+    return <div className="text-center py-4">Loading appointments...</div>;
   }
 
   if (appointments.length === 0) {
@@ -128,87 +116,82 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
 
   return (
     <>
-      <div className="space-y-4">
-        {appointments.map(appointment => {
-          const customer = appointment.customers;
-          const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown Customer';
-          const customerAddress = customer ? `${customer.address || ''}, ${customer.city || ''}, ${customer.state || ''}`.replace(/^,\s*|,\s*$/g, '') : '';
-          const appointmentDate = parseDateFromDatabase(appointment.appointment_date);
-          
-          return (
-            <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium">
-                        {format(appointmentDate, 'MMM d, yyyy')}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">{appointment.appointment_time}</span>
-                    </div>
-                  </div>
+      <div className="space-y-3">
+        {appointments.map((appointment) => (
+          <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center space-x-2">
                   <Badge className={getStatusColor(appointment.status)}>
                     {appointment.status}
                   </Badge>
+                  <span className="text-sm text-gray-500 flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {format(parseDateFromDatabase(appointment.appointment_date), 'MMM d, yyyy')}
+                  </span>
+                  <span className="text-sm text-gray-500 flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {appointment.appointment_time}
+                  </span>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{customerName}</span>
-                    {customer?.phone && (
-                      <>
-                        <Phone className="h-4 w-4 text-gray-500 ml-4" />
-                        <span className="text-sm text-gray-600">{customer.phone}</span>
-                      </>
-                    )}
-                  </div>
-
-                  {customerAddress && (
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">{customerAddress}</span>
-                    </div>
-                  )}
-
-                  <div className="text-sm">
-                    <span className="font-medium">Service:</span> {appointment.service_type}
-                  </div>
-
-                  {appointment.notes && (
-                    <div className="text-sm">
-                      <span className="font-medium">Notes:</span> {appointment.notes}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button 
-                    variant="outline" 
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
                     size="sm"
-                    onClick={() => handleEdit(appointment)}
+                    onClick={() => handleCreateServiceRecord(appointment)}
+                    className="flex items-center space-x-1"
                   >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
+                    <Plus className="h-4 w-4" />
+                    <span>Service Record</span>
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
-                    onClick={() => handleDelete(appointment.id)}
+                    onClick={() => setEditingAppointment(appointment)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
                     disabled={deleteAppointmentMutation.isPending}
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4 text-gray-400" />
+                  <span className="font-medium">
+                    {appointment.customers 
+                      ? `${appointment.customers.first_name} ${appointment.customers.last_name}`
+                      : 'No customer assigned'
+                    }
+                  </span>
+                  {appointment.customers?.address && (
+                    <span className="text-sm text-gray-500">
+                      - {appointment.customers.address}, {appointment.customers.city}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm">{appointment.service_type}</span>
+                </div>
+                
+                {appointment.notes && (
+                  <div className="text-sm text-gray-600 mt-2">
+                    <strong>Notes:</strong> {appointment.notes}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {editingAppointment && (
@@ -216,6 +199,15 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({
           appointment={editingAppointment}
           isOpen={!!editingAppointment}
           onOpenChange={(open) => !open && setEditingAppointment(null)}
+        />
+      )}
+
+      {creatingServiceRecord && (
+        <AppointmentServiceRecordForm
+          appointment={creatingServiceRecord}
+          isOpen={!!creatingServiceRecord}
+          onOpenChange={(open) => !open && setCreatingServiceRecord(null)}
+          onSuccess={handleServiceRecordSuccess}
         />
       )}
     </>
