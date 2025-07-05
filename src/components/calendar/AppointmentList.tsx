@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
+import { AppointmentServiceRecordForm } from './AppointmentServiceRecordForm';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
 import { Clock, User, Calendar, Edit, Trash2, FileText, Plus } from 'lucide-react';
