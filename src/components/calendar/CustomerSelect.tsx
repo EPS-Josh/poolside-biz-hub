@@ -84,7 +84,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
                 {customers.map((customer) => (
                   <CommandItem
                     key={customer.id}
-                    value={`${customer.first_name} ${customer.last_name} ${customer.address || ''} ${customer.city || ''}`}
+                    value={`${customer.last_name} ${customer.first_name} ${customer.address || ''} ${customer.city || ''} ${customer.state || ''}`.toLowerCase()}
                     onSelect={() => {
                       onChange(customer.id === value ? "" : customer.id);
                       setOpen(false);
