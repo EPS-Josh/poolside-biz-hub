@@ -25,26 +25,34 @@ export const MonthView: React.FC<MonthViewProps> = ({
   let days = [];
   let day = startDate;
 
+  console.log('MonthView rendering, current month:', format(monthStart, 'MMMM yyyy'));
+
   while (day <= endDate) {
     for (let i = 0; i < 7; i++) {
       const dayAppointments = getAppointmentsForDate(appointments, day);
       const currentDay = new Date(day);
       const isCurrentMonth = isSameMonth(currentDay, monthStart);
       const isToday = isSameDay(currentDay, new Date());
+      
+      console.log(`Day ${format(currentDay, 'd')}: isCurrentMonth=${isCurrentMonth}, isToday=${isToday}`);
 
       days.push(
         <div
           key={day.toString()}
-          className={`min-h-24 sm:min-h-32 p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+          className={`min-h-24 sm:min-h-32 p-1 sm:p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
             !isCurrentMonth ? 'bg-gray-100' : 'bg-white'
           } ${isToday ? 'bg-blue-50' : ''}`}
           onClick={() => onDateSelect(currentDay)}
         >
           <div className="flex flex-col h-full">
-            <div className={`text-xl sm:text-2xl font-black mb-2 leading-none ${
-              isToday ? '!text-blue-600' : 
-              !isCurrentMonth ? '!text-gray-400' : '!text-gray-900'
-            }`}>
+            <div 
+              className="mb-1 sm:mb-2 leading-none"
+              style={{
+                fontSize: isCurrentMonth ? '20px' : '16px',
+                fontWeight: '900',
+                color: isToday ? '#2563eb' : (isCurrentMonth ? '#111827' : '#9ca3af')
+              }}
+            >
               {format(currentDay, 'd')}
             </div>
             <div className="flex-1 space-y-1 overflow-hidden">
