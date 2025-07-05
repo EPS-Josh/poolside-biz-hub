@@ -27,13 +27,13 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
-      // Set a high limit to ensure we get all customers
-      const { data, error, count } = await supabase
+      // Fetch all customers without any limit
+      const { data, error } = await supabase
         .from('customers')
-        .select('id, first_name, last_name, address, city, state', { count: 'exact' })
+        .select('id, first_name, last_name, address, city, state')
         .order('last_name', { ascending: true })
         .order('first_name', { ascending: true })
-        .limit(5000); // Set explicit high limit to get all customers
+        .range(0, 9999); // Use range to get up to 10,000 records
       
       if (error) {
         console.error('Error fetching customers:', error);
@@ -41,7 +41,6 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
       }
       
       console.log('CustomerSelect: Total customers found:', data?.length || 0);
-      console.log('CustomerSelect: Total customer count from DB:', count);
       console.log('CustomerSelect: First customer:', data?.[0]);
       console.log('CustomerSelect: Last customer:', data?.[data.length - 1]);
       
