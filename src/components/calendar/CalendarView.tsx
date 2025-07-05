@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -119,32 +118,40 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     while (day <= endDate) {
       for (let i = 0; i < 7; i++) {
         const dayAppointments = getAppointmentsForDate(day);
+        const currentDay = new Date(day);
 
         days.push(
           <div
             key={day.toString()}
-            className={`min-h-24 p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+            className={`min-h-32 p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
               !isSameMonth(day, monthStart) ? 'bg-gray-100 text-gray-400' : 'bg-white'
             } ${isSameDay(day, new Date()) ? 'bg-blue-50' : ''}`}
-            onClick={() => onDateSelect(day)}
+            onClick={() => onDateSelect(currentDay)}
           >
-            <div className="font-medium mb-1">{format(day, 'd')}</div>
-            <div className="space-y-1">
-              {dayAppointments.map(apt => {
-                const customer = apt.customers;
-                const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
-                
-                return (
-                  <div
-                    key={apt.id}
-                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded truncate cursor-pointer hover:bg-blue-200 transition-colors"
-                    onClick={(e) => handleAppointmentClick(apt, e)}
-                    title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}`}
-                  >
-                    {apt.appointment_time} - {customerName}
-                  </div>
-                );
-              })}
+            <div className="flex flex-col h-full">
+              <div className={`text-sm font-semibold mb-2 ${
+                isSameDay(currentDay, new Date()) ? 'text-blue-600' : 
+                !isSameMonth(currentDay, monthStart) ? 'text-gray-400' : 'text-gray-900'
+              }`}>
+                {format(currentDay, 'd')}
+              </div>
+              <div className="flex-1 space-y-1 overflow-hidden">
+                {dayAppointments.map(apt => {
+                  const customer = apt.customers;
+                  const customerName = customer ? `${customer.first_name} ${customer.last_name}` : 'No Customer';
+                  
+                  return (
+                    <div
+                      key={apt.id}
+                      className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded truncate cursor-pointer hover:bg-blue-200 transition-colors"
+                      onClick={(e) => handleAppointmentClick(apt, e)}
+                      title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}`}
+                    >
+                      {apt.appointment_time} - {customerName}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         );
