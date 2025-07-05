@@ -31,11 +31,13 @@ export const useCustomers = (searchTerm: string = '') => {
     console.log('Fetching customers for user:', user.id, user.email);
 
     try {
-      const { data, error } = await supabase
+      // Explicitly set a high limit to ensure we get all customers
+      const { data, error, count } = await supabase
         .from('customers')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true });
+        .order('first_name', { ascending: true })
+        .limit(10000); // Set a high limit to ensure we get all customers
 
       if (error) {
         throw error;
@@ -43,6 +45,7 @@ export const useCustomers = (searchTerm: string = '') => {
 
       console.log('Customers data received:', data);
       console.log('Number of customers found:', data?.length || 0);
+      console.log('Total customer count:', count);
 
       setCustomers(data || []);
     } catch (error) {
