@@ -29,25 +29,41 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
   const [open, setOpen] = useState(false);
 
   const { data: customers = [] } = useQuery({
-    queryKey: ['customers'],
+    queryKey: ['customers-select'],
     queryFn: async () => {
-      console.log('CustomerSelect: Fetching customers...');
+      console.log('CustomerSelect: Fetching all customers...');
       
-      const { data, error, count } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, address, city, state', { count: 'exact' })
-        .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching customers:', error);
-        throw error;
+      // Fetch all customers in batches to avoid Supabase limits
+      let allCustomers: Customer[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data, error, count } = await supabase
+          .from('customers')
+          .select('id, first_name, last_name, address, city, state', { count: 'exact' })
+          .order('last_name', { ascending: true })
+          .order('first_name', { ascending: true })
+          .range(from, from + batchSize - 1);
+        
+        if (error) {
+          console.error('Error fetching customers batch:', error);
+          throw error;
+        }
+        
+        if (data) {
+          allCustomers = [...allCustomers, ...data];
+          console.log(`CustomerSelect: Fetched batch ${from}-${from + data.length - 1}, total so far: ${allCustomers.length}`);
+        }
+        
+        // Check if we've fetched all records
+        hasMore = data && data.length === batchSize && allCustomers.length < (count || 0);
+        from += batchSize;
       }
       
-      console.log('CustomerSelect: Total customers found:', count);
-      console.log('CustomerSelect: Customers data:', data?.length || 0, 'records');
-      
-      return data || [];
+      console.log('CustomerSelect: Total customers fetched:', allCustomers.length);
+      return allCustomers;
     },
     enabled: !!user
   });

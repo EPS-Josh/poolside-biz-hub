@@ -28,26 +28,41 @@ export const useCustomers = (searchTerm: string = '') => {
   const fetchCustomers = async () => {
     if (!user) return;
 
-    console.log('useCustomers: Fetching customers for user:', user.id, user.email);
+    console.log('useCustomers: Fetching all customers for user:', user.id, user.email);
 
     try {
       setLoading(true);
       
-      // Fetch ALL customers without any limit
-      const { data, error, count } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact' })
-        .order('last_name', { ascending: true })
-        .order('first_name', { ascending: true });
+      // Fetch all customers in batches to avoid Supabase limits
+      let allCustomers: Customer[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (error) {
-        throw error;
+      while (hasMore) {
+        const { data, error, count } = await supabase
+          .from('customers')
+          .select('*', { count: 'exact' })
+          .order('last_name', { ascending: true })
+          .order('first_name', { ascending: true })
+          .range(from, from + batchSize - 1);
+
+        if (error) {
+          throw error;
+        }
+
+        if (data) {
+          allCustomers = [...allCustomers, ...data];
+          console.log(`useCustomers: Fetched batch ${from}-${from + data.length - 1}, total so far: ${allCustomers.length}`);
+        }
+
+        // Check if we've fetched all records
+        hasMore = data && data.length === batchSize && allCustomers.length < (count || 0);
+        from += batchSize;
       }
 
-      console.log('useCustomers: Total customers found:', count);
-      console.log('useCustomers: Customers data received:', data?.length || 0, 'records');
-
-      setCustomers(data || []);
+      console.log('useCustomers: Total customers found:', allCustomers.length);
+      setCustomers(allCustomers);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast({
