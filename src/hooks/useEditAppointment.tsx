@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { formatDateForDatabase } from '@/utils/dateUtils';
+import { convertTo24Hour } from '@/utils/timeUtils';
 
 export const useEditAppointment = (appointment: any, onClose: () => void) => {
   const { user } = useAuth();
@@ -15,17 +16,19 @@ export const useEditAppointment = (appointment: any, onClose: () => void) => {
       if (!user?.id) throw new Error('User not authenticated');
 
       const dateString = formatDateForDatabase(appointmentData.date);
+      const time24Hour = convertTo24Hour(appointmentData.time);
       
       console.log('Updating appointment with MST date:', dateString);
       console.log('Original date object:', appointmentData.date);
-      console.log('Time being saved:', appointmentData.time);
+      console.log('Time being saved (24-hour):', time24Hour);
+      console.log('Original time (12-hour):', appointmentData.time);
 
       const { error } = await supabase
         .from('appointments')
         .update({
           customer_id: appointmentData.customerId || null,
           appointment_date: dateString,
-          appointment_time: appointmentData.time,
+          appointment_time: time24Hour,
           service_type: appointmentData.service,
           status: appointmentData.status,
           notes: appointmentData.notes || null
