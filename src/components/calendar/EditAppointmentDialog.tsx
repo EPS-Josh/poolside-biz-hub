@@ -1,9 +1,6 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { convertTimeToInput } from '@/utils/timeUtils';
@@ -21,8 +18,6 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
   isOpen,
   onOpenChange
 }) => {
-  const { user } = useAuth();
-  
   const [formData, setFormData] = useState({
     customerId: appointment.customer_id || '',
     date: parseDateFromDatabase(appointment.appointment_date),
@@ -30,25 +25,6 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
     service: appointment.service_type,
     notes: appointment.notes || '',
     status: appointment.status
-  });
-
-  // Fetch customers for the dropdown
-  const { data: customers = [] } = useQuery({
-    queryKey: ['customers'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, address, city, state')
-        .order('first_name');
-      
-      if (error) {
-        console.error('Error fetching customers:', error);
-        throw error;
-      }
-      
-      return data || [];
-    },
-    enabled: !!user
   });
 
   const { updateAppointmentMutation } = useEditAppointment(appointment, () => onOpenChange(false));
@@ -84,7 +60,7 @@ export const EditAppointmentDialog: React.FC<EditAppointmentDialogProps> = ({
         <EditAppointmentForm
           formData={formData}
           setFormData={setFormData}
-          customers={customers}
+          customers={[]} // No longer needed since CustomerSelect handles its own data
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
           isLoading={updateAppointmentMutation.isPending}

@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SERVICES, TIME_SLOTS } from './constants';
+import { CustomerSelect } from './CustomerSelect';
 
 interface EditAppointmentFormProps {
   formData: {
@@ -38,30 +39,10 @@ export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Customer Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="customer">Customer</Label>
-          <Select value={formData.customerId} onValueChange={(value) => 
-            setFormData(prev => ({ ...prev, customerId: value }))
-          }>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a customer (optional)" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[200px] overflow-y-auto">
-              {customers.map(customer => (
-                <SelectItem key={customer.id} value={customer.id}>
-                  <div className="truncate">
-                    {customer.first_name} {customer.last_name}
-                    {customer.address && customer.city && (
-                      <span className="text-sm text-muted-foreground ml-1">
-                        - {customer.address}, {customer.city}
-                      </span>
-                    )}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <CustomerSelect
+          value={formData.customerId}
+          onChange={(value) => setFormData(prev => ({ ...prev, customerId: value }))}
+        />
 
         {/* Service Selection */}
         <div className="space-y-2">
