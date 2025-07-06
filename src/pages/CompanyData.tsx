@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -121,38 +120,44 @@ const CompanyData = () => {
       setIsSaving(true);
       console.log('Saving company data:', companyData);
 
+      // Ensure all fields are properly mapped and handle empty strings as null
       const dataToSave = {
         user_id: user.id,
-        company_name: companyData.companyName,
-        email: companyData.email,
-        phone: companyData.phone,
-        address: companyData.address,
-        city: companyData.city,
-        state: companyData.state,
-        zip_code: companyData.zipCode,
-        website: companyData.website,
-        tax_id: companyData.taxId,
-        license_number: companyData.licenseNumber,
-        insurance_provider: companyData.insuranceProvider,
-        insurance_policy_number: companyData.insurancePolicyNumber
+        company_name: companyData.companyName || null,
+        email: companyData.email || null,
+        phone: companyData.phone || null,
+        address: companyData.address || null,
+        city: companyData.city || null,
+        state: companyData.state || null,
+        zip_code: companyData.zipCode || null,
+        website: companyData.website || null,
+        tax_id: companyData.taxId || null,
+        license_number: companyData.licenseNumber || null,
+        insurance_provider: companyData.insuranceProvider || null,
+        insurance_policy_number: companyData.insurancePolicyNumber || null
       };
 
-      const { error } = await supabase
+      console.log('Data being saved to database:', dataToSave);
+
+      const { data, error } = await supabase
         .from('company_data')
         .upsert(dataToSave, { 
           onConflict: 'user_id',
           ignoreDuplicates: false 
-        });
+        })
+        .select();
 
       if (error) {
-        console.error('Error saving company data:', error);
+        console.error('Supabase error:', error);
         toast({
           title: 'Error',
-          description: 'Failed to save company data: ' + error.message,
+          description: `Failed to save company data: ${error.message}`,
           variant: 'destructive',
         });
         return;
       }
+
+      console.log('Successfully saved data:', data);
 
       toast({
         title: 'Success',
@@ -160,7 +165,7 @@ const CompanyData = () => {
       });
       setIsEditing(false);
     } catch (error) {
-      console.error('Error saving company data:', error);
+      console.error('Unexpected error saving company data:', error);
       toast({
         title: 'Error',
         description: 'Failed to save company data',
