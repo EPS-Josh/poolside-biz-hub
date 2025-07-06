@@ -3,6 +3,7 @@ export const SERVICES = [
   'Weekly Pool Cleaning',
   'Chemical Balancing',
   'Equipment Repair',
+  'Filter Cleaning',
   'Pool Opening',
   'Pool Closing',
   'Equipment Installation',
