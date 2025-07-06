@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -168,6 +167,7 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
                   <SelectItem value="equipment-repair">Equipment Repair</SelectItem>
                   <SelectItem value="cleaning">Pool Cleaning</SelectItem>
                   <SelectItem value="filter-maintenance">Filter Maintenance</SelectItem>
+                  <SelectItem value="filter-cleaning">Filter Cleaning</SelectItem>
                   <SelectItem value="equipment-installation">Equipment Installation</SelectItem>
                   <SelectItem value="inspection">Inspection</SelectItem>
                   <SelectItem value="emergency-service">Emergency Service</SelectItem>
