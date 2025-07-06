@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,14 +43,14 @@ interface Customer {
   id: string;
   first_name: string;
   last_name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  notes?: string;
+  email: string | null;
+  phone?: string | null;
+  company?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  notes?: string | null;
 }
 
 interface CustomerFormProps {
@@ -89,7 +88,7 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
         form.reset({
           first_name: customer.first_name,
           last_name: customer.last_name,
-          email: customer.email,
+          email: customer.email || '',
           phone: customer.phone || '',
           company: customer.company || '',
           address: customer.address || '',
