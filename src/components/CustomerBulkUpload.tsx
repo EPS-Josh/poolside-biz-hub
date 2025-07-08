@@ -67,9 +67,49 @@ export const CustomerBulkUpload = ({ onSuccess }: CustomerBulkUploadProps) => {
     window.URL.revokeObjectURL(url);
   };
 
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < line.length) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Handle escaped quotes
+          current += '"';
+          i += 2;
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+          i++;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        result.push(current.trim());
+        current = '';
+        i++;
+      } else {
+        current += char;
+        i++;
+      }
+    }
+    
+    // Add the last field
+    result.push(current.trim());
+    
+    return result;
+  };
+
+  const removeQuotes = (value: string): string => {
+    return value.replace(/^"(.+)"$/, '$1').replace(/""/g, '"');
+  };
+
   const parseCSV = (text: string): CustomerData[] => {
     const lines = text.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const headers = parseCSVLine(lines[0]).map(h => removeQuotes(h).trim().toLowerCase());
     
     const expectedHeaders = ['first_name', 'last_name'];
     const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
@@ -79,7 +119,7 @@ export const CustomerBulkUpload = ({ onSuccess }: CustomerBulkUploadProps) => {
     }
     
     return lines.slice(1).map((line, index) => {
-      const values = line.split(',').map(v => v.trim());
+      const values = parseCSVLine(line).map(v => removeQuotes(v));
       const customer: CustomerData = {
         first_name: '',
         last_name: ''
