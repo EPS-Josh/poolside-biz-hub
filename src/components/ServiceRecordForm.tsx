@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
+import { formatPhoenixDateForDatabase, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 
 interface ServiceRecordFormProps {
   customerId: string;
@@ -22,8 +22,11 @@ export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormPr
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Initialize with current Phoenix date
+  const currentPhoenixDate = getCurrentPhoenixDate();
   const [formData, setFormData] = useState({
-    service_date: new Date().toISOString().split('T')[0],
+    service_date: formatPhoenixDateForDatabase(currentPhoenixDate),
     service_time: '',
     service_type: '',
     technician_name: '',
@@ -57,6 +60,8 @@ export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormPr
 
     setLoading(true);
     try {
+      console.log('Submitting service record with Phoenix date:', formData.service_date);
+      
       const { error } = await supabase
         .from('service_records')
         .insert({
@@ -86,8 +91,9 @@ export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormPr
       });
 
       setOpen(false);
+      const resetPhoenixDate = getCurrentPhoenixDate();
       setFormData({
-        service_date: new Date().toISOString().split('T')[0],
+        service_date: formatPhoenixDateForDatabase(resetPhoenixDate),
         service_time: '',
         service_type: '',
         technician_name: '',

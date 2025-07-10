@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Calendar, Clock, User, Wrench, Beaker, FileText, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { toPhoenixTime } from '@/utils/phoenixTimeUtils';
 
 interface ServiceRecord {
   id: string;
@@ -93,7 +95,10 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    // Service dates are already stored in Phoenix timezone format (YYYY-MM-DD)
+    // Parse as Phoenix date to display correctly
+    const phoenixDate = new Date(dateString + 'T12:00:00'); // Add noon time to avoid timezone issues
+    return toPhoenixTime(phoenixDate).toLocaleDateString();
   };
 
   const formatTime = (timeString: string) => {

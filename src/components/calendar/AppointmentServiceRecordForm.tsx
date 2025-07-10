@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { parseDateFromDatabase } from '@/utils/dateUtils';
+import { parseDateFromDatabase, formatPhoenixDateForDatabase } from '@/utils/dateUtils';
 
 interface AppointmentServiceRecordFormProps {
   appointment: any;
@@ -28,9 +28,9 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   
-  // Pre-populate form data from appointment
+  // Pre-populate form data from appointment - ensure Phoenix timezone consistency
   const [formData, setFormData] = useState({
-    service_date: appointment.appointment_date,
+    service_date: appointment.appointment_date, // This is already in Phoenix timezone format
     service_time: appointment.appointment_time,
     service_type: appointment.service_type,
     technician_name: '',
@@ -64,12 +64,14 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
 
     setLoading(true);
     try {
+      console.log('Creating service record from appointment with Phoenix date:', formData.service_date);
+      
       const { error } = await supabase
         .from('service_records')
         .insert({
           customer_id: appointment.customer_id,
           user_id: user.id,
-          service_date: formData.service_date,
+          service_date: formData.service_date, // Already in Phoenix timezone format
           service_time: formData.service_time || null,
           service_type: formData.service_type,
           technician_name: formData.technician_name || null,
