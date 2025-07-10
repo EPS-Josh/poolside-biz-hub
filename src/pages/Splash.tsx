@@ -126,7 +126,7 @@ const Splash = () => {
                   </div>
                   <div className="flex items-center space-x-3">
                     <Mail className="h-5 w-5 text-blue-600" />
-                    <span className="text-foreground">info@finestpools.com</span>
+                    <span className="text-foreground">info@finestpoolsandspas.com</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <MapPin className="h-5 w-5 text-blue-600" />
@@ -236,7 +236,7 @@ const Splash = () => {
                 <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
                 <div className="space-y-2 text-gray-400">
                   <p>(520) 728-3002</p>
-                  <p>joshua@finestpoolsandspas.com</p>
+                  <p>info@finestpoolsandspas.com</p>
                   <p>Serving the Greater Tucson Area</p>
                 </div>
               </div>
