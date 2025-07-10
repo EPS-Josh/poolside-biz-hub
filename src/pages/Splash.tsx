@@ -1,10 +1,10 @@
 
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { Users, Calendar, Shield, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ServiceRequestForm } from '@/components/ServiceRequestForm';
 
 const Splash = () => {
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ const Splash = () => {
                 <img 
                   src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
                   alt="Finest Pools & Spas LLC Logo" 
-                  className="h-16 w-auto"
+                  className="h-20 w-auto"
                 />
               </div>
               <div className="flex items-center space-x-3">
@@ -90,13 +90,14 @@ const Splash = () => {
                     Professional pool maintenance services you can trust. 
                     Serving the community with excellence for over 3 decades.
                   </p>
-                  <Button 
-                    size="lg" 
-                    onClick={() => navigate('/auth')}
-                    className="px-8 py-3 text-lg bg-cyan-600 hover:bg-cyan-700"
-                  >
-                    Schedule Service Today
-                  </Button>
+                  <ServiceRequestForm>
+                    <Button 
+                      size="lg" 
+                      className="px-8 py-3 text-lg bg-cyan-600 hover:bg-cyan-700"
+                    >
+                      Schedule Service Today
+                    </Button>
+                  </ServiceRequestForm>
                 </div>
               </div>
             </div>
@@ -199,13 +200,14 @@ const Splash = () => {
               for all their pool maintenance needs. Contact us today for a free consultation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={() => navigate('/auth')}
-                className="px-8 py-3 text-lg bg-cyan-600 hover:bg-cyan-700"
-              >
-                Get Started Today
-              </Button>
+              <ServiceRequestForm>
+                <Button 
+                  size="lg" 
+                  className="px-8 py-3 text-lg bg-cyan-600 hover:bg-cyan-700"
+                >
+                  Get Started Today
+                </Button>
+              </ServiceRequestForm>
               <Button 
                 size="lg" 
                 variant="outline"
