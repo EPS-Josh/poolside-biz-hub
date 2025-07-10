@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { Waves, Users, Calendar, Shield, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
+import { Users, Calendar, Shield, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 const Splash = () => {
@@ -10,7 +10,7 @@ const Splash = () => {
 
   const services = [
     {
-      icon: Waves,
+      icon: Calendar,
       title: "Pool Cleaning & Maintenance",
       description: "Weekly cleaning, chemical balancing, and equipment maintenance to keep your pool crystal clear"
     },
@@ -38,8 +38,11 @@ const Splash = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <Waves className="h-8 w-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-foreground">Finest Pools & Spas</h1>
+              <img 
+                src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
+                alt="Finest Pools & Spas LLC Logo" 
+                className="h-12 w-auto"
+              />
             </div>
             <div className="flex items-center space-x-3">
               <ThemeToggle />
@@ -208,8 +211,11 @@ const Splash = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <div className="flex items-center space-x-3 mb-4">
-                <Waves className="h-6 w-6" />
-                <span className="text-lg font-semibold">Finest Pools & Spas</span>
+                <img 
+                  src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
+                  alt="Finest Pools & Spas LLC Logo" 
+                  className="h-8 w-auto brightness-0 invert"
+                />
               </div>
               <p className="text-gray-400">
                 Professional pool maintenance services for over 3 decades.
