@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarIcon, Plus, List, Grid, Users, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 
 type ViewType = 'month' | 'week' | 'day' | 'list';
 
@@ -26,6 +27,9 @@ const Calendar = () => {
     setSelectedDate(date);
     setIsDialogOpen(true);
   };
+
+  // Get current Phoenix date for "Today's Appointments"
+  const phoenixToday = getCurrentPhoenixDate();
 
   return (
     <ProtectedRoute>
@@ -136,10 +140,10 @@ const Calendar = () => {
                     {/* Today's Appointments */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Today's Appointments</CardTitle>
+                        <CardTitle className="text-lg">Today's Appointments (Phoenix Time)</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <AppointmentList limit={5} dateFilter={new Date()} />
+                        <AppointmentList limit={5} dateFilter={phoenixToday} />
                       </CardContent>
                     </Card>
 
