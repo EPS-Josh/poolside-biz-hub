@@ -140,7 +140,7 @@ const Calendar = () => {
                     {/* Today's Appointments */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Today's Appointments (Phoenix Time)</CardTitle>
+                        <CardTitle className="text-lg">Today's Appointments</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <AppointmentList limit={5} dateFilter={phoenixToday} />
