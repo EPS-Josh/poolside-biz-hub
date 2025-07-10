@@ -60,10 +60,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Service request saved to database:', serviceRequest);
 
-    // Send notification email to business
+    // Send notification email to business - now with multiple recipients
     const businessEmailResponse = await resend.emails.send({
       from: "Pool Service <onboarding@resend.dev>",
-      to: ["info@finestpoolsandspas.com"], // Replace with your business email
+      to: [
+        "info@finestpoolsandspas.com",
+        "admin@finestpoolsandspas.com" // Add your additional recipient here
+      ],
       subject: `New Service Request from ${requestData.firstName} ${requestData.lastName}`,
       html: `
         <h2>New Pool Service Request</h2>
