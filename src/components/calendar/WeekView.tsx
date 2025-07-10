@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { format, startOfWeek, addDays } from 'date-fns';
 import { getAppointmentsForDate } from '@/utils/appointmentUtils';
+import { isSameDayPhoenix, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 
 interface WeekViewProps {
   currentDate: Date;
@@ -18,6 +19,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
 }) => {
   const weekStart = startOfWeek(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const today = getCurrentPhoenixDate();
 
   return (
     <div>
@@ -26,7 +28,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
         {days.map(day => (
           <div key={day.toString()} className="p-3 text-center bg-gray-50">
             <div className="font-medium">{format(day, 'EEE')}</div>
-            <div className={`text-2xl ${isSameDay(day, new Date()) ? 'text-blue-600 font-bold' : 'text-gray-900'}`}>
+            <div className={`text-2xl ${isSameDayPhoenix(day, today) ? 'text-blue-600 font-bold' : 'text-gray-900'}`}>
               {format(day, 'd')}
             </div>
           </div>

@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth } from 'date-fns';
 import { getAppointmentsForDate } from '@/utils/appointmentUtils';
+import { isSameDayPhoenix, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 
 interface MonthViewProps {
   currentDate: Date;
@@ -24,15 +25,17 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const rows = [];
   let days = [];
   let day = startDate;
+  const today = getCurrentPhoenixDate();
 
   console.log('MonthView rendering, current month:', format(monthStart, 'MMMM yyyy'));
+  console.log('Phoenix time now:', today);
 
   while (day <= endDate) {
     for (let i = 0; i < 7; i++) {
       const dayAppointments = getAppointmentsForDate(appointments, day);
       const currentDay = new Date(day);
       const isCurrentMonth = isSameMonth(currentDay, monthStart);
-      const isToday = isSameDay(currentDay, new Date());
+      const isToday = isSameDayPhoenix(currentDay, today);
       
       console.log(`Day ${format(currentDay, 'd')}: isCurrentMonth=${isCurrentMonth}, isToday=${isToday}`);
 
@@ -47,7 +50,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
           <div className="flex flex-col h-full">
             <div className={`mb-1 sm:mb-2 leading-none ${
               isToday 
-                ? 'text-primary text-xl sm:text-2xl' 
+                ? 'text-primary text-xl sm:text-2xl font-bold' 
                 : isCurrentMonth 
                   ? 'text-foreground text-xl sm:text-2xl' 
                   : 'text-muted-foreground text-base sm:text-lg'

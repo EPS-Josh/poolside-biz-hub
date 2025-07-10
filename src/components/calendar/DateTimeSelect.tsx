@@ -27,7 +27,7 @@ export const DateTimeSelect: React.FC<DateTimeSelectProps> = ({
     <>
       {/* Date Selection */}
       <div className="space-y-2">
-        <Label>Date *</Label>
+        <Label>Date * (Phoenix Time)</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -47,7 +47,7 @@ export const DateTimeSelect: React.FC<DateTimeSelectProps> = ({
               selected={date}
               onSelect={(selectedDate) => {
                 if (selectedDate) {
-                  console.log('Calendar date selected (MST):', selectedDate);
+                  console.log('Calendar date selected (Phoenix Time):', selectedDate);
                   onDateChange(selectedDate);
                 }
               }}
@@ -60,7 +60,7 @@ export const DateTimeSelect: React.FC<DateTimeSelectProps> = ({
 
       {/* Time Selection */}
       <div className="space-y-2">
-        <Label htmlFor="time">Time *</Label>
+        <Label htmlFor="time">Time * (Phoenix Time)</Label>
         <Select value={time} onValueChange={onTimeChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select a time" />

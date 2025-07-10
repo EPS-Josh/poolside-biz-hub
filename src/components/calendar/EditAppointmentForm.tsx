@@ -65,7 +65,7 @@ export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
 
         {/* Date Selection */}
         <div className="space-y-2">
-          <Label>Date *</Label>
+          <Label>Date * (Phoenix Time)</Label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -85,7 +85,7 @@ export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
                 selected={formData.date}
                 onSelect={(date) => {
                   if (date) {
-                    console.log('Calendar date selected for edit (MST):', date);
+                    console.log('Calendar date selected for edit (Phoenix Time):', date);
                     setFormData(prev => ({ ...prev, date }));
                   }
                 }}
@@ -98,7 +98,7 @@ export const EditAppointmentForm: React.FC<EditAppointmentFormProps> = ({
 
         {/* Time Selection */}
         <div className="space-y-2">
-          <Label htmlFor="time">Time *</Label>
+          <Label htmlFor="time">Time * (Phoenix Time)</Label>
           <Select value={formData.time} onValueChange={(value) => 
             setFormData(prev => ({ ...prev, time: value }))
           }>

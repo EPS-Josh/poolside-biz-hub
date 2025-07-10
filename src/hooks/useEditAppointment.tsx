@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { formatDateForDatabase } from '@/utils/dateUtils';
+import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
 import { convertTo24Hour } from '@/utils/timeUtils';
 
 export const useEditAppointment = (appointment: any, onClose: () => void) => {
@@ -15,10 +15,10 @@ export const useEditAppointment = (appointment: any, onClose: () => void) => {
     mutationFn: async (appointmentData: any) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const dateString = formatDateForDatabase(appointmentData.date);
+      const dateString = formatPhoenixDateForDatabase(appointmentData.date);
       const time24Hour = convertTo24Hour(appointmentData.time);
       
-      console.log('Updating appointment with MST date:', dateString);
+      console.log('Updating appointment with Phoenix date:', dateString);
       console.log('Original date object:', appointmentData.date);
       console.log('Time being saved (24-hour):', time24Hour);
       console.log('Original time (12-hour):', appointmentData.time);

@@ -20,7 +20,7 @@ export const DayView: React.FC<DayViewProps> = ({
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          {format(currentDate, 'EEEE, MMMM d, yyyy')}
+          {format(currentDate, 'EEEE, MMMM d, yyyy')} (Phoenix Time)
         </h2>
       </div>
 
