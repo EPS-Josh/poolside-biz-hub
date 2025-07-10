@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -32,19 +33,6 @@ const Splash = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Large Logo Banner */}
-      <div className="bg-white dark:bg-gray-900 shadow-lg border-b-2 border-blue-100 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex justify-center">
-            <img 
-              src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
-              alt="Finest Pools & Spas LLC Logo" 
-              className="h-24 md:h-32 lg:h-40 w-auto"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Header */}
       <header className="bg-background shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,6 +58,19 @@ const Splash = () => {
           </div>
         </div>
       </header>
+
+      {/* Large Logo Banner */}
+      <div className="bg-white dark:bg-gray-900 shadow-lg border-b-2 border-blue-100 dark:border-gray-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center">
+            <img 
+              src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
+              alt="Finest Pools & Spas LLC Logo" 
+              className="h-24 md:h-32 lg:h-40 w-auto"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
