@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { format, parseISO } from 'date-fns';
 import { Clock, User, Calendar, Edit, Trash2, FileText, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
+import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
 
 interface AppointmentListProps {
   limit?: number;
@@ -43,7 +45,9 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
         .order('appointment_time', { ascending: true });
 
       if (dateFilter) {
-        const dateString = dateFilter.toISOString().split('T')[0];
+        // Use Phoenix date formatting for proper comparison
+        const dateString = formatPhoenixDateForDatabase(dateFilter);
+        console.log('Filtering appointments for Phoenix date:', dateString);
         query = query.eq('appointment_date', dateString);
       }
 
@@ -58,6 +62,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
         throw error;
       }
 
+      console.log('Fetched appointments:', data);
       return data || [];
     },
     enabled: !!user
