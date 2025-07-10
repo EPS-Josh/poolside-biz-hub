@@ -24,6 +24,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const serviceRequestSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -47,6 +48,7 @@ interface ServiceRequestFormProps {
 export const ServiceRequestForm = ({ children }: ServiceRequestFormProps) => {
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const form = useForm<ServiceRequestForm>({
     resolver: zodResolver(serviceRequestSchema),
@@ -63,11 +65,21 @@ export const ServiceRequestForm = ({ children }: ServiceRequestFormProps) => {
   });
 
   const onSubmit = async (data: ServiceRequestForm) => {
+    setIsSubmitting(true);
     try {
-      console.log('Service request submitted:', data);
+      console.log('Submitting service request:', data);
       
-      // Here you would typically send the data to your backend
-      // For now, we'll just show a success message
+      // Call the edge function to save to database and send emails
+      const { data: result, error } = await supabase.functions.invoke('send-service-request-email', {
+        body: data
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      console.log('Service request submitted successfully:', result);
       
       toast({
         title: "Request Submitted Successfully!",
@@ -80,9 +92,11 @@ export const ServiceRequestForm = ({ children }: ServiceRequestFormProps) => {
       console.error('Error submitting service request:', error);
       toast({
         title: "Submission Failed",
-        description: "There was an error submitting your request. Please try again or call us directly.",
+        description: "There was an error submitting your request. Please try again or call us directly at (520) 728-3002.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -258,14 +272,19 @@ export const ServiceRequestForm = ({ children }: ServiceRequestFormProps) => {
             />
 
             <div className="flex gap-3 pt-4">
-              <Button type="submit" className="flex-1 bg-cyan-600 hover:bg-cyan-700">
-                Submit Request
+              <Button 
+                type="submit" 
+                className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Request'}
               </Button>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => setOpen(false)}
                 className="px-6"
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>

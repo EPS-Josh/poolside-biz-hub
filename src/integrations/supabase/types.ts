@@ -472,6 +472,51 @@ export type Database = {
           },
         ]
       }
+      service_requests: {
+        Row: {
+          address: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          message: string | null
+          phone: string
+          preferred_contact_method: string
+          service_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          message?: string | null
+          phone: string
+          preferred_contact_method: string
+          service_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          message?: string | null
+          phone?: string
+          preferred_contact_method?: string
+          service_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
