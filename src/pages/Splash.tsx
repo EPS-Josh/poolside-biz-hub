@@ -1,4 +1,5 @@
 
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -51,7 +52,7 @@ const Splash = () => {
                 <img 
                   src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
                   alt="Finest Pools & Spas LLC Logo" 
-                  className="h-12 w-auto"
+                  className="h-16 w-auto"
                 />
               </div>
               <div className="flex items-center space-x-3">
