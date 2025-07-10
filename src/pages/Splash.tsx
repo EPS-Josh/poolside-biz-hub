@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
@@ -34,7 +35,7 @@ const Splash = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-gray-900 dark:to-gray-800 relative">
       {/* Fixed Background Logo */}
       <div 
-        className="fixed top-0 left-0 w-full h-screen bg-no-repeat bg-center bg-contain opacity-5 dark:opacity-10 pointer-events-none z-0"
+        className="fixed top-0 left-0 w-full h-screen bg-no-repeat bg-center bg-contain opacity-15 dark:opacity-10 pointer-events-none z-0"
         style={{
           backgroundImage: `url('/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png')`
         }}
