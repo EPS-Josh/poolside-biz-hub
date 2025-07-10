@@ -65,7 +65,7 @@ const handler = async (req: Request): Promise<Response> => {
       from: "Pool Service <onboarding@resend.dev>",
       to: [
         "info@finestpoolsandspas.com",
-        "admin@finestpoolsandspas.com" // Add your additional recipient here
+        "lance@finestpoolsandspas.com" // Updated recipient
       ],
       subject: `New Service Request from ${requestData.firstName} ${requestData.lastName}`,
       html: `
