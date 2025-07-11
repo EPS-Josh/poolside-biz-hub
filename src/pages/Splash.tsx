@@ -49,14 +49,19 @@ const Splash = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
+                <ThemeToggle />
+              </div>
+              
+              {/* Center Logo */}
+              <div className="flex-1 flex justify-center items-center">
                 <img 
-                  src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
+                  src="/lovable-uploads/2359aecc-7243-4bba-af06-a53dc727777e.png" 
                   alt="Finest Pools & Spas LLC Logo" 
-                  className="h-20 w-auto"
+                  className="h-14 w-auto max-w-md object-contain"
                 />
               </div>
+              
               <div className="flex items-center space-x-3">
-                <ThemeToggle />
                 <Button variant="outline" className="flex items-center space-x-2">
                   <span>Client Portal</span>
                   <ArrowRight className="h-4 w-4" />
