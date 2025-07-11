@@ -13,29 +13,12 @@ export const Header = () => {
 
   const handleSignOut = async () => {
     try {
-      const { error } = await signOut();
-      if (error) {
-        console.error('Sign out error:', error);
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to sign out',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Success',
-          description: 'Signed out successfully!',
-        });
-        // Redirect to auth page after successful signout
-        navigate('/auth');
-      }
+      await signOut();
+      // No need for toast or navigation since signOut does a hard redirect
     } catch (err) {
       console.error('Unexpected error during signout:', err);
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      // Force redirect even if there's an error
+      window.location.href = '/auth';
     }
   };
 

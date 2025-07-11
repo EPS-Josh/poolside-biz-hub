@@ -55,21 +55,34 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
-      // Force clear the session by using signOut with scope global to clear all sessions
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
-      // Clear local state regardless of error
-      setSession(null);
-      setUser(null);
-      
-      return { error };
+      // Try normal signOut first
+      await supabase.auth.signOut({ scope: 'global' });
     } catch (err) {
-      // Even if there's an error, clear local state
-      setSession(null);
-      setUser(null);
-      console.log('Force clearing session due to error:', err);
-      return { error: null }; // Return success since we cleared local state
+      console.log('Normal signOut failed, forcing manual logout:', err);
     }
+    
+    // Force clear all auth-related storage
+    localStorage.removeItem('sb-fsqztictdjcguzchlcdf-auth-token');
+    sessionStorage.removeItem('sb-fsqztictdjcguzchlcdf-auth-token');
+    
+    // Clear all localStorage items that start with 'supabase' or 'sb-'
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('supabase') || key.startsWith('sb-'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // Clear local state
+    setSession(null);
+    setUser(null);
+    
+    // Force page reload to completely clear any remaining auth state
+    window.location.href = '/auth';
+    
+    return { error: null };
   };
 
   return {
