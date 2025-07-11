@@ -48,7 +48,7 @@ export const Header = () => {
             <img 
               src="/lovable-uploads/2359aecc-7243-4bba-af06-a53dc727777e.png" 
               alt="Finest Pools & Spas LLC Logo" 
-              className="h-10 w-auto max-w-xs object-contain"
+              className="h-14 w-auto max-w-md object-contain"
             />
           </div>
           
