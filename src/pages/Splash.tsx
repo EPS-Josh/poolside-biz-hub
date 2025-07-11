@@ -57,7 +57,7 @@ const Splash = () => {
                 <img 
                   src="/lovable-uploads/2359aecc-7243-4bba-af06-a53dc727777e.png" 
                   alt="Finest Pools & Spas LLC Logo" 
-                  className="h-14 w-auto max-w-md object-contain"
+                  className="h-20 w-auto max-w-lg object-contain"
                 />
               </div>
               
