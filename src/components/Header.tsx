@@ -44,11 +44,11 @@ export const Header = () => {
           </div>
           
           {/* Center Logo */}
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 flex justify-center items-center">
             <img 
               src="/lovable-uploads/2359aecc-7243-4bba-af06-a53dc727777e.png" 
               alt="Finest Pools & Spas LLC Logo" 
-              className="h-12 w-auto"
+              className="h-10 w-auto max-w-xs object-contain"
             />
           </div>
           
