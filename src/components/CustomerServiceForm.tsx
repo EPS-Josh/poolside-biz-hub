@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ValveDataScraper } from '@/components/ValveDataScraper';
 import { ValveSelector } from '@/components/ValveSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -242,10 +240,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
 
               {/* Pool Equipment Section */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-md font-medium">Pool Equipment</h4>
-                  <ValveDataScraper onValveDataFetched={handleValveDataFetched} />
-                </div>
+                <h4 className="text-md font-medium">Pool Equipment</h4>
                 
                 {/* Dropdowns */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
