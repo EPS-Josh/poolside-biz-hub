@@ -235,9 +235,9 @@ const Splash = () => {
               <div>
                 <div className="flex items-center space-x-3 mb-4">
                   <img 
-                    src="/lovable-uploads/1b78d6d1-0694-433e-9fec-a5d2ed069f46.png" 
+                    src="/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
                     alt="Finest Pools & Spas LLC Logo" 
-                    className="h-16 w-auto brightness-0 invert"
+                    className="h-16 w-auto"
                   />
                 </div>
                 <p className="text-gray-400">
