@@ -78,8 +78,7 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
         
         <ServiceRecordForm
           customerId={customerId}
-          initialServiceDate={appointmentDate}
-          onServiceRecordCreated={handleServiceRecordCreated}
+          onSuccess={handleServiceRecordCreated}
         />
       </DialogContent>
     </Dialog>

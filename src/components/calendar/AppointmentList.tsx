@@ -213,10 +213,11 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
 
       {creatingServiceRecord && (
         <AppointmentServiceRecordForm
-          appointment={creatingServiceRecord}
-          isOpen={!!creatingServiceRecord}
-          onOpenChange={(open) => !open && setCreatingServiceRecord(null)}
-          onSuccess={handleServiceRecordSuccess}
+          appointmentId={creatingServiceRecord.id}
+          customerId={creatingServiceRecord.customer_id}
+          appointmentDate={creatingServiceRecord.appointment_date}
+          appointmentTime={creatingServiceRecord.appointment_time}
+          onServiceRecordCreated={handleServiceRecordSuccess}
         />
       )}
     </>
