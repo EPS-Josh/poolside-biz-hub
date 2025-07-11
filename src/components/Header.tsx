@@ -12,17 +12,29 @@ export const Header = () => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
+    try {
+      const { error } = await signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to sign out',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Success',
+          description: 'Signed out successfully!',
+        });
+        // Redirect to auth page after successful signout
+        navigate('/auth');
+      }
+    } catch (err) {
+      console.error('Unexpected error during signout:', err);
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'An unexpected error occurred',
         variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Signed out successfully!',
       });
     }
   };
