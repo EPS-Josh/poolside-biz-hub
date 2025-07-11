@@ -42,6 +42,16 @@ export const Header = () => {
               <span>Menu</span>
             </Button>
           </div>
+          
+          {/* Center Logo */}
+          <div className="flex-1 flex justify-center">
+            <img 
+              src="/lovable-uploads/2359aecc-7243-4bba-af06-a53dc727777e.png" 
+              alt="Finest Pools & Spas LLC Logo" 
+              className="h-12 w-auto"
+            />
+          </div>
+          
           <div className="flex items-center space-x-4">
             <ThemeToggle />
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
