@@ -54,18 +54,22 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    // Check if there's an active session before attempting to sign out
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    
-    if (!currentSession) {
-      // If no session exists, just clear local state
+    try {
+      // Force clear the session by using signOut with scope global to clear all sessions
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      // Clear local state regardless of error
       setSession(null);
       setUser(null);
-      return { error: null };
+      
+      return { error };
+    } catch (err) {
+      // Even if there's an error, clear local state
+      setSession(null);
+      setUser(null);
+      console.log('Force clearing session due to error:', err);
+      return { error: null }; // Return success since we cleared local state
     }
-    
-    const { error } = await supabase.auth.signOut();
-    return { error };
   };
 
   return {
