@@ -41,9 +41,9 @@ export const Header = () => {
           {/* Center Logo */}
           <div className="flex-1 flex justify-center items-center">
             <img 
-              src="/lovable-uploads/2359aecc-7243-4bba-af06-a53dc727777e.png" 
+              src="/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
               alt="Finest Pools & Spas LLC Logo" 
-              className="h-14 w-auto max-w-md object-contain"
+              className="h-12 w-auto max-w-lg object-contain"
             />
           </div>
           
