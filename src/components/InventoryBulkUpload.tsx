@@ -258,7 +258,10 @@ const InventoryBulkUpload = () => {
     
     const items = [];
     for (const row of parsedData.rows) {
-      const item: any = { user_id: '' }; // Will be set during upload
+      const item: any = { 
+        user_id: '', // Will be set during upload
+        quantity_in_stock: 0 // Default value to prevent NULL constraint violations
+      };
       
       columnMappings.forEach((mapping, index) => {
         if (mapping.dbField && mapping.dbField !== 'skip' && row[index] !== undefined) {
