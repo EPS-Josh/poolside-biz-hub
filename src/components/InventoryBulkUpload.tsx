@@ -26,6 +26,7 @@ const InventoryBulkUpload = () => {
   const downloadTemplate = () => {
     const headers = [
       'ITEM #',
+      'FPS ITEM #',
       'DESCRIPTION',
       'SOLUTION',
       'TYPE',
@@ -46,6 +47,7 @@ const InventoryBulkUpload = () => {
     const sampleData = [
       [
         'CHT-001',
+        'FPS-CHT-001',
         'Fast-dissolving chlorine tablets for pool sanitation',
         'Pool Maintenance',
         'Chemical',
@@ -64,6 +66,7 @@ const InventoryBulkUpload = () => {
       ],
       [
         'PB-002',
+        'FPS-PB-002',
         'Heavy-duty pool cleaning brush',
         'Cleaning Equipment',
         'Tool',
@@ -122,6 +125,9 @@ const InventoryBulkUpload = () => {
         switch (header) {
           case 'ITEM #':
             fieldName = 'item_number';
+            break;
+          case 'FPS ITEM #':
+            fieldName = 'fps_item_number';
             break;
           case 'DESCRIPTION':
             fieldName = 'description';

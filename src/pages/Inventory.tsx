@@ -26,6 +26,7 @@ interface InventoryItem {
   cost_price: number | null;
   low_stock_threshold: number;
   item_number: string | null;
+  fps_item_number: string | null;
   solution: string | null;
   type: string | null;
   pieces_per_part: number | null;
@@ -72,6 +73,7 @@ const Inventory = () => {
       const { error } = await supabase.from("inventory_items").insert({
         user_id: user.id,
         item_number: formData.get("itemNumber") as string || null,
+        fps_item_number: formData.get("fpsItemNumber") as string || null,
         name: formData.get("name") as string || null,
         description: formData.get("description") as string || null,
         solution: formData.get("solution") as string || null,
@@ -119,6 +121,7 @@ const Inventory = () => {
     mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
       const { error } = await supabase.from("inventory_items").update({
         item_number: formData.get("itemNumber") as string || null,
+        fps_item_number: formData.get("fpsItemNumber") as string || null,
         name: formData.get("name") as string || null,
         description: formData.get("description") as string || null,
         solution: formData.get("solution") as string || null,
@@ -241,13 +244,21 @@ const Inventory = () => {
       {/* Basic Info */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Basic Information</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="itemNumber">Item #</Label>
             <Input
               id="itemNumber"
               name="itemNumber"
               defaultValue={item?.item_number || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fpsItemNumber">FPS Item #</Label>
+            <Input
+              id="fpsItemNumber"
+              name="fpsItemNumber"
+              defaultValue={item?.fps_item_number || ""}
             />
           </div>
           <div className="space-y-2">

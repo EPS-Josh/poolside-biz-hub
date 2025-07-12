@@ -377,6 +377,7 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string | null
+          fps_item_number: string | null
           height: number | null
           id: string
           item_number: string | null
@@ -406,6 +407,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          fps_item_number?: string | null
           height?: number | null
           id?: string
           item_number?: string | null
@@ -435,6 +437,7 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          fps_item_number?: string | null
           height?: number | null
           id?: string
           item_number?: string | null
