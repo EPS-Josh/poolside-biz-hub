@@ -62,7 +62,7 @@ const Menu = () => {
           description: "Track products, parts, and supplies",
           icon: Package,
           color: "bg-orange-500",
-          action: () => console.log('Inventory coming soon'),
+          action: () => navigate('/inventory'),
         },
         {
           title: "Appointment Calendar",
@@ -160,7 +160,7 @@ const Menu = () => {
                   <Calendar className="h-4 w-4" />
                   <span>Schedule Service</span>
                 </Button>
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => navigate('/inventory')}>
                   <Package className="h-4 w-4" />
                   <span>Check Inventory</span>
                 </Button>
