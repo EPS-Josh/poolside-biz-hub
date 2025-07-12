@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 
 interface InventoryItem {
   id: string;
@@ -272,20 +273,23 @@ const Inventory = () => {
               <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
               <p className="text-muted-foreground">Track and manage your inventory items</p>
             </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Add New Inventory Item</DialogTitle>
-                </DialogHeader>
-                <ItemForm />
-              </DialogContent>
-            </Dialog>
+            <div className="flex space-x-2">
+              <InventoryBulkUpload />
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Item
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add New Inventory Item</DialogTitle>
+                  </DialogHeader>
+                  <ItemForm />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <Card>
