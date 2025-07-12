@@ -684,11 +684,13 @@ const Inventory = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Category</TableHead>
+                      <TableHead>FPS Item #</TableHead>
+                      <TableHead>MFG Item #</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Solution</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Quantity</TableHead>
-                      <TableHead>Unit Price</TableHead>
+                      <TableHead>List Price</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -698,12 +700,16 @@ const Inventory = () => {
                       const stockStatus = getStockStatus(item);
                       return (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>{item.sku || "-"}</TableCell>
-                          <TableCell>{item.category || "-"}</TableCell>
+                          <TableCell className="font-medium">{item.fps_item_number || "-"}</TableCell>
+                          <TableCell>{item.item_number || "-"}</TableCell>
+                          <TableCell className="max-w-xs truncate" title={item.description || ""}>
+                            {item.description || "-"}
+                          </TableCell>
+                          <TableCell>{item.solution || "-"}</TableCell>
+                          <TableCell>{item.type || "-"}</TableCell>
                           <TableCell>{item.quantity_in_stock}</TableCell>
                           <TableCell>
-                            {item.unit_price ? `$${item.unit_price.toFixed(2)}` : "-"}
+                            {item.list_price ? `$${item.list_price.toFixed(2)}` : "-"}
                           </TableCell>
                           <TableCell>
                             <Badge variant={stockStatus.variant}>{stockStatus.label}</Badge>
