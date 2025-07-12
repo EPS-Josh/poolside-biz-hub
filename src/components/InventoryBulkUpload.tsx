@@ -294,11 +294,13 @@ const InventoryBulkUpload = () => {
         switch (fieldName) {
           case 'pieces_per_part':
           case 'min_order_qty':
-          case 'quantity_in_stock':
           case 'pieces_per_case':
           case 'pieces_per_pallet':
           case 'low_stock_threshold':
             item[fieldName] = value ? parseInt(value) || null : null;
+            break;
+          case 'quantity_in_stock':
+            item[fieldName] = value ? parseInt(value) || 0 : 0;
             break;
           case 'list_price':
           case 'unit_price':
