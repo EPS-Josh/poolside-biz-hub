@@ -378,6 +378,7 @@ export type Database = {
           created_at: string
           description: string | null
           fps_item_number: string | null
+          fps_sales_price: number | null
           height: number | null
           id: string
           item_number: string | null
@@ -385,6 +386,7 @@ export type Database = {
           length: number | null
           list_price: number | null
           low_stock_threshold: number | null
+          markup_percentage: number | null
           min_order_qty: number | null
           name: string | null
           pieces_per_case: number | null
@@ -418,6 +420,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fps_item_number?: string | null
+          fps_sales_price?: number | null
           height?: number | null
           id?: string
           item_number?: string | null
@@ -425,6 +428,7 @@ export type Database = {
           length?: number | null
           list_price?: number | null
           low_stock_threshold?: number | null
+          markup_percentage?: number | null
           min_order_qty?: number | null
           name?: string | null
           pieces_per_case?: number | null
@@ -458,6 +462,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           fps_item_number?: string | null
+          fps_sales_price?: number | null
           height?: number | null
           id?: string
           item_number?: string | null
@@ -465,6 +470,7 @@ export type Database = {
           length?: number | null
           list_price?: number | null
           low_stock_threshold?: number | null
+          markup_percentage?: number | null
           min_order_qty?: number | null
           name?: string | null
           pieces_per_case?: number | null

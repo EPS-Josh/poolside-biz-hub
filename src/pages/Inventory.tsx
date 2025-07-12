@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Package } from "lucide-react";
@@ -51,6 +52,8 @@ interface InventoryItem {
   supplier_4_price: number | null;
   supplier_5_name: string | null;
   supplier_5_price: number | null;
+  fps_sales_price: number | null;
+  markup_percentage: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -116,6 +119,8 @@ const Inventory = () => {
         supplier_4_price: parseFloat(formData.get("supplier4Price") as string) || null,
         supplier_5_name: formData.get("supplier5Name") as string || null,
         supplier_5_price: parseFloat(formData.get("supplier5Price") as string) || null,
+        fps_sales_price: parseFloat(formData.get("fpsSalesPrice") as string) || null,
+        markup_percentage: parseFloat(formData.get("markupPercentage") as string) || null,
       });
 
       if (error) throw error;
@@ -174,6 +179,8 @@ const Inventory = () => {
         supplier_4_price: parseFloat(formData.get("supplier4Price") as string) || null,
         supplier_5_name: formData.get("supplier5Name") as string || null,
         supplier_5_price: parseFloat(formData.get("supplier5Price") as string) || null,
+        fps_sales_price: parseFloat(formData.get("fpsSalesPrice") as string) || null,
+        markup_percentage: parseFloat(formData.get("markupPercentage") as string) || null,
       }).eq("id", id);
 
       if (error) throw error;
@@ -429,7 +436,7 @@ const Inventory = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="listPrice">List Price</Label>
             <Input
@@ -462,6 +469,34 @@ const Inventory = () => {
               min="0"
               defaultValue={item?.cost_price || ""}
             />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="fpsSalesPrice">FPS Sales Price</Label>
+            <Input
+              id="fpsSalesPrice"
+              name="fpsSalesPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.fps_sales_price || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="markupPercentage">% Markup</Label>
+            <Select name="markupPercentage" defaultValue={item?.markup_percentage?.toString() || ""}>
+              <SelectTrigger className="bg-background">
+                <SelectValue placeholder="Select markup" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="1.2">1.2</SelectItem>
+                <SelectItem value="1.3">1.3</SelectItem>
+                <SelectItem value="1.4">1.4</SelectItem>
+                <SelectItem value="1.5">1.5</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="lowStockThreshold">Low Stock Alert</Label>
