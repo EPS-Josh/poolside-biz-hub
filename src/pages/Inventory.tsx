@@ -183,6 +183,34 @@ const Inventory = () => {
     },
   });
 
+  const deleteAllItemsMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
+      const { error } = await supabase
+        .from("inventory_items")
+        .delete()
+        .eq("user_id", user.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
+      toast({
+        title: "Success",
+        description: "All inventory items deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete inventory items",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>, isEdit: boolean = false) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -495,6 +523,15 @@ const Inventory = () => {
               <p className="text-muted-foreground">Track and manage your inventory items</p>
             </div>
             <div className="flex space-x-2">
+              {inventoryItems.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => deleteAllItemsMutation.mutate()}
+                  disabled={deleteAllItemsMutation.isPending}
+                >
+                  {deleteAllItemsMutation.isPending ? "Clearing..." : "Clear All"}
+                </Button>
+              )}
               <InventoryBulkUpload />
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
