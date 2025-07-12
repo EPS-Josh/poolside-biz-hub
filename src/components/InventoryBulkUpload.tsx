@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Upload, Download, FileText, CheckCircle, XCircle } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface UploadResult {
   success: number;
@@ -16,12 +18,66 @@ interface UploadResult {
   errors: string[];
 }
 
+interface ColumnMapping {
+  csvColumn: string;
+  dbField: string;
+}
+
+interface ParsedData {
+  headers: string[];
+  rows: string[][];
+}
+
 const InventoryBulkUpload = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [parsedData, setParsedData] = useState<ParsedData | null>(null);
+  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Database field options for mapping
+  const dbFields = [
+    { value: "", label: "Skip Column" },
+    { value: "fps_item_number", label: "FPS Item #" },
+    { value: "item_number", label: "MFG Item #" },
+    { value: "upc", label: "UPC" },
+    { value: "description", label: "Description" },
+    { value: "solution", label: "Solution" },
+    { value: "type", label: "Type" },
+    { value: "item_status", label: "Item Status" },
+    { value: "name", label: "Name" },
+    { value: "sku", label: "SKU" },
+    { value: "category", label: "Category" },
+    { value: "pieces_per_part", label: "Pieces Per Part" },
+    { value: "min_order_qty", label: "Min Order Qty" },
+    { value: "quantity_in_stock", label: "Quantity in Stock" },
+    { value: "pieces_per_case", label: "Pieces Per Case" },
+    { value: "pieces_per_pallet", label: "Pieces Per Pallet" },
+    { value: "list_price", label: "List Price" },
+    { value: "unit_price", label: "Unit Price" },
+    { value: "cost_price", label: "Cost Price" },
+    { value: "fps_sales_price", label: "FPS Sales Price" },
+    { value: "markup_percentage", label: "Markup Percentage" },
+    { value: "low_stock_threshold", label: "Low Stock Threshold" },
+    { value: "length", label: "Length" },
+    { value: "width", label: "Width" },
+    { value: "height", label: "Height" },
+    { value: "weight", label: "Weight" },
+    { value: "supplier_1_name", label: "Supplier 1 Name" },
+    { value: "supplier_1_price", label: "Supplier 1 Price" },
+    { value: "supplier_2_name", label: "Supplier 2 Name" },
+    { value: "supplier_2_price", label: "Supplier 2 Price" },
+    { value: "supplier_3_name", label: "Supplier 3 Name" },
+    { value: "supplier_3_price", label: "Supplier 3 Price" },
+    { value: "supplier_4_name", label: "Supplier 4 Name" },
+    { value: "supplier_4_price", label: "Supplier 4 Price" },
+    { value: "supplier_5_name", label: "Supplier 5 Name" },
+    { value: "supplier_5_price", label: "Supplier 5 Price" },
+    { value: "superseded_item", label: "Superseded Item" }
+  ];
 
   const downloadTemplate = () => {
     const headers = [
@@ -163,185 +219,139 @@ const InventoryBulkUpload = () => {
     });
   };
 
-  const parseCSV = (text: string): any[] => {
+  // Auto-suggest mapping based on header similarity
+  const suggestMapping = (csvHeader: string): string => {
+    const normalized = csvHeader.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Exact matches first
+    for (const field of dbFields) {
+      if (field.label.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized) {
+        return field.value;
+      }
+    }
+    
+    // Partial matches
+    for (const field of dbFields) {
+      const fieldNormalized = field.label.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (fieldNormalized.includes(normalized) || normalized.includes(fieldNormalized)) {
+        return field.value;
+      }
+    }
+    
+    return '';
+  };
+
+  const parseCSVForPreview = (text: string): ParsedData | null => {
     const lines = text.split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
+    if (lines.length < 2) return null;
 
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const items = [];
+    const rows = lines.slice(1).map(line => 
+      line.split(',').map(v => v.trim().replace(/"/g, ''))
+    );
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      const item: any = {};
+    return { headers, rows };
+  };
+
+  const processDataWithMapping = (): any[] => {
+    if (!parsedData) return [];
+    
+    const items = [];
+    for (const row of parsedData.rows) {
+      const item: any = { user_id: '' }; // Will be set during upload
       
-      headers.forEach((header, index) => {
-        const value = values[index] || '';
-        
-        // Map CSV headers to database field names
-        let fieldName = header;
-        switch (header) {
-          case 'FPS ITEM #':
-            fieldName = 'fps_item_number';
-            break;
-          case 'MFG ITEM #':
-            fieldName = 'item_number';
-            break;
-          case 'UPC':
-            fieldName = 'upc';
-            break;
-          case 'DESCRIPTION':
-            fieldName = 'description';
-            break;
-          case 'SOLUTION':
-            fieldName = 'solution';
-            break;
-          case 'TYPE':
-            fieldName = 'type';
-            break;
-          case 'ITEM STATUS':
-            fieldName = 'item_status';
-            break;
-          case 'NAME':
-            fieldName = 'name';
-            break;
-          case 'SKU':
-            fieldName = 'sku';
-            break;
-          case 'CATEGORY':
-            fieldName = 'category';
-            break;
-          case 'PIECES PER PART':
-            fieldName = 'pieces_per_part';
-            break;
-          case 'MIN ORDER QTY':
-            fieldName = 'min_order_qty';
-            break;
-          case 'QUANTITY IN STOCK':
-            fieldName = 'quantity_in_stock';
-            break;
-          case 'PIECES PER CASE':
-            fieldName = 'pieces_per_case';
-            break;
-          case 'PIECES PER PALLET':
-            fieldName = 'pieces_per_pallet';
-            break;
-          case 'LIST PRICE':
-            fieldName = 'list_price';
-            break;
-          case 'UNIT PRICE':
-            fieldName = 'unit_price';
-            break;
-          case 'COST PRICE':
-            fieldName = 'cost_price';
-            break;
-          case 'FPS SALES PRICE':
-            fieldName = 'fps_sales_price';
-            break;
-          case 'MARKUP PERCENTAGE':
-            fieldName = 'markup_percentage';
-            break;
-          case 'LOW STOCK THRESHOLD':
-            fieldName = 'low_stock_threshold';
-            break;
-          case 'LENGTH':
-            fieldName = 'length';
-            break;
-          case 'WIDTH':
-            fieldName = 'width';
-            break;
-          case 'HEIGHT':
-            fieldName = 'height';
-            break;
-          case 'WEIGHT':
-            fieldName = 'weight';
-            break;
-          case 'SUPPLIER 1 NAME':
-            fieldName = 'supplier_1_name';
-            break;
-          case 'SUPPLIER 1 PRICE':
-            fieldName = 'supplier_1_price';
-            break;
-          case 'SUPPLIER 2 NAME':
-            fieldName = 'supplier_2_name';
-            break;
-          case 'SUPPLIER 2 PRICE':
-            fieldName = 'supplier_2_price';
-            break;
-          case 'SUPPLIER 3 NAME':
-            fieldName = 'supplier_3_name';
-            break;
-          case 'SUPPLIER 3 PRICE':
-            fieldName = 'supplier_3_price';
-            break;
-          case 'SUPPLIER 4 NAME':
-            fieldName = 'supplier_4_name';
-            break;
-          case 'SUPPLIER 4 PRICE':
-            fieldName = 'supplier_4_price';
-            break;
-          case 'SUPPLIER 5 NAME':
-            fieldName = 'supplier_5_name';
-            break;
-          case 'SUPPLIER 5 PRICE':
-            fieldName = 'supplier_5_price';
-            break;
-          case 'SUPERSEDED ITEM':
-            fieldName = 'superseded_item';
-            break;
-        }
-        
-        // Parse values based on field type
-        switch (fieldName) {
-          case 'pieces_per_part':
-          case 'min_order_qty':
-          case 'pieces_per_case':
-          case 'pieces_per_pallet':
-          case 'low_stock_threshold':
-            item[fieldName] = value ? parseInt(value) || null : null;
-            break;
-          case 'quantity_in_stock':
-            item[fieldName] = value ? parseInt(value) || 0 : 0;
-            break;
-          case 'list_price':
-          case 'unit_price':
-          case 'cost_price':
-          case 'fps_sales_price':
-          case 'markup_percentage':
-          case 'supplier_1_price':
-          case 'supplier_2_price':
-          case 'supplier_3_price':
-          case 'supplier_4_price':
-          case 'supplier_5_price':
-          case 'length':
-          case 'width':
-          case 'height':
-          case 'weight':
-            item[fieldName] = value ? parseFloat(value) || null : null;
-            break;
-          default:
-            item[fieldName] = value || null;
+      columnMappings.forEach((mapping, index) => {
+        if (mapping.dbField && row[index] !== undefined) {
+          const value = row[index] || '';
+          
+          // Apply the same data type conversions as before
+          switch (mapping.dbField) {
+            case 'pieces_per_part':
+            case 'min_order_qty':
+            case 'pieces_per_case':
+            case 'pieces_per_pallet':
+            case 'low_stock_threshold':
+              item[mapping.dbField] = value ? parseInt(value) || null : null;
+              break;
+            case 'quantity_in_stock':
+              item[mapping.dbField] = value ? parseInt(value) || 0 : 0;
+              break;
+            case 'list_price':
+            case 'unit_price':
+            case 'cost_price':
+            case 'fps_sales_price':
+            case 'markup_percentage':
+            case 'length':
+            case 'width':
+            case 'height':
+            case 'weight':
+            case 'supplier_1_price':
+            case 'supplier_2_price':
+            case 'supplier_3_price':
+            case 'supplier_4_price':
+            case 'supplier_5_price':
+              item[mapping.dbField] = value ? parseFloat(value) || null : null;
+              break;
+            default:
+              item[mapping.dbField] = value || null;
+          }
         }
       });
-
-      if (item.item_number || item.description) {
-        items.push(item);
-      }
+      
+      items.push(item);
     }
 
     return items;
   };
 
-  const bulkUploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type === 'text/csv') {
+      setSelectedFile(file);
+      setUploadResult(null);
+      
+      // Parse file for preview
+      const text = await file.text();
+      const parsed = parseCSVForPreview(text);
+      
+      if (parsed) {
+        setParsedData(parsed);
+        
+        // Auto-suggest mappings
+        const mappings = parsed.headers.map(header => ({
+          csvColumn: header,
+          dbField: suggestMapping(header)
+        }));
+        setColumnMappings(mappings);
+        setShowPreview(true);
+      }
+    } else {
+      toast({
+        title: "Invalid File",
+        description: "Please select a CSV file",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateMapping = (index: number, dbField: string) => {
+    const updated = [...columnMappings];
+    updated[index].dbField = dbField;
+    setColumnMappings(updated);
+  };
+
+  const uploadMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedFile || !parsedData) throw new Error("No file selected or parsed");
+
+      const items = processDataWithMapping();
+
+      if (items.length === 0) {
+        throw new Error("No valid data found in CSV file");
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
-      const text = await file.text();
-      const items = parseCSV(text);
-      
-      if (items.length === 0) {
-        throw new Error("No valid items found in CSV file");
-      }
 
       const results: UploadResult = {
         success: 0,
@@ -398,33 +408,6 @@ const InventoryBulkUpload = () => {
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === 'text/csv') {
-      setSelectedFile(file);
-      setUploadResult(null);
-    } else {
-      toast({
-        title: "Invalid File",
-        description: "Please select a CSV file",
-        variant: "destructive",
-      });
-      e.target.value = '';
-    }
-  };
-
-  const handleUpload = () => {
-    if (selectedFile) {
-      bulkUploadMutation.mutate(selectedFile);
-    }
-  };
-
-  const resetUpload = () => {
-    setSelectedFile(null);
-    setUploadResult(null);
-    setIsDialogOpen(false);
-  };
-
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
@@ -433,120 +416,200 @@ const InventoryBulkUpload = () => {
           Bulk Upload
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bulk Upload Inventory Items</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <FileText className="mr-2 h-5 w-5" />
-                Download Template
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Download the CSV template with sample data to ensure your file has the correct format.
-              </p>
-              <Button onClick={downloadTemplate} variant="outline" className="w-full">
-                <Download className="mr-2 h-4 w-4" />
-                Download CSV Template
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="csvFile">Select CSV File</Label>
+              <Input
+                id="csvFile"
+                type="file"
+                accept=".csv"
+                onChange={handleFileSelect}
+                className="mt-1"
+              />
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center text-lg">
-                <Upload className="mr-2 h-5 w-5" />
-                Upload CSV File
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="csvFile">Select CSV File</Label>
-                <Input
-                  id="csvFile"
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileChange}
-                  className="cursor-pointer"
-                />
-              </div>
+            {selectedFile && (
+              <Alert>
+                <FileText className="h-4 w-4" />
+                <AlertDescription>
+                  Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
 
-              {selectedFile && (
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    File selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <div className="flex space-x-2">
+          {showPreview && parsedData && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Column Mapping</h3>
                 <Button 
-                  onClick={handleUpload} 
-                  disabled={!selectedFile || bulkUploadMutation.isPending}
-                  className="flex-1"
+                  onClick={() => {
+                    setShowPreview(false);
+                    setParsedData(null);
+                    setColumnMappings([]);
+                  }}
+                  variant="outline"
+                  size="sm"
                 >
-                  {bulkUploadMutation.isPending ? "Uploading..." : "Upload Items"}
-                </Button>
-                <Button onClick={resetUpload} variant="outline">
-                  Cancel
+                  Start Over
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+              
+              <Alert>
+                <AlertDescription>
+                  Map your CSV columns to database fields. Columns can be skipped if not needed.
+                </AlertDescription>
+              </Alert>
+
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>CSV Column</TableHead>
+                      <TableHead>Sample Data</TableHead>
+                      <TableHead></TableHead>
+                      <TableHead>Database Field</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {columnMappings.map((mapping, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {mapping.csvColumn}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {parsedData.rows[0]?.[index] || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={mapping.dbField}
+                            onValueChange={(value) => updateMapping(index, value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select field..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {dbFields.map((field) => (
+                                <SelectItem key={field.value} value={field.value}>
+                                  {field.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="bg-muted/30 rounded-lg p-4">
+                <h4 className="font-medium mb-2">Data Preview ({parsedData.rows.length} rows)</h4>
+                <div className="text-sm text-muted-foreground mb-2">
+                  Showing first 3 rows with current mapping:
+                </div>
+                <div className="border rounded-lg bg-background">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {columnMappings
+                          .filter(m => m.dbField)
+                          .map((mapping, index) => (
+                            <TableHead key={index} className="text-xs">
+                              {dbFields.find(f => f.value === mapping.dbField)?.label || mapping.dbField}
+                            </TableHead>
+                          ))
+                        }
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {parsedData.rows.slice(0, 3).map((row, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                          {columnMappings
+                            .filter(m => m.dbField)
+                            .map((mapping, colIndex) => {
+                              const originalIndex = columnMappings.findIndex(m => m === mapping);
+                              return (
+                                <TableCell key={colIndex} className="text-xs">
+                                  {row[originalIndex] || '—'}
+                                </TableCell>
+                              );
+                            })
+                          }
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Button 
+              onClick={downloadTemplate} 
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download Template
+            </Button>
+            
+            {selectedFile && showPreview && (
+              <Button 
+                onClick={() => uploadMutation.mutate()}
+                disabled={uploadMutation.isPending || !columnMappings.some(m => m.dbField)}
+                className="flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                {uploadMutation.isPending ? "Uploading..." : "Upload Data"}
+              </Button>
+            )}
+          </div>
 
           {uploadResult && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  {uploadResult.success > 0 ? (
-                    <CheckCircle className="mr-2 h-5 w-5 text-green-500" />
-                  ) : (
-                    <XCircle className="mr-2 h-5 w-5 text-red-500" />
-                  )}
-                  Upload Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <Alert className={uploadResult.failed === 0 ? "border-green-200 bg-green-50" : "border-yellow-200 bg-yellow-50"}>
+              {uploadResult.failed === 0 ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <XCircle className="h-4 w-4 text-yellow-600" />
+              )}
+              <AlertDescription>
                 <div className="space-y-2">
-                  <p className="text-sm">
-                    <span className="font-medium text-green-600">Success:</span> {uploadResult.success} items
-                  </p>
-                  {uploadResult.failed > 0 && (
-                    <p className="text-sm">
-                      <span className="font-medium text-red-600">Failed:</span> {uploadResult.failed} items
-                    </p>
-                  )}
-                  
+                  <div>
+                    Successfully uploaded: {uploadResult.success} items
+                    {uploadResult.failed > 0 && (
+                      <span className="text-red-600 ml-2">
+                        Failed: {uploadResult.failed} items
+                      </span>
+                    )}
+                  </div>
                   {uploadResult.errors.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm font-medium text-red-600 mb-2">Errors:</p>
-                      <div className="max-h-32 overflow-y-auto space-y-1">
-                        {uploadResult.errors.map((error, index) => (
-                          <p key={index} className="text-xs text-red-500 bg-red-50 p-2 rounded">
-                            {error}
-                          </p>
+                    <div className="text-sm text-red-600">
+                      <div className="font-medium">Errors:</div>
+                      <ul className="list-disc list-inside space-y-1">
+                        {uploadResult.errors.slice(0, 5).map((error, index) => (
+                          <li key={index}>{error}</li>
                         ))}
-                      </div>
+                        {uploadResult.errors.length > 5 && (
+                          <li>... and {uploadResult.errors.length - 5} more errors</li>
+                        )}
+                      </ul>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </AlertDescription>
+            </Alert>
           )}
-
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p><strong>CSV Format Requirements:</strong></p>
-            <p>• First row must contain column headers exactly as shown in template</p>
-            <p>• Required: Either ITEM # or DESCRIPTION</p>
-            <p>• All other columns are optional</p>
-            <p>• Numbers should not contain currency symbols or commas</p>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
