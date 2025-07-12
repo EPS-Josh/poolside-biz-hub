@@ -501,7 +501,7 @@ const Inventory = () => {
                     Add Item
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
                   <DialogHeader>
                     <DialogTitle>Add New Inventory Item</DialogTitle>
                   </DialogHeader>
@@ -594,7 +594,7 @@ const Inventory = () => {
 
         {/* Edit Dialog */}
         <Dialog open={!!editingItem} onOpenChange={() => setEditingItem(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
             <DialogHeader>
               <DialogTitle>Edit Inventory Item</DialogTitle>
             </DialogHeader>
