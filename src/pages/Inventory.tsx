@@ -285,7 +285,7 @@ const Inventory = () => {
         
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="itemNumber">Item #</Label>
+            <Label htmlFor="itemNumber">MFG Item #</Label>
             <Input
               id="itemNumber"
               name="itemNumber"
