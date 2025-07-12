@@ -40,7 +40,7 @@ const InventoryBulkUpload = () => {
 
   // Database field options for mapping
   const dbFields = [
-    { value: "", label: "Skip Column" },
+    { value: "skip", label: "Skip Column" },
     { value: "fps_item_number", label: "FPS Item #" },
     { value: "item_number", label: "MFG Item #" },
     { value: "upc", label: "UPC" },
@@ -238,7 +238,7 @@ const InventoryBulkUpload = () => {
       }
     }
     
-    return '';
+    return 'skip';
   };
 
   const parseCSVForPreview = (text: string): ParsedData | null => {
@@ -261,7 +261,7 @@ const InventoryBulkUpload = () => {
       const item: any = { user_id: '' }; // Will be set during upload
       
       columnMappings.forEach((mapping, index) => {
-        if (mapping.dbField && row[index] !== undefined) {
+        if (mapping.dbField && mapping.dbField !== 'skip' && row[index] !== undefined) {
           const value = row[index] || '';
           
           // Apply the same data type conversions as before
@@ -522,7 +522,7 @@ const InventoryBulkUpload = () => {
                     <TableHeader>
                       <TableRow>
                         {columnMappings
-                          .filter(m => m.dbField)
+                          .filter(m => m.dbField && m.dbField !== 'skip')
                           .map((mapping, index) => (
                             <TableHead key={index} className="text-xs">
                               {dbFields.find(f => f.value === mapping.dbField)?.label || mapping.dbField}
@@ -535,7 +535,7 @@ const InventoryBulkUpload = () => {
                       {parsedData.rows.slice(0, 3).map((row, rowIndex) => (
                         <TableRow key={rowIndex}>
                           {columnMappings
-                            .filter(m => m.dbField)
+                            .filter(m => m.dbField && m.dbField !== 'skip')
                             .map((mapping, colIndex) => {
                               const originalIndex = columnMappings.findIndex(m => m === mapping);
                               return (
@@ -567,7 +567,7 @@ const InventoryBulkUpload = () => {
             {selectedFile && showPreview && (
               <Button 
                 onClick={() => uploadMutation.mutate()}
-                disabled={uploadMutation.isPending || !columnMappings.some(m => m.dbField)}
+                disabled={uploadMutation.isPending || !columnMappings.some(m => m.dbField && m.dbField !== 'skip')}
                 className="flex items-center gap-2"
               >
                 <Upload className="h-4 w-4" />
