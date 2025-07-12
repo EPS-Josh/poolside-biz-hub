@@ -41,6 +41,16 @@ interface InventoryItem {
   width: number | null;
   height: number | null;
   weight: number | null;
+  supplier_1_name: string | null;
+  supplier_1_price: number | null;
+  supplier_2_name: string | null;
+  supplier_2_price: number | null;
+  supplier_3_name: string | null;
+  supplier_3_price: number | null;
+  supplier_4_name: string | null;
+  supplier_4_price: number | null;
+  supplier_5_name: string | null;
+  supplier_5_price: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -96,6 +106,16 @@ const Inventory = () => {
         unit_price: parseFloat(formData.get("unitPrice") as string) || null,
         cost_price: parseFloat(formData.get("costPrice") as string) || null,
         low_stock_threshold: parseInt(formData.get("lowStockThreshold") as string) || 10,
+        supplier_1_name: formData.get("supplier1Name") as string || null,
+        supplier_1_price: parseFloat(formData.get("supplier1Price") as string) || null,
+        supplier_2_name: formData.get("supplier2Name") as string || null,
+        supplier_2_price: parseFloat(formData.get("supplier2Price") as string) || null,
+        supplier_3_name: formData.get("supplier3Name") as string || null,
+        supplier_3_price: parseFloat(formData.get("supplier3Price") as string) || null,
+        supplier_4_name: formData.get("supplier4Name") as string || null,
+        supplier_4_price: parseFloat(formData.get("supplier4Price") as string) || null,
+        supplier_5_name: formData.get("supplier5Name") as string || null,
+        supplier_5_price: parseFloat(formData.get("supplier5Price") as string) || null,
       });
 
       if (error) throw error;
@@ -144,6 +164,16 @@ const Inventory = () => {
         unit_price: parseFloat(formData.get("unitPrice") as string) || null,
         cost_price: parseFloat(formData.get("costPrice") as string) || null,
         low_stock_threshold: parseInt(formData.get("lowStockThreshold") as string) || 10,
+        supplier_1_name: formData.get("supplier1Name") as string || null,
+        supplier_1_price: parseFloat(formData.get("supplier1Price") as string) || null,
+        supplier_2_name: formData.get("supplier2Name") as string || null,
+        supplier_2_price: parseFloat(formData.get("supplier2Price") as string) || null,
+        supplier_3_name: formData.get("supplier3Name") as string || null,
+        supplier_3_price: parseFloat(formData.get("supplier3Price") as string) || null,
+        supplier_4_name: formData.get("supplier4Name") as string || null,
+        supplier_4_price: parseFloat(formData.get("supplier4Price") as string) || null,
+        supplier_5_name: formData.get("supplier5Name") as string || null,
+        supplier_5_price: parseFloat(formData.get("supplier5Price") as string) || null,
       }).eq("id", id);
 
       if (error) throw error;
@@ -244,21 +274,22 @@ const Inventory = () => {
       {/* Basic Info */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Basic Information</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="fpsItemNumber">FPS Item #</Label>
+          <Input
+            id="fpsItemNumber"
+            name="fpsItemNumber"
+            defaultValue={item?.fps_item_number || ""}
+          />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="itemNumber">Item #</Label>
             <Input
               id="itemNumber"
               name="itemNumber"
               defaultValue={item?.item_number || ""}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fpsItemNumber">FPS Item #</Label>
-            <Input
-              id="fpsItemNumber"
-              name="fpsItemNumber"
-              defaultValue={item?.fps_item_number || ""}
             />
           </div>
           <div className="space-y-2">
@@ -494,6 +525,34 @@ const Inventory = () => {
             />
           </div>
         </div>
+      </div>
+
+      {/* Suppliers */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Suppliers</h3>
+        {[1, 2, 3, 4, 5].map((num) => (
+          <div key={num} className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor={`supplier${num}Name`}>Supplier {num} Name</Label>
+              <Input
+                id={`supplier${num}Name`}
+                name={`supplier${num}Name`}
+                defaultValue={item?.[`supplier_${num}_name` as keyof InventoryItem] as string || ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`supplier${num}Price`}>Supplier {num} List Price</Label>
+              <Input
+                id={`supplier${num}Price`}
+                name={`supplier${num}Price`}
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={item?.[`supplier_${num}_price` as keyof InventoryItem] as number || ""}
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Other */}

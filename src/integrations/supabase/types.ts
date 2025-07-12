@@ -394,6 +394,16 @@ export type Database = {
           sku: string | null
           solution: string | null
           superseded_item: string | null
+          supplier_1_name: string | null
+          supplier_1_price: number | null
+          supplier_2_name: string | null
+          supplier_2_price: number | null
+          supplier_3_name: string | null
+          supplier_3_price: number | null
+          supplier_4_name: string | null
+          supplier_4_price: number | null
+          supplier_5_name: string | null
+          supplier_5_price: number | null
           type: string | null
           unit_price: number | null
           upc: string | null
@@ -424,6 +434,16 @@ export type Database = {
           sku?: string | null
           solution?: string | null
           superseded_item?: string | null
+          supplier_1_name?: string | null
+          supplier_1_price?: number | null
+          supplier_2_name?: string | null
+          supplier_2_price?: number | null
+          supplier_3_name?: string | null
+          supplier_3_price?: number | null
+          supplier_4_name?: string | null
+          supplier_4_price?: number | null
+          supplier_5_name?: string | null
+          supplier_5_price?: number | null
           type?: string | null
           unit_price?: number | null
           upc?: string | null
@@ -454,6 +474,16 @@ export type Database = {
           sku?: string | null
           solution?: string | null
           superseded_item?: string | null
+          supplier_1_name?: string | null
+          supplier_1_price?: number | null
+          supplier_2_name?: string | null
+          supplier_2_price?: number | null
+          supplier_3_name?: string | null
+          supplier_3_price?: number | null
+          supplier_4_name?: string | null
+          supplier_4_price?: number | null
+          supplier_5_name?: string | null
+          supplier_5_price?: number | null
           type?: string | null
           unit_price?: number | null
           upc?: string | null
