@@ -17,7 +17,7 @@ import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 
 interface InventoryItem {
   id: string;
-  name: string;
+  name: string | null;
   description: string | null;
   sku: string | null;
   category: string | null;
@@ -25,6 +25,21 @@ interface InventoryItem {
   unit_price: number | null;
   cost_price: number | null;
   low_stock_threshold: number;
+  item_number: string | null;
+  solution: string | null;
+  type: string | null;
+  pieces_per_part: number | null;
+  min_order_qty: number | null;
+  item_status: string | null;
+  list_price: number | null;
+  upc: string | null;
+  superseded_item: string | null;
+  pieces_per_case: number | null;
+  pieces_per_pallet: number | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  weight: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,8 +71,23 @@ const Inventory = () => {
 
       const { error } = await supabase.from("inventory_items").insert({
         user_id: user.id,
-        name: formData.get("name") as string,
+        item_number: formData.get("itemNumber") as string || null,
+        name: formData.get("name") as string || null,
         description: formData.get("description") as string || null,
+        solution: formData.get("solution") as string || null,
+        type: formData.get("type") as string || null,
+        pieces_per_part: parseInt(formData.get("piecesPerPart") as string) || null,
+        min_order_qty: parseInt(formData.get("minOrderQty") as string) || null,
+        item_status: formData.get("itemStatus") as string || null,
+        list_price: parseFloat(formData.get("listPrice") as string) || null,
+        upc: formData.get("upc") as string || null,
+        superseded_item: formData.get("supersededItem") as string || null,
+        pieces_per_case: parseInt(formData.get("piecesPerCase") as string) || null,
+        pieces_per_pallet: parseInt(formData.get("piecesPerPallet") as string) || null,
+        length: parseFloat(formData.get("length") as string) || null,
+        width: parseFloat(formData.get("width") as string) || null,
+        height: parseFloat(formData.get("height") as string) || null,
+        weight: parseFloat(formData.get("weight") as string) || null,
         sku: formData.get("sku") as string || null,
         category: formData.get("category") as string || null,
         quantity_in_stock: parseInt(formData.get("quantity") as string) || 0,
@@ -88,8 +118,23 @@ const Inventory = () => {
   const updateItemMutation = useMutation({
     mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
       const { error } = await supabase.from("inventory_items").update({
-        name: formData.get("name") as string,
+        item_number: formData.get("itemNumber") as string || null,
+        name: formData.get("name") as string || null,
         description: formData.get("description") as string || null,
+        solution: formData.get("solution") as string || null,
+        type: formData.get("type") as string || null,
+        pieces_per_part: parseInt(formData.get("piecesPerPart") as string) || null,
+        min_order_qty: parseInt(formData.get("minOrderQty") as string) || null,
+        item_status: formData.get("itemStatus") as string || null,
+        list_price: parseFloat(formData.get("listPrice") as string) || null,
+        upc: formData.get("upc") as string || null,
+        superseded_item: formData.get("supersededItem") as string || null,
+        pieces_per_case: parseInt(formData.get("piecesPerCase") as string) || null,
+        pieces_per_pallet: parseInt(formData.get("piecesPerPallet") as string) || null,
+        length: parseFloat(formData.get("length") as string) || null,
+        width: parseFloat(formData.get("width") as string) || null,
+        height: parseFloat(formData.get("height") as string) || null,
+        weight: parseFloat(formData.get("weight") as string) || null,
         sku: formData.get("sku") as string || null,
         category: formData.get("category") as string || null,
         quantity_in_stock: parseInt(formData.get("quantity") as string) || 0,
@@ -162,37 +207,87 @@ const Inventory = () => {
   };
 
   const ItemForm = ({ item }: { item?: InventoryItem }) => (
-    <form onSubmit={(e) => handleSubmit(e, !!item)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <form onSubmit={(e) => handleSubmit(e, !!item)} className="space-y-6 max-h-[70vh] overflow-y-auto">
+      {/* Basic Info */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Basic Information</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="itemNumber">Item #</Label>
+            <Input
+              id="itemNumber"
+              name="itemNumber"
+              defaultValue={item?.item_number || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="upc">UPC</Label>
+            <Input
+              id="upc"
+              name="upc"
+              defaultValue={item?.upc || ""}
+            />
+          </div>
+        </div>
+        
         <div className="space-y-2">
-          <Label htmlFor="name">Name *</Label>
-          <Input
-            id="name"
-            name="name"
-            defaultValue={item?.name || ""}
-            required
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            name="description"
+            defaultValue={item?.description || ""}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="sku">SKU</Label>
-          <Input
-            id="sku"
-            name="sku"
-            defaultValue={item?.sku || ""}
-          />
+        
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="solution">Solution</Label>
+            <Input
+              id="solution"
+              name="solution"
+              defaultValue={item?.solution || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="type">Type</Label>
+            <Input
+              id="type"
+              name="type"
+              defaultValue={item?.type || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="itemStatus">Item Status</Label>
+            <Input
+              id="itemStatus"
+              name="itemStatus"
+              defaultValue={item?.item_status || ""}
+            />
+          </div>
         </div>
       </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          name="description"
-          defaultValue={item?.description || ""}
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
+
+      {/* Legacy Fields */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Legacy Fields</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              defaultValue={item?.name || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sku">SKU</Label>
+            <Input
+              id="sku"
+              name="sku"
+              defaultValue={item?.sku || ""}
+            />
+          </div>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Input
@@ -201,55 +296,179 @@ const Inventory = () => {
             defaultValue={item?.category || ""}
           />
         </div>
+      </div>
+
+      {/* Quantities & Pricing */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Quantities & Pricing</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="piecesPerPart">Pieces per Part</Label>
+            <Input
+              id="piecesPerPart"
+              name="piecesPerPart"
+              type="number"
+              min="0"
+              defaultValue={item?.pieces_per_part || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="minOrderQty">Min Order Qty</Label>
+            <Input
+              id="minOrderQty"
+              name="minOrderQty"
+              type="number"
+              min="0"
+              defaultValue={item?.min_order_qty || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Quantity in Stock</Label>
+            <Input
+              id="quantity"
+              name="quantity"
+              type="number"
+              min="0"
+              defaultValue={item?.quantity_in_stock || 0}
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="piecesPerCase">Pieces per Case</Label>
+            <Input
+              id="piecesPerCase"
+              name="piecesPerCase"
+              type="number"
+              min="0"
+              defaultValue={item?.pieces_per_case || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="piecesPerPallet">Pieces per Pallet</Label>
+            <Input
+              id="piecesPerPallet"
+              name="piecesPerPallet"
+              type="number"
+              min="0"
+              defaultValue={item?.pieces_per_pallet || ""}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="listPrice">List Price</Label>
+            <Input
+              id="listPrice"
+              name="listPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.list_price || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="unitPrice">Unit Price</Label>
+            <Input
+              id="unitPrice"
+              name="unitPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.unit_price || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="costPrice">Cost Price</Label>
+            <Input
+              id="costPrice"
+              name="costPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.cost_price || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lowStockThreshold">Low Stock Alert</Label>
+            <Input
+              id="lowStockThreshold"
+              name="lowStockThreshold"
+              type="number"
+              min="0"
+              defaultValue={item?.low_stock_threshold || 10}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Physical Properties */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Physical Properties</h3>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="length">Length</Label>
+            <Input
+              id="length"
+              name="length"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.length || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="width">Width</Label>
+            <Input
+              id="width"
+              name="width"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.width || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="height">Height</Label>
+            <Input
+              id="height"
+              name="height"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.height || ""}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="weight">Weight</Label>
+            <Input
+              id="weight"
+              name="weight"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={item?.weight || ""}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Other */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Other</h3>
         <div className="space-y-2">
-          <Label htmlFor="quantity">Quantity *</Label>
+          <Label htmlFor="supersededItem">Superseded Item</Label>
           <Input
-            id="quantity"
-            name="quantity"
-            type="number"
-            min="0"
-            defaultValue={item?.quantity_in_stock || 0}
-            required
+            id="supersededItem"
+            name="supersededItem"
+            defaultValue={item?.superseded_item || ""}
           />
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="unitPrice">Unit Price</Label>
-          <Input
-            id="unitPrice"
-            name="unitPrice"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={item?.unit_price || ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="costPrice">Cost Price</Label>
-          <Input
-            id="costPrice"
-            name="costPrice"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={item?.cost_price || ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="lowStockThreshold">Low Stock Alert</Label>
-          <Input
-            id="lowStockThreshold"
-            name="lowStockThreshold"
-            type="number"
-            min="0"
-            defaultValue={item?.low_stock_threshold || 10}
-          />
-        </div>
-      </div>
-      
-      <div className="flex justify-end space-x-2">
+      <div className="flex justify-end space-x-2 pt-4 border-t">
         <Button type="button" variant="outline" onClick={() => {
           setIsAddDialogOpen(false);
           setEditingItem(null);
