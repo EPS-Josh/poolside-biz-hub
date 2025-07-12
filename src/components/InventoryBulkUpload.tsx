@@ -25,63 +25,120 @@ const InventoryBulkUpload = () => {
 
   const downloadTemplate = () => {
     const headers = [
-      'ITEM #',
       'FPS ITEM #',
+      'MFG ITEM #',
+      'UPC',
       'DESCRIPTION',
       'SOLUTION',
       'TYPE',
+      'ITEM STATUS',
+      'NAME',
+      'SKU',
+      'CATEGORY',
       'PIECES PER PART',
       'MIN ORDER QTY',
-      'ITEM STATUS',
-      'LIST PRICE',
-      'UPC',
-      'SUPERSEDED ITEM',
+      'QUANTITY IN STOCK',
       'PIECES PER CASE',
       'PIECES PER PALLET',
+      'LIST PRICE',
+      'UNIT PRICE',
+      'COST PRICE',
+      'FPS SALES PRICE',
+      'MARKUP PERCENTAGE',
+      'LOW STOCK THRESHOLD',
       'LENGTH',
       'WIDTH',
       'HEIGHT',
-      'WEIGHT'
+      'WEIGHT',
+      'SUPPLIER 1 NAME',
+      'SUPPLIER 1 PRICE',
+      'SUPPLIER 2 NAME',
+      'SUPPLIER 2 PRICE',
+      'SUPPLIER 3 NAME',
+      'SUPPLIER 3 PRICE',
+      'SUPPLIER 4 NAME',
+      'SUPPLIER 4 PRICE',
+      'SUPPLIER 5 NAME',
+      'SUPPLIER 5 PRICE',
+      'SUPERSEDED ITEM'
     ];
     
     const sampleData = [
       [
-        'CHT-001',
         'FPS-CHT-001',
+        'CHT-001',
+        '123456789012',
         'Fast-dissolving chlorine tablets for pool sanitation',
         'Pool Maintenance',
         'Chemical',
+        'Active',
+        'Chlorine Tablets',
+        'CHT-001-SKU',
+        'Pool Chemicals',
         '1',
         '10',
-        'Active',
-        '29.99',
-        '123456789012',
-        '',
+        '50',
         '24',
         '48',
+        '29.99',
+        '24.99',
+        '18.50',
+        '27.99',
+        '1.3',
+        '10',
         '12.5',
         '8.0',
         '6.0',
-        '25.5'
+        '25.5',
+        'Supplier ABC',
+        '22.00',
+        'Supplier XYZ',
+        '21.50',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
       ],
       [
-        'PB-002',
         'FPS-PB-002',
+        'PB-002',
+        '987654321098',
         'Heavy-duty pool cleaning brush',
         'Cleaning Equipment',
         'Tool',
+        'Active',
+        'Pool Brush',
+        'PB-002-SKU',
+        'Pool Equipment',
         '1',
         '5',
-        'Active',
-        '24.99',
-        '987654321098',
-        '',
+        '25',
         '12',
         '24',
+        '24.99',
+        '19.99',
+        '15.00',
+        '22.49',
+        '1.4',
+        '5',
         '18.0',
         '6.0',
         '3.0',
-        '2.5'
+        '2.5',
+        'Supplier DEF',
+        '18.00',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        ''
       ]
     ];
 
@@ -123,11 +180,14 @@ const InventoryBulkUpload = () => {
         // Map CSV headers to database field names
         let fieldName = header;
         switch (header) {
-          case 'ITEM #':
-            fieldName = 'item_number';
-            break;
           case 'FPS ITEM #':
             fieldName = 'fps_item_number';
+            break;
+          case 'MFG ITEM #':
+            fieldName = 'item_number';
+            break;
+          case 'UPC':
+            fieldName = 'upc';
             break;
           case 'DESCRIPTION':
             fieldName = 'description';
@@ -138,29 +198,50 @@ const InventoryBulkUpload = () => {
           case 'TYPE':
             fieldName = 'type';
             break;
+          case 'ITEM STATUS':
+            fieldName = 'item_status';
+            break;
+          case 'NAME':
+            fieldName = 'name';
+            break;
+          case 'SKU':
+            fieldName = 'sku';
+            break;
+          case 'CATEGORY':
+            fieldName = 'category';
+            break;
           case 'PIECES PER PART':
             fieldName = 'pieces_per_part';
             break;
           case 'MIN ORDER QTY':
             fieldName = 'min_order_qty';
             break;
-          case 'ITEM STATUS':
-            fieldName = 'item_status';
-            break;
-          case 'LIST PRICE':
-            fieldName = 'list_price';
-            break;
-          case 'UPC':
-            fieldName = 'upc';
-            break;
-          case 'SUPERSEDED ITEM':
-            fieldName = 'superseded_item';
+          case 'QUANTITY IN STOCK':
+            fieldName = 'quantity_in_stock';
             break;
           case 'PIECES PER CASE':
             fieldName = 'pieces_per_case';
             break;
           case 'PIECES PER PALLET':
             fieldName = 'pieces_per_pallet';
+            break;
+          case 'LIST PRICE':
+            fieldName = 'list_price';
+            break;
+          case 'UNIT PRICE':
+            fieldName = 'unit_price';
+            break;
+          case 'COST PRICE':
+            fieldName = 'cost_price';
+            break;
+          case 'FPS SALES PRICE':
+            fieldName = 'fps_sales_price';
+            break;
+          case 'MARKUP PERCENTAGE':
+            fieldName = 'markup_percentage';
+            break;
+          case 'LOW STOCK THRESHOLD':
+            fieldName = 'low_stock_threshold';
             break;
           case 'LENGTH':
             fieldName = 'length';
@@ -174,17 +255,61 @@ const InventoryBulkUpload = () => {
           case 'WEIGHT':
             fieldName = 'weight';
             break;
+          case 'SUPPLIER 1 NAME':
+            fieldName = 'supplier_1_name';
+            break;
+          case 'SUPPLIER 1 PRICE':
+            fieldName = 'supplier_1_price';
+            break;
+          case 'SUPPLIER 2 NAME':
+            fieldName = 'supplier_2_name';
+            break;
+          case 'SUPPLIER 2 PRICE':
+            fieldName = 'supplier_2_price';
+            break;
+          case 'SUPPLIER 3 NAME':
+            fieldName = 'supplier_3_name';
+            break;
+          case 'SUPPLIER 3 PRICE':
+            fieldName = 'supplier_3_price';
+            break;
+          case 'SUPPLIER 4 NAME':
+            fieldName = 'supplier_4_name';
+            break;
+          case 'SUPPLIER 4 PRICE':
+            fieldName = 'supplier_4_price';
+            break;
+          case 'SUPPLIER 5 NAME':
+            fieldName = 'supplier_5_name';
+            break;
+          case 'SUPPLIER 5 PRICE':
+            fieldName = 'supplier_5_price';
+            break;
+          case 'SUPERSEDED ITEM':
+            fieldName = 'superseded_item';
+            break;
         }
         
         // Parse values based on field type
         switch (fieldName) {
           case 'pieces_per_part':
           case 'min_order_qty':
+          case 'quantity_in_stock':
           case 'pieces_per_case':
           case 'pieces_per_pallet':
+          case 'low_stock_threshold':
             item[fieldName] = value ? parseInt(value) || null : null;
             break;
           case 'list_price':
+          case 'unit_price':
+          case 'cost_price':
+          case 'fps_sales_price':
+          case 'markup_percentage':
+          case 'supplier_1_price':
+          case 'supplier_2_price':
+          case 'supplier_3_price':
+          case 'supplier_4_price':
+          case 'supplier_5_price':
           case 'length':
           case 'width':
           case 'height':
