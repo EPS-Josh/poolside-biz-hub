@@ -195,9 +195,11 @@ const Inventory = () => {
   };
 
   const filteredItems = inventoryItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.item_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStockStatus = (item: InventoryItem) => {
