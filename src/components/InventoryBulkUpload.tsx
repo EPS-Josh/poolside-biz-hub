@@ -265,35 +265,21 @@ const InventoryBulkUpload = () => {
           const value = row[index] || '';
           
           // Apply the same data type conversions as before
-          switch (mapping.dbField) {
-            case 'pieces_per_part':
-            case 'min_order_qty':
-            case 'pieces_per_case':
-            case 'pieces_per_pallet':
-            case 'low_stock_threshold':
-              item[mapping.dbField] = value ? parseInt(value) || null : null;
-              break;
-            case 'quantity_in_stock':
-              item[mapping.dbField] = value ? parseInt(value) || 0 : 0;
-              break;
-            case 'list_price':
-            case 'unit_price':
-            case 'cost_price':
-            case 'fps_sales_price':
-            case 'markup_percentage':
-            case 'length':
-            case 'width':
-            case 'height':
-            case 'weight':
-            case 'supplier_1_price':
-            case 'supplier_2_price':
-            case 'supplier_3_price':
-            case 'supplier_4_price':
-            case 'supplier_5_price':
-              item[mapping.dbField] = value ? parseFloat(value) || null : null;
-              break;
-            default:
-              item[mapping.dbField] = value || null;
+          if (mapping.dbField === 'quantity_in_stock') {
+            // quantity_in_stock is required (NOT NULL), default to 0 for empty values
+            const numValue = parseInt(value);
+            item[mapping.dbField] = isNaN(numValue) ? 0 : numValue;
+          } else if (['pieces_per_part', 'min_order_qty', 'pieces_per_case', 'pieces_per_pallet', 'low_stock_threshold'].includes(mapping.dbField)) {
+            // Other integer fields can be null
+            const numValue = parseInt(value);
+            item[mapping.dbField] = isNaN(numValue) ? null : numValue;
+          } else if (['list_price', 'unit_price', 'cost_price', 'fps_sales_price', 'markup_percentage', 'length', 'width', 'height', 'weight', 'supplier_1_price', 'supplier_2_price', 'supplier_3_price', 'supplier_4_price', 'supplier_5_price'].includes(mapping.dbField)) {
+            // Numeric fields can be null
+            const numValue = parseFloat(value);
+            item[mapping.dbField] = isNaN(numValue) ? null : numValue;
+          } else {
+            // Text fields
+            item[mapping.dbField] = value || null;
           }
         }
       });
