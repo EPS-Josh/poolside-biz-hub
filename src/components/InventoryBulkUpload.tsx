@@ -25,36 +25,60 @@ const InventoryBulkUpload = () => {
 
   const downloadTemplate = () => {
     const headers = [
-      'name',
-      'description', 
-      'sku',
-      'category',
-      'quantity_in_stock',
-      'unit_price',
-      'cost_price',
-      'low_stock_threshold'
+      'ITEM #',
+      'DESCRIPTION',
+      'SOLUTION',
+      'TYPE',
+      'PIECES PER PART',
+      'MIN ORDER QTY',
+      'ITEM STATUS',
+      'LIST PRICE',
+      'UPC',
+      'SUPERSEDED ITEM',
+      'PIECES PER CASE',
+      'PIECES PER PALLET',
+      'LENGTH',
+      'WIDTH',
+      'HEIGHT',
+      'WEIGHT'
     ];
     
     const sampleData = [
       [
-        'Pool Chlorine Tablets',
-        'Fast-dissolving chlorine tablets for pool sanitation',
         'CHT-001',
-        'Chemicals',
-        '100',
+        'Fast-dissolving chlorine tablets for pool sanitation',
+        'Pool Maintenance',
+        'Chemical',
+        '1',
+        '10',
+        'Active',
         '29.99',
-        '18.50',
-        '20'
+        '123456789012',
+        '',
+        '24',
+        '48',
+        '12.5',
+        '8.0',
+        '6.0',
+        '25.5'
       ],
       [
-        'Pool Brush',
-        'Heavy-duty pool cleaning brush',
         'PB-002',
-        'Equipment',
-        '15',
+        'Heavy-duty pool cleaning brush',
+        'Cleaning Equipment',
+        'Tool',
+        '1',
+        '5',
+        'Active',
         '24.99',
-        '12.00',
-        '5'
+        '987654321098',
+        '',
+        '12',
+        '24',
+        '18.0',
+        '6.0',
+        '3.0',
+        '2.5'
       ]
     ];
 
@@ -93,29 +117,80 @@ const InventoryBulkUpload = () => {
       headers.forEach((header, index) => {
         const value = values[index] || '';
         
+        // Map CSV headers to database field names
+        let fieldName = header;
         switch (header) {
-          case 'quantity_in_stock':
-          case 'low_stock_threshold':
-            item[header] = value ? parseInt(value) || 0 : 0;
+          case 'ITEM #':
+            fieldName = 'item_number';
             break;
-          case 'unit_price':
-          case 'cost_price':
-            item[header] = value ? parseFloat(value) || null : null;
+          case 'DESCRIPTION':
+            fieldName = 'description';
             break;
-          case 'name':
-            item[header] = value;
+          case 'SOLUTION':
+            fieldName = 'solution';
             break;
-          case 'description':
-          case 'sku':
-          case 'category':
-            item[header] = value || null;
+          case 'TYPE':
+            fieldName = 'type';
+            break;
+          case 'PIECES PER PART':
+            fieldName = 'pieces_per_part';
+            break;
+          case 'MIN ORDER QTY':
+            fieldName = 'min_order_qty';
+            break;
+          case 'ITEM STATUS':
+            fieldName = 'item_status';
+            break;
+          case 'LIST PRICE':
+            fieldName = 'list_price';
+            break;
+          case 'UPC':
+            fieldName = 'upc';
+            break;
+          case 'SUPERSEDED ITEM':
+            fieldName = 'superseded_item';
+            break;
+          case 'PIECES PER CASE':
+            fieldName = 'pieces_per_case';
+            break;
+          case 'PIECES PER PALLET':
+            fieldName = 'pieces_per_pallet';
+            break;
+          case 'LENGTH':
+            fieldName = 'length';
+            break;
+          case 'WIDTH':
+            fieldName = 'width';
+            break;
+          case 'HEIGHT':
+            fieldName = 'height';
+            break;
+          case 'WEIGHT':
+            fieldName = 'weight';
+            break;
+        }
+        
+        // Parse values based on field type
+        switch (fieldName) {
+          case 'pieces_per_part':
+          case 'min_order_qty':
+          case 'pieces_per_case':
+          case 'pieces_per_pallet':
+            item[fieldName] = value ? parseInt(value) || null : null;
+            break;
+          case 'list_price':
+          case 'length':
+          case 'width':
+          case 'height':
+          case 'weight':
+            item[fieldName] = value ? parseFloat(value) || null : null;
             break;
           default:
-            item[header] = value || null;
+            item[fieldName] = value || null;
         }
       });
 
-      if (item.name) {
+      if (item.item_number || item.description) {
         items.push(item);
       }
     }
@@ -334,9 +409,9 @@ const InventoryBulkUpload = () => {
 
           <div className="text-xs text-muted-foreground space-y-1">
             <p><strong>CSV Format Requirements:</strong></p>
-            <p>• First row must contain column headers</p>
-            <p>• Required column: name</p>
-            <p>• Optional columns: description, sku, category, quantity_in_stock, unit_price, cost_price, low_stock_threshold</p>
+            <p>• First row must contain column headers exactly as shown in template</p>
+            <p>• Required: Either ITEM # or DESCRIPTION</p>
+            <p>• All other columns are optional</p>
             <p>• Numbers should not contain currency symbols or commas</p>
           </div>
         </div>

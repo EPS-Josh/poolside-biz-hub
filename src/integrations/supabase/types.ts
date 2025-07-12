@@ -377,42 +377,87 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string | null
+          height: number | null
           id: string
+          item_number: string | null
+          item_status: string | null
+          length: number | null
+          list_price: number | null
           low_stock_threshold: number | null
-          name: string
+          min_order_qty: number | null
+          name: string | null
+          pieces_per_case: number | null
+          pieces_per_pallet: number | null
+          pieces_per_part: number | null
           quantity_in_stock: number
           sku: string | null
+          solution: string | null
+          superseded_item: string | null
+          type: string | null
           unit_price: number | null
+          upc: string | null
           updated_at: string
           user_id: string
+          weight: number | null
+          width: number | null
         }
         Insert: {
           category?: string | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          height?: number | null
           id?: string
+          item_number?: string | null
+          item_status?: string | null
+          length?: number | null
+          list_price?: number | null
           low_stock_threshold?: number | null
-          name: string
+          min_order_qty?: number | null
+          name?: string | null
+          pieces_per_case?: number | null
+          pieces_per_pallet?: number | null
+          pieces_per_part?: number | null
           quantity_in_stock?: number
           sku?: string | null
+          solution?: string | null
+          superseded_item?: string | null
+          type?: string | null
           unit_price?: number | null
+          upc?: string | null
           updated_at?: string
           user_id: string
+          weight?: number | null
+          width?: number | null
         }
         Update: {
           category?: string | null
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          height?: number | null
           id?: string
+          item_number?: string | null
+          item_status?: string | null
+          length?: number | null
+          list_price?: number | null
           low_stock_threshold?: number | null
-          name?: string
+          min_order_qty?: number | null
+          name?: string | null
+          pieces_per_case?: number | null
+          pieces_per_pallet?: number | null
+          pieces_per_part?: number | null
           quantity_in_stock?: number
           sku?: string | null
+          solution?: string | null
+          superseded_item?: string | null
+          type?: string | null
           unit_price?: number | null
+          upc?: string | null
           updated_at?: string
           user_id?: string
+          weight?: number | null
+          width?: number | null
         }
         Relationships: []
       }
