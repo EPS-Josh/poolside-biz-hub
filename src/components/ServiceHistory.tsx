@@ -7,9 +7,10 @@ import { EditServiceRecordForm } from '@/components/EditServiceRecordForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, User, Wrench, Beaker, FileText, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { Calendar, Clock, User, Wrench, Beaker, FileText, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toPhoenixTime } from '@/utils/phoenixTimeUtils';
 
 interface ServiceRecord {
@@ -114,6 +115,33 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
     fetchServiceRecords();
   };
 
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('service_records')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Service record deleted successfully',
+      });
+
+      fetchServiceRecords();
+    } catch (error) {
+      console.error('Error deleting service record:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete service record',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -178,6 +206,35 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Service Record</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this service record from {formatDate(record.service_date)}? 
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteRecord(record.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                           <CollapsibleTrigger asChild>
                             <Button
                               variant="ghost"
