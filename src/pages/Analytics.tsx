@@ -11,6 +11,7 @@ import { CalendarDays, Users, Wrench, DollarSign, TrendingUp, TrendingDown, Pack
 import { Header } from "@/components/Header";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
+import { parseDateFromDatabase } from "@/utils/dateUtils";
 
 const Analytics = () => {
   const [timeRange, setTimeRange] = useState("all");
@@ -374,7 +375,7 @@ const Analytics = () => {
                             <p className="font-medium">{record.customers?.first_name} {record.customers?.last_name}</p>
                             <p className="text-sm text-muted-foreground">{record.service_type}</p>
                           </div>
-                          <Badge variant="outline">{format(new Date(record.service_date), 'MMM dd')}</Badge>
+                          <Badge variant="outline">{format(parseDateFromDatabase(record.service_date), 'MMM dd')}</Badge>
                         </div>
                       ))}
                     </div>
