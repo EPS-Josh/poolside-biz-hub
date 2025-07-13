@@ -302,9 +302,16 @@ const Analytics = () => {
                             labelLine={false}
                             style={{ fontSize: '12px', fill: 'hsl(var(--foreground))' }}
                           >
-                            {serviceTypeData?.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                            ))}
+                            {serviceTypeData?.map((entry, index) => {
+                              const color = pieColors[index % pieColors.length];
+                              console.log(`Pie slice ${index}: ${entry.type} using color: ${color}`);
+                              return (
+                                <Cell 
+                                  key={`cell-${entry.type}-${index}`} 
+                                  fill={color} 
+                                />
+                              );
+                            })}
                           </Pie>
                           <ChartTooltip content={<ChartTooltipContent />} />
                         </PieChart>
