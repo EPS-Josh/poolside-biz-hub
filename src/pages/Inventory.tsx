@@ -721,15 +721,6 @@ const Inventory = () => {
               <p className="text-muted-foreground">Track and manage your inventory items</p>
             </div>
             <div className="flex space-x-2">
-              {inventoryItems.length > 0 && (
-                <Button 
-                  variant="destructive" 
-                  onClick={() => deleteAllItemsMutation.mutate()}
-                  disabled={deleteAllItemsMutation.isPending}
-                >
-                  {deleteAllItemsMutation.isPending ? "Clearing..." : "Clear All"}
-                </Button>
-              )}
               <InventoryBulkUpload />
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
