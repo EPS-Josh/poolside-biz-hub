@@ -172,7 +172,16 @@ const Analytics = () => {
     }
   };
 
-  const pieColors = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"];
+  const pieColors = [
+    "hsl(210, 100%, 50%)",  // Blue
+    "hsl(120, 100%, 40%)",  // Green
+    "hsl(30, 100%, 50%)",   // Orange
+    "hsl(300, 100%, 50%)",  // Purple
+    "hsl(0, 100%, 50%)",    // Red
+    "hsl(180, 100%, 40%)",  // Teal
+    "hsl(60, 100%, 50%)",   // Yellow
+    "hsl(270, 100%, 50%)"   // Violet
+  ];
 
   return (
     <ProtectedRoute>
