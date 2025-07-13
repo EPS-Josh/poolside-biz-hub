@@ -33,8 +33,16 @@ const Analytics = () => {
       if (timeRange !== "all") {
         const monthsAgo = parseInt(timeRange);
         const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
-        serviceQuery = serviceQuery.gte('service_date', startDate.toISOString().split('T')[0]);
-        console.log('Adding date filter:', startDate.toISOString().split('T')[0]);
+        const startDateString = startDate.toISOString().split('T')[0];
+        serviceQuery = serviceQuery.gte('service_date', startDateString);
+        
+        console.log('Applying date filter:', {
+          timeRange,
+          monthsAgo,
+          startDate: startDate.toISOString(),
+          startDateString,
+          currentDate: new Date().toISOString()
+        });
       } else {
         console.log('No date filter applied - getting all service records');
       }
