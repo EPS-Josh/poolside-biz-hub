@@ -13,44 +13,49 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 const Analytics = () => {
-  const [timeRange, setTimeRange] = useState("6");
+  const [timeRange, setTimeRange] = useState("all");
 
   // Key Metrics Queries
   const { data: metricsData } = useQuery({
     queryKey: ['analytics-metrics', timeRange],
     queryFn: async () => {
-      const monthsAgo = parseInt(timeRange);
-      const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
-      
-      console.log('Analytics date range:', {
-        monthsAgo,
-        startDate: startDate.toISOString(),
-        currentDate: new Date().toISOString()
-      });
-      
       // Total customers
       const { count: totalCustomers } = await supabase
         .from('customers')
         .select('*', { count: 'exact', head: true });
 
-      // Service records in period
-      const { data: serviceRecords, count: totalServices } = await supabase
+      // Service records - filter by date range or get all
+      let serviceQuery = supabase
         .from('service_records')
         .select('*, customers(first_name, last_name)')
-        .gte('service_date', startDate.toISOString().split('T')[0])
         .order('service_date');
 
+      if (timeRange !== "all") {
+        const monthsAgo = parseInt(timeRange);
+        const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
+        serviceQuery = serviceQuery.gte('service_date', startDate.toISOString().split('T')[0]);
+      }
+
+      const { data: serviceRecords, count: totalServices } = await serviceQuery;
+
       console.log('Service records query:', {
-        startDateFormatted: startDate.toISOString().split('T')[0],
+        timeRange,
         totalServices,
         sampleRecords: serviceRecords?.slice(0, 3)
       });
 
-      // Appointments in period
-      const { count: totalAppointments } = await supabase
+      // Appointments - filter by date range or get all
+      let appointmentQuery = supabase
         .from('appointments')
-        .select('*', { count: 'exact', head: true })
-        .gte('appointment_date', startDate.toISOString());
+        .select('*', { count: 'exact', head: true });
+
+      if (timeRange !== "all") {
+        const monthsAgo = parseInt(timeRange);
+        const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
+        appointmentQuery = appointmentQuery.gte('appointment_date', startDate.toISOString().split('T')[0]);
+      }
+
+      const { count: totalAppointments } = await appointmentQuery;
 
       // Low stock items
       const { data: lowStockItems } = await supabase
@@ -73,25 +78,44 @@ const Analytics = () => {
   const { data: revenueData } = useQuery({
     queryKey: ['revenue-analytics', timeRange],
     queryFn: async () => {
-      const monthsAgo = parseInt(timeRange);
-      const months = [];
-      
-      for (let i = monthsAgo; i >= 0; i--) {
-        const date = subMonths(new Date(), i);
-        const { count } = await supabase
-          .from('service_records')
-          .select('*', { count: 'exact', head: true })
-          .gte('service_date', startOfMonth(date).toISOString())
-          .lt('service_date', endOfMonth(date).toISOString());
+      if (timeRange === "all") {
+        // For "all time", show last 6 months of data
+        const months = [];
+        for (let i = 5; i >= 0; i--) {
+          const date = subMonths(new Date(), i);
+          const { count } = await supabase
+            .from('service_records')
+            .select('*', { count: 'exact', head: true })
+            .gte('service_date', startOfMonth(date).toISOString().split('T')[0])
+            .lt('service_date', endOfMonth(date).toISOString().split('T')[0]);
+          
+          months.push({
+            month: format(date, 'MMM yyyy'),
+            services: count || 0,
+            revenue: (count || 0) * 125, // Avg service price
+          });
+        }
+        return months;
+      } else {
+        const monthsAgo = parseInt(timeRange);
+        const months = [];
         
-        months.push({
-          month: format(date, 'MMM yyyy'),
-          services: count || 0,
-          revenue: (count || 0) * 125, // Avg service price
-        });
+        for (let i = monthsAgo; i >= 0; i--) {
+          const date = subMonths(new Date(), i);
+          const { count } = await supabase
+            .from('service_records')
+            .select('*', { count: 'exact', head: true })
+            .gte('service_date', startOfMonth(date).toISOString().split('T')[0])
+            .lt('service_date', endOfMonth(date).toISOString().split('T')[0]);
+          
+          months.push({
+            month: format(date, 'MMM yyyy'),
+            services: count || 0,
+            revenue: (count || 0) * 125, // Avg service price
+          });
+        }
+        return months;
       }
-      
-      return months;
     }
   });
 
@@ -99,13 +123,17 @@ const Analytics = () => {
   const { data: serviceTypeData } = useQuery({
     queryKey: ['service-types', timeRange],
     queryFn: async () => {
-      const monthsAgo = parseInt(timeRange);
-      const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
-      
-      const { data } = await supabase
+      let query = supabase
         .from('service_records')
-        .select('service_type')
-        .gte('service_date', startDate.toISOString());
+        .select('service_type');
+
+      if (timeRange !== "all") {
+        const monthsAgo = parseInt(timeRange);
+        const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
+        query = query.gte('service_date', startDate.toISOString().split('T')[0]);
+      }
+
+      const { data } = await query;
 
       const typeCounts = data?.reduce((acc, record) => {
         acc[record.service_type] = (acc[record.service_type] || 0) + 1;
@@ -148,6 +176,7 @@ const Analytics = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
                 <SelectItem value="1">Last Month</SelectItem>
                 <SelectItem value="3">Last 3 Months</SelectItem>
                 <SelectItem value="6">Last 6 Months</SelectItem>
