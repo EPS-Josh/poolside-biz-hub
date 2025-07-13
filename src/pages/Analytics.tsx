@@ -28,7 +28,7 @@ const Analytics = () => {
       let serviceQuery = supabase
         .from('service_records')
         .select('*, customers(first_name, last_name)', { count: 'exact' })
-        .order('service_date');
+        .order('service_date', { ascending: false });
 
       if (timeRange !== "all") {
         const monthsAgo = parseInt(timeRange);
