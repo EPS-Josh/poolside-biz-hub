@@ -69,7 +69,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
         updatedParts[index] = {
           ...updatedParts[index],
           inventoryItemId: value,
-          itemName: selectedItem.name || '',
+          itemName: selectedItem.name || selectedItem.description || '',
           unitPrice: selectedItem.unit_price
         };
       }
@@ -123,7 +123,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
                     {inventoryItems.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         <div className="flex flex-col">
-                          <span>{item.name || 'Unnamed Item'}</span>
+                          <span>{item.name || item.description || 'Unnamed Item'}</span>
                           {item.fps_item_number && (
                             <span className="text-xs text-muted-foreground">FPS #: {item.fps_item_number}</span>
                           )}
