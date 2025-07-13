@@ -13,6 +13,7 @@ interface InventoryItem {
   name: string | null;
   description: string | null;
   sku: string | null;
+  fps_item_number: string | null;
   category: string | null;
   quantity_in_stock: number;
   unit_price: number | null;
@@ -41,7 +42,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items')
-        .select('id, name, description, sku, category, quantity_in_stock, unit_price, low_stock_threshold')
+        .select('id, name, description, sku, fps_item_number, category, quantity_in_stock, unit_price, low_stock_threshold')
         .order('name');
       
       if (error) throw error;
@@ -122,6 +123,9 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
                       <SelectItem key={item.id} value={item.id}>
                         <div className="flex flex-col">
                           <span>{item.name || 'Unnamed Item'}</span>
+                          {item.fps_item_number && (
+                            <span className="text-xs text-muted-foreground">FPS #: {item.fps_item_number}</span>
+                          )}
                           {item.sku && (
                             <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
                           )}
