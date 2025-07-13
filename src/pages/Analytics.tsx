@@ -153,10 +153,11 @@ const Analytics = () => {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      return Object.entries(typeCounts).map(([type, count]) => ({
+      return Object.entries(typeCounts).map(([type, count], index) => ({
         type,
         count,
-        percentage: Math.round((count / (data?.length || 1)) * 100)
+        percentage: Math.round((count / (data?.length || 1)) * 100),
+        fill: pieColors[index % pieColors.length] // Add color directly to data
       }));
     }
   });
@@ -301,18 +302,7 @@ const Analytics = () => {
                             label={({ type, percentage }) => `${type}: ${percentage}%`}
                             labelLine={false}
                             style={{ fontSize: '12px', fill: 'hsl(var(--foreground))' }}
-                          >
-                            {serviceTypeData?.map((entry, index) => {
-                              const color = pieColors[index % pieColors.length];
-                              console.log(`Pie slice ${index}: ${entry.type} using color: ${color}`);
-                              return (
-                                <Cell 
-                                  key={`cell-${entry.type}-${index}`} 
-                                  fill={color} 
-                                />
-                              );
-                            })}
-                          </Pie>
+                          />
                           <ChartTooltip content={<ChartTooltipContent />} />
                         </PieChart>
                       </ResponsiveContainer>
