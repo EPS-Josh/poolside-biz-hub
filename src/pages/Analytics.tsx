@@ -289,22 +289,32 @@ const Analytics = () => {
                     <CardTitle>Service Distribution</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={serviceTypeData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={120}
-                          dataKey="count"
-                          label={({ type, percentage }) => `${type}: ${percentage}%`}
-                          labelLine={false}
-                          style={{ fontSize: '12px', fill: 'hsl(var(--foreground))' }}
-                        />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <ChartContainer config={chartConfig}>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={serviceTypeData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={120}
+                            dataKey="count"
+                            label={({ type, percentage }) => `${type}: ${percentage}%`}
+                            labelLine={false}
+                            style={{ fontSize: '12px', fill: 'hsl(var(--foreground))' }}
+                          >
+                            {serviceTypeData?.map((entry, index) => (
+                              <Cell 
+                                key={`cell-${entry.type}-${index}`} 
+                                fill={entry.fill}
+                                style={{ stroke: 'none', outline: 'none' }}
+                              />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
                   </CardContent>
                 </Card>
               </div>
