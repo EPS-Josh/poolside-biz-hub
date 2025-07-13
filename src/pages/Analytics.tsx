@@ -134,7 +134,7 @@ const Analytics = () => {
 
   // Service Type Distribution
   const { data: serviceTypeData } = useQuery({
-    queryKey: ['service-types', timeRange],
+    queryKey: ['service-types-v2', timeRange],
     queryFn: async () => {
       let query = supabase
         .from('service_records')
