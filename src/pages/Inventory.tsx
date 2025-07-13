@@ -68,10 +68,10 @@ const Inventory = () => {
   const [sortField, setSortField] = useState<SortField>('fps_item_number');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filters, setFilters] = useState({
-    solution: '',
-    type: '',
-    item_status: '',
-    stockStatus: ''
+    solution: 'all',
+    type: 'all',
+    item_status: 'all',
+    stockStatus: 'all'
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -288,10 +288,10 @@ const Inventory = () => {
 
   const clearFilters = () => {
     setFilters({
-      solution: '',
-      type: '',
-      item_status: '',
-      stockStatus: ''
+      solution: 'all',
+      type: 'all',
+      item_status: 'all',
+      stockStatus: 'all'
     });
   };
 
@@ -310,13 +310,13 @@ const Inventory = () => {
       );
 
       // Column filters
-      const matchesSolution = !filters.solution || item.solution?.toLowerCase().includes(filters.solution.toLowerCase());
-      const matchesType = !filters.type || item.type?.toLowerCase().includes(filters.type.toLowerCase());
-      const matchesStatus = !filters.item_status || item.item_status?.toLowerCase().includes(filters.item_status.toLowerCase());
+      const matchesSolution = filters.solution === 'all' || !filters.solution || item.solution?.toLowerCase().includes(filters.solution.toLowerCase());
+      const matchesType = filters.type === 'all' || !filters.type || item.type?.toLowerCase().includes(filters.type.toLowerCase());
+      const matchesStatus = filters.item_status === 'all' || !filters.item_status || item.item_status?.toLowerCase().includes(filters.item_status.toLowerCase());
       
       // Stock status filter
       let matchesStockStatus = true;
-      if (filters.stockStatus) {
+      if (filters.stockStatus && filters.stockStatus !== 'all') {
         const stockStatus = getStockStatus(item);
         matchesStockStatus = stockStatus.label.toLowerCase().includes(filters.stockStatus.toLowerCase());
       }
@@ -775,7 +775,7 @@ const Inventory = () => {
                       <SelectValue placeholder="Solution" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Solutions</SelectItem>
+                      <SelectItem value="all">All Solutions</SelectItem>
                       {uniqueValues.solutions.map(solution => (
                         <SelectItem key={solution} value={solution}>{solution}</SelectItem>
                       ))}
@@ -787,7 +787,7 @@ const Inventory = () => {
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="all">All Types</SelectItem>
                       {uniqueValues.types.map(type => (
                         <SelectItem key={type} value={type}>{type}</SelectItem>
                       ))}
@@ -799,7 +799,7 @@ const Inventory = () => {
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       {uniqueValues.statuses.map(status => (
                         <SelectItem key={status} value={status}>{status}</SelectItem>
                       ))}
@@ -811,14 +811,14 @@ const Inventory = () => {
                       <SelectValue placeholder="Stock" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Stock</SelectItem>
+                      <SelectItem value="all">All Stock</SelectItem>
                       {uniqueValues.stockStatuses.map(status => (
                         <SelectItem key={status} value={status}>{status}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   
-                  {(filters.solution || filters.type || filters.item_status || filters.stockStatus) && (
+                  {(filters.solution !== 'all' || filters.type !== 'all' || filters.item_status !== 'all' || filters.stockStatus !== 'all') && (
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                       <X className="h-4 w-4" />
                     </Button>
