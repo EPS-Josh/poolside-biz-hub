@@ -22,6 +22,12 @@ const Analytics = () => {
       const monthsAgo = parseInt(timeRange);
       const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
       
+      console.log('Analytics date range:', {
+        monthsAgo,
+        startDate: startDate.toISOString(),
+        currentDate: new Date().toISOString()
+      });
+      
       // Total customers
       const { count: totalCustomers } = await supabase
         .from('customers')
@@ -31,8 +37,14 @@ const Analytics = () => {
       const { data: serviceRecords, count: totalServices } = await supabase
         .from('service_records')
         .select('*, customers(first_name, last_name)')
-        .gte('service_date', startDate.toISOString())
+        .gte('service_date', startDate.toISOString().split('T')[0])
         .order('service_date');
+
+      console.log('Service records query:', {
+        startDateFormatted: startDate.toISOString().split('T')[0],
+        totalServices,
+        sampleRecords: serviceRecords?.slice(0, 3)
+      });
 
       // Appointments in period
       const { count: totalAppointments } = await supabase
