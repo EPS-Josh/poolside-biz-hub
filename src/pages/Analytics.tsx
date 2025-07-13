@@ -289,24 +289,22 @@ const Analytics = () => {
                     <CardTitle>Service Distribution</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ChartContainer config={chartConfig}>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={serviceTypeData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={120}
-                            dataKey="count"
-                            label={({ type, percentage }) => `${type}: ${percentage}%`}
-                            labelLine={false}
-                            style={{ fontSize: '12px', fill: 'hsl(var(--foreground))' }}
-                          />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={serviceTypeData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={120}
+                          dataKey="count"
+                          label={({ type, percentage }) => `${type}: ${percentage}%`}
+                          labelLine={false}
+                          style={{ fontSize: '12px', fill: 'hsl(var(--foreground))' }}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
               </div>
