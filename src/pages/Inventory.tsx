@@ -318,7 +318,7 @@ const Inventory = () => {
       let matchesStockStatus = true;
       if (filters.stockStatus && filters.stockStatus !== 'all') {
         const stockStatus = getStockStatus(item);
-        matchesStockStatus = stockStatus.label.toLowerCase().includes(filters.stockStatus.toLowerCase());
+        matchesStockStatus = stockStatus.label === filters.stockStatus;
       }
 
       return matchesSearch && matchesSolution && matchesType && matchesStatus && matchesStockStatus;
