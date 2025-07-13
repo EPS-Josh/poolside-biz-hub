@@ -57,7 +57,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
     if (!searchTerm) return inventoryItems;
     
     const lowercaseSearch = searchTerm.toLowerCase();
-    return inventoryItems.filter(item => {
+    const filtered = inventoryItems.filter(item => {
       const name = (item.name || '').toLowerCase();
       const description = (item.description || '').toLowerCase();
       const sku = (item.sku || '').toLowerCase();
@@ -68,6 +68,9 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
              sku.includes(lowercaseSearch) || 
              fpsNumber.includes(lowercaseSearch);
     });
+    
+    console.log('Search term:', searchTerm, 'Filtered items:', filtered.length);
+    return filtered;
   };
 
   const addPartUsed = () => {
@@ -142,6 +145,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
                     />
                   </div>
                   <Select
+                    key={`${index}-${searchTerms[index] || ''}`}
                     value={part.inventoryItemId}
                     onValueChange={(value) => updatePartUsed(index, 'inventoryItemId', value)}
                   >
