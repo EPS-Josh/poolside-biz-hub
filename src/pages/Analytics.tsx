@@ -38,24 +38,26 @@ const Analytics = () => {
 
       const { data: serviceRecords, count: totalServices } = await serviceQuery;
 
-      console.log('Service records query:', {
+      console.log('Service records query result:', {
         timeRange,
         totalServices,
+        recordCount: serviceRecords?.length,
         sampleRecords: serviceRecords?.slice(0, 3)
       });
 
-      // Appointments - filter by date range or get all
+      // Appointments - only future appointments (from today forward)
+      const today = new Date().toISOString().split('T')[0];
       let appointmentQuery = supabase
         .from('appointments')
-        .select('*', { count: 'exact', head: true });
-
-      if (timeRange !== "all") {
-        const monthsAgo = parseInt(timeRange);
-        const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
-        appointmentQuery = appointmentQuery.gte('appointment_date', startDate.toISOString().split('T')[0]);
-      }
+        .select('*', { count: 'exact', head: true })
+        .gte('appointment_date', today);
 
       const { count: totalAppointments } = await appointmentQuery;
+
+      console.log('Appointments query result:', {
+        today,
+        totalAppointments
+      });
 
       // Low stock items
       const { data: lowStockItems } = await supabase
