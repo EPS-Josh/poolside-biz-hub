@@ -289,16 +289,9 @@ const Analytics = () => {
                             innerRadius={60}
                             outerRadius={120}
                             dataKey="count"
-                            label={({ type, percentage }) => (
-                              <text 
-                                fill="hsl(var(--foreground))" 
-                                fontSize="12" 
-                                fontWeight="500"
-                              >
-                                {type}: {percentage}%
-                              </text>
-                            )}
+                            label={({ type, percentage }) => `${type}: ${percentage}%`}
                             labelLine={false}
+                            style={{ fontSize: '12px', fill: 'hsl(var(--foreground))' }}
                           >
                             {serviceTypeData?.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
