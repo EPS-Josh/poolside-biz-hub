@@ -15,6 +15,7 @@ interface InventoryItem {
   name: string | null;
   description: string | null;
   sku: string | null;
+  item_number: string | null;
   fps_item_number: string | null;
   category: string | null;
   quantity_in_stock: number;
@@ -46,7 +47,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('inventory_items')
-        .select('id, name, description, sku, fps_item_number, category, quantity_in_stock, unit_price, low_stock_threshold')
+        .select('id, name, description, sku, item_number, fps_item_number, category, quantity_in_stock, unit_price, low_stock_threshold')
         .order('description');
       
       if (error) throw error;
@@ -144,7 +145,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
                           {inventoryItems.map((item) => (
                             <CommandItem
                               key={item.id}
-                              value={`${item.name || ''} ${item.description || ''} ${item.sku || ''} ${item.fps_item_number || ''}`}
+                              value={`${item.name || ''} ${item.description || ''} ${item.sku || ''} ${item.item_number || ''} ${item.fps_item_number || ''}`}
                               onSelect={() => {
                                 updatePartUsed(index, 'inventoryItemId', item.id);
                                 setOpenComboboxes(prev => ({ ...prev, [index]: false }));
@@ -157,7 +158,12 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
                                 )}
                               />
                               <div className="flex flex-col">
-                                <span>{item.name || item.description || 'Unnamed Item'}</span>
+                                <span>
+                                  {item.item_number && (
+                                    <span className="font-medium text-blue-600 mr-2">{item.item_number}</span>
+                                  )}
+                                  {item.name || item.description || 'Unnamed Item'}
+                                </span>
                                 {item.fps_item_number && (
                                   <span className="text-xs text-muted-foreground">FPS #: {item.fps_item_number}</span>
                                 )}
