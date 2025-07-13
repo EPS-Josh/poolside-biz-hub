@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Package } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 
@@ -58,10 +58,21 @@ interface InventoryItem {
   updated_at: string;
 }
 
+type SortField = keyof InventoryItem;
+type SortDirection = 'asc' | 'desc';
+
 const Inventory = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<SortField>('fps_item_number');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [filters, setFilters] = useState({
+    solution: '',
+    type: '',
+    item_status: '',
+    stockStatus: ''
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -262,18 +273,100 @@ const Inventory = () => {
     }
   };
 
-  const filteredItems = inventoryItems.filter(item =>
-    item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.item_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const handleFilterChange = (filterKey: string, value: string) => {
+    setFilters(prev => ({ ...prev, [filterKey]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      solution: '',
+      type: '',
+      item_status: '',
+      stockStatus: ''
+    });
+  };
+
+  const filteredAndSortedItems = useMemo(() => {
+    let filtered = inventoryItems.filter(item => {
+      // Search filter
+      const matchesSearch = !searchTerm || (
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.item_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.fps_item_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.solution?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.type?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      // Column filters
+      const matchesSolution = !filters.solution || item.solution?.toLowerCase().includes(filters.solution.toLowerCase());
+      const matchesType = !filters.type || item.type?.toLowerCase().includes(filters.type.toLowerCase());
+      const matchesStatus = !filters.item_status || item.item_status?.toLowerCase().includes(filters.item_status.toLowerCase());
+      
+      // Stock status filter
+      let matchesStockStatus = true;
+      if (filters.stockStatus) {
+        const stockStatus = getStockStatus(item);
+        matchesStockStatus = stockStatus.label.toLowerCase().includes(filters.stockStatus.toLowerCase());
+      }
+
+      return matchesSearch && matchesSolution && matchesType && matchesStatus && matchesStockStatus;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+      
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) return sortDirection === 'asc' ? 1 : -1;
+      if (bValue === null || bValue === undefined) return sortDirection === 'asc' ? -1 : 1;
+      
+      // Handle different data types
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+        return sortDirection === 'asc' ? comparison : -comparison;
+      }
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      // Fallback to string comparison
+      const comparison = String(aValue).localeCompare(String(bValue));
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [inventoryItems, searchTerm, filters, sortField, sortDirection]);
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.quantity_in_stock === 0) return { label: "Out of Stock", variant: "destructive" as const };
     if (item.quantity_in_stock <= item.low_stock_threshold) return { label: "Low Stock", variant: "secondary" as const };
     return { label: "In Stock", variant: "default" as const };
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const uniqueValues = {
+    solutions: [...new Set(inventoryItems.map(item => item.solution).filter(Boolean))],
+    types: [...new Set(inventoryItems.map(item => item.type).filter(Boolean))],
+    statuses: [...new Set(inventoryItems.map(item => item.item_status).filter(Boolean))],
+    stockStatuses: ['In Stock', 'Low Stock', 'Out of Stock']
   };
 
   const ItemForm = ({ item }: { item?: InventoryItem }) => (
@@ -657,26 +750,86 @@ const Inventory = () => {
 
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle className="flex items-center">
-                  <Package className="mr-2 h-5 w-5" />
-                  Inventory Items ({filteredItems.length})
-                </CardTitle>
-                <div className="relative w-72">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search items..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="flex items-center">
+                    <Package className="mr-2 h-5 w-5" />
+                    Inventory Items ({filteredAndSortedItems.length})
+                  </CardTitle>
+                  <div className="relative w-72">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search items..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                {/* Filters */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="h-4 w-4" />
+                  <Select value={filters.solution} onValueChange={(value) => handleFilterChange('solution', value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Solution" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Solutions</SelectItem>
+                      {uniqueValues.solutions.map(solution => (
+                        <SelectItem key={solution} value={solution}>{solution}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={filters.type} onValueChange={(value) => handleFilterChange('type', value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Types</SelectItem>
+                      {uniqueValues.types.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={filters.item_status} onValueChange={(value) => handleFilterChange('item_status', value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Statuses</SelectItem>
+                      {uniqueValues.statuses.map(status => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={filters.stockStatus} onValueChange={(value) => handleFilterChange('stockStatus', value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Stock" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Stock</SelectItem>
+                      {uniqueValues.stockStatuses.map(status => (
+                        <SelectItem key={status} value={status}>{status}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {(filters.solution || filters.type || filters.item_status || filters.stockStatus) && (
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="text-center py-8">Loading inventory...</div>
-              ) : filteredItems.length === 0 ? (
+              ) : filteredAndSortedItems.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   No inventory items found. Add your first item to get started.
                 </div>
@@ -684,19 +837,75 @@ const Inventory = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>FPS Item #</TableHead>
-                      <TableHead>MFG Item #</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Solution</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>List Price</TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('fps_item_number')}
+                        >
+                          FPS Item # {getSortIcon('fps_item_number')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('item_number')}
+                        >
+                          MFG Item # {getSortIcon('item_number')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('description')}
+                        >
+                          Description {getSortIcon('description')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('solution')}
+                        >
+                          Solution {getSortIcon('solution')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('type')}
+                        >
+                          Type {getSortIcon('type')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('quantity_in_stock')}
+                        >
+                          Quantity {getSortIcon('quantity_in_stock')}
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button 
+                          variant="ghost" 
+                          className="h-auto p-0 font-medium hover:bg-transparent"
+                          onClick={() => handleSort('list_price')}
+                        >
+                          List Price {getSortIcon('list_price')}
+                        </Button>
+                      </TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredItems.map((item) => {
+                    {filteredAndSortedItems.map((item) => {
                       const stockStatus = getStockStatus(item);
                       return (
                         <TableRow key={item.id}>
