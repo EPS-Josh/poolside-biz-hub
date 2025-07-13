@@ -295,6 +295,12 @@ const Inventory = () => {
     });
   };
 
+  const getStockStatus = (item: InventoryItem) => {
+    if (item.quantity_in_stock === 0) return { label: "Out of Stock", variant: "destructive" as const };
+    if (item.quantity_in_stock <= item.low_stock_threshold) return { label: "Low Stock", variant: "secondary" as const };
+    return { label: "In Stock", variant: "default" as const };
+  };
+
   const filteredAndSortedItems = useMemo(() => {
     let filtered = inventoryItems.filter(item => {
       // Search filter
@@ -351,11 +357,6 @@ const Inventory = () => {
     return filtered;
   }, [inventoryItems, searchTerm, filters, sortField, sortDirection]);
 
-  const getStockStatus = (item: InventoryItem) => {
-    if (item.quantity_in_stock === 0) return { label: "Out of Stock", variant: "destructive" as const };
-    if (item.quantity_in_stock <= item.low_stock_threshold) return { label: "Low Stock", variant: "secondary" as const };
-    return { label: "In Stock", variant: "default" as const };
-  };
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
