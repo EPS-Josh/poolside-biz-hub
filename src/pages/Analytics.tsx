@@ -27,13 +27,16 @@ const Analytics = () => {
       // Service records - filter by date range or get all
       let serviceQuery = supabase
         .from('service_records')
-        .select('*, customers(first_name, last_name)')
+        .select('*, customers(first_name, last_name)', { count: 'exact' })
         .order('service_date');
 
       if (timeRange !== "all") {
         const monthsAgo = parseInt(timeRange);
         const startDate = startOfMonth(subMonths(new Date(), monthsAgo));
         serviceQuery = serviceQuery.gte('service_date', startDate.toISOString().split('T')[0]);
+        console.log('Adding date filter:', startDate.toISOString().split('T')[0]);
+      } else {
+        console.log('No date filter applied - getting all service records');
       }
 
       const { data: serviceRecords, count: totalServices } = await serviceQuery;
