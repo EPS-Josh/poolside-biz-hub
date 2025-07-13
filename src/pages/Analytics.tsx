@@ -289,7 +289,15 @@ const Analytics = () => {
                             innerRadius={60}
                             outerRadius={120}
                             dataKey="count"
-                            label={({ type, percentage }) => `${type}: ${percentage}%`}
+                            label={({ type, percentage }) => (
+                              <text 
+                                fill="hsl(var(--foreground))" 
+                                fontSize="12" 
+                                fontWeight="500"
+                              >
+                                {type}: {percentage}%
+                              </text>
+                            )}
                             labelLine={false}
                           >
                             {serviceTypeData?.map((entry, index) => (
