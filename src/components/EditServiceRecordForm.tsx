@@ -35,6 +35,7 @@ interface ServiceRecord {
   total_time_minutes?: number;
   service_status: string;
   created_at: string;
+  parts_used?: any;
 }
 
 interface EditServiceRecordFormProps {
@@ -108,6 +109,13 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
           calcium_hardness: record.after_readings?.calcium_hardness || ''
         }
       });
+      
+      // Load parts used data if it exists
+      if (record.parts_used && Array.isArray(record.parts_used)) {
+        setPartsUsed(record.parts_used);
+      } else {
+        setPartsUsed([]);
+      }
     }
   }, [record, open]);
 
@@ -133,7 +141,8 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
           total_time_minutes: formData.total_time_minutes ? parseInt(formData.total_time_minutes) : null,
           service_status: formData.service_status,
           before_readings: formData.before_readings,
-          after_readings: formData.after_readings
+          after_readings: formData.after_readings,
+          parts_used: partsUsed.length > 0 ? JSON.parse(JSON.stringify(partsUsed)) : null
         })
         .eq('id', record.id);
 

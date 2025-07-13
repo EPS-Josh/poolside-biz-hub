@@ -535,6 +535,7 @@ export type Database = {
           equipment_serviced: string | null
           id: string
           next_service_date: string | null
+          parts_used: Json | null
           photos_taken: string[] | null
           service_date: string
           service_status: string | null
@@ -557,6 +558,7 @@ export type Database = {
           equipment_serviced?: string | null
           id?: string
           next_service_date?: string | null
+          parts_used?: Json | null
           photos_taken?: string[] | null
           service_date: string
           service_status?: string | null
@@ -579,6 +581,7 @@ export type Database = {
           equipment_serviced?: string | null
           id?: string
           next_service_date?: string | null
+          parts_used?: Json | null
           photos_taken?: string[] | null
           service_date?: string
           service_status?: string | null

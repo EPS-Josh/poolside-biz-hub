@@ -89,7 +89,8 @@ export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormPr
           total_time_minutes: formData.total_time_minutes ? parseInt(formData.total_time_minutes) : null,
           service_status: formData.service_status,
           before_readings: formData.before_readings,
-          after_readings: formData.after_readings
+          after_readings: formData.after_readings,
+          parts_used: partsUsed.length > 0 ? JSON.parse(JSON.stringify(partsUsed)) : null
         });
 
       if (error) throw error;
