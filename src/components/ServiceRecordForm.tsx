@@ -11,6 +11,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
 import { formatPhoenixDateForDatabase, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
+import { PartsUsedSelector } from '@/components/PartsUsedSelector';
+
+interface PartUsed {
+  inventoryItemId: string;
+  quantity: number;
+  itemName: string;
+  unitPrice: number | null;
+}
 
 interface ServiceRecordFormProps {
   customerId: string;
@@ -22,6 +30,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormPr
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [partsUsed, setPartsUsed] = useState<PartUsed[]>([]);
   
   // Initialize with current Phoenix date
   const currentPhoenixDate = getCurrentPhoenixDate();
@@ -108,6 +117,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormPr
         before_readings: { ph: '', chlorine: '', alkalinity: '', cyanuric_acid: '', calcium_hardness: '' },
         after_readings: { ph: '', chlorine: '', alkalinity: '', cyanuric_acid: '', calcium_hardness: '' }
       });
+      setPartsUsed([]);
       onSuccess();
     } catch (error) {
       console.error('Error adding service record:', error);
@@ -208,6 +218,11 @@ export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormPr
               rows={3}
             />
           </div>
+
+          <PartsUsedSelector
+            partsUsed={partsUsed}
+            onPartsUsedChange={setPartsUsed}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
