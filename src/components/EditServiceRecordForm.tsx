@@ -10,7 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { PartsUsedSelector } from '@/components/PartsUsedSelector';
 
+interface PartUsed {
+  inventoryItemId: string;
+  quantity: number;
+  itemName: string;
+  unitPrice: number | null;
+}
 interface ServiceRecord {
   id: string;
   service_date: string;
@@ -41,6 +48,7 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [partsUsed, setPartsUsed] = useState<PartUsed[]>([]);
   const [formData, setFormData] = useState({
     service_date: '',
     service_time: '',
@@ -229,6 +237,11 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
               rows={3}
             />
           </div>
+
+          <PartsUsedSelector
+            partsUsed={partsUsed}
+            onPartsUsedChange={setPartsUsed}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
