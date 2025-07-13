@@ -36,7 +36,7 @@ const Menu = () => {
           description: "Detailed analytics and business reports",
           icon: BarChart3,
           color: "bg-purple-500",
-          action: () => console.log('Analytics coming soon'),
+          action: () => navigate('/analytics'),
         },
       ]
     },
@@ -164,7 +164,7 @@ const Menu = () => {
                   <Package className="h-4 w-4" />
                   <span>Check Inventory</span>
                 </Button>
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button variant="outline" className="flex items-center space-x-2" onClick={() => navigate('/analytics')}>
                   <BarChart3 className="h-4 w-4" />
                   <span>View Reports</span>
                 </Button>
