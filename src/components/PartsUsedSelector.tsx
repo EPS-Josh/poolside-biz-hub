@@ -46,6 +46,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
         .order('name');
       
       if (error) throw error;
+      console.log('Inventory items fetched:', data);
       return data as InventoryItem[];
     }
   });
