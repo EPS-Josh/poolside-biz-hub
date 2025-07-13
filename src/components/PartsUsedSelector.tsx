@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Search } from 'lucide-react';
 
 interface InventoryItem {
   id: string;
@@ -36,6 +36,8 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
   partsUsed,
   onPartsUsedChange
 }) => {
+  const [searchTerms, setSearchTerms] = useState<{ [key: number]: string }>({});
+
   // Fetch inventory items
   const { data: inventoryItems = [], isLoading } = useQuery({
     queryKey: ['inventory-items'],
@@ -43,13 +45,30 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
       const { data, error } = await supabase
         .from('inventory_items')
         .select('id, name, description, sku, fps_item_number, category, quantity_in_stock, unit_price, low_stock_threshold')
-        .order('name');
+        .order('description');
       
       if (error) throw error;
       console.log('Inventory items fetched:', data);
       return data as InventoryItem[];
     }
   });
+
+  const getFilteredItems = (searchTerm: string) => {
+    if (!searchTerm) return inventoryItems;
+    
+    const lowercaseSearch = searchTerm.toLowerCase();
+    return inventoryItems.filter(item => {
+      const name = (item.name || '').toLowerCase();
+      const description = (item.description || '').toLowerCase();
+      const sku = (item.sku || '').toLowerCase();
+      const fpsNumber = (item.fps_item_number || '').toLowerCase();
+      
+      return name.includes(lowercaseSearch) || 
+             description.includes(lowercaseSearch) || 
+             sku.includes(lowercaseSearch) || 
+             fpsNumber.includes(lowercaseSearch);
+    });
+  };
 
   const addPartUsed = () => {
     const newPart: PartUsed = {
@@ -112,33 +131,44 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
             <div key={index} className="flex items-end space-x-2 p-3 border rounded-lg">
               <div className="flex-1">
                 <Label htmlFor={`part-${index}`}>Inventory Item</Label>
-                <Select
-                  value={part.inventoryItemId}
-                  onValueChange={(value) => updatePartUsed(index, 'inventoryItemId', value)}
-                >
-                  <SelectTrigger id={`part-${index}`}>
-                    <SelectValue placeholder="Select an item" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {inventoryItems.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        <div className="flex flex-col">
-                          <span>{item.name || item.description || 'Unnamed Item'}</span>
-                          {item.fps_item_number && (
-                            <span className="text-xs text-muted-foreground">FPS #: {item.fps_item_number}</span>
-                          )}
-                          {item.sku && (
-                            <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
-                          )}
-                          <span className="text-xs text-muted-foreground">
-                            In Stock: {item.quantity_in_stock}
-                            {item.unit_price && ` • $${item.unit_price}`}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search inventory items..."
+                      value={searchTerms[index] || ''}
+                      onChange={(e) => setSearchTerms(prev => ({ ...prev, [index]: e.target.value }))}
+                      className="pl-8"
+                    />
+                  </div>
+                  <Select
+                    value={part.inventoryItemId}
+                    onValueChange={(value) => updatePartUsed(index, 'inventoryItemId', value)}
+                  >
+                    <SelectTrigger id={`part-${index}`}>
+                      <SelectValue placeholder="Select an item" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {getFilteredItems(searchTerms[index] || '').map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          <div className="flex flex-col">
+                            <span>{item.name || item.description || 'Unnamed Item'}</span>
+                            {item.fps_item_number && (
+                              <span className="text-xs text-muted-foreground">FPS #: {item.fps_item_number}</span>
+                            )}
+                            {item.sku && (
+                              <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
+                            )}
+                            <span className="text-xs text-muted-foreground">
+                              In Stock: {item.quantity_in_stock}
+                              {item.unit_price && ` • $${item.unit_price}`}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="w-24">
                 <Label htmlFor={`quantity-${index}`}>Quantity</Label>
