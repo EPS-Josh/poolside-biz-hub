@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Trash2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface InventoryItem {
   id: string;
@@ -36,7 +38,7 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
   partsUsed,
   onPartsUsedChange
 }) => {
-  const [searchTerms, setSearchTerms] = useState<{ [key: number]: string }>({});
+  const [openComboboxes, setOpenComboboxes] = useState<{ [key: number]: boolean }>({});
 
   // Fetch inventory items
   const { data: inventoryItems = [], isLoading } = useQuery({
@@ -53,25 +55,6 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
     }
   });
 
-  const getFilteredItems = (searchTerm: string) => {
-    if (!searchTerm) return inventoryItems;
-    
-    const lowercaseSearch = searchTerm.toLowerCase();
-    const filtered = inventoryItems.filter(item => {
-      const name = (item.name || '').toLowerCase();
-      const description = (item.description || '').toLowerCase();
-      const sku = (item.sku || '').toLowerCase();
-      const fpsNumber = (item.fps_item_number || '').toLowerCase();
-      
-      return name.includes(lowercaseSearch) || 
-             description.includes(lowercaseSearch) || 
-             sku.includes(lowercaseSearch) || 
-             fpsNumber.includes(lowercaseSearch);
-    });
-    
-    console.log('Search term:', searchTerm, 'Filtered items:', filtered.length);
-    return filtered;
-  };
 
   const addPartUsed = () => {
     const newPart: PartUsed = {
@@ -134,45 +117,65 @@ export const PartsUsedSelector: React.FC<PartsUsedSelectorProps> = ({
             <div key={index} className="flex items-end space-x-2 p-3 border rounded-lg">
               <div className="flex-1">
                 <Label htmlFor={`part-${index}`}>Inventory Item</Label>
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search inventory items..."
-                      value={searchTerms[index] || ''}
-                      onChange={(e) => setSearchTerms(prev => ({ ...prev, [index]: e.target.value }))}
-                      className="pl-8"
-                    />
-                  </div>
-                  <Select
-                    key={`${index}-${searchTerms[index] || ''}`}
-                    value={part.inventoryItemId}
-                    onValueChange={(value) => updatePartUsed(index, 'inventoryItemId', value)}
-                  >
-                    <SelectTrigger id={`part-${index}`}>
-                      <SelectValue placeholder="Select an item" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {getFilteredItems(searchTerms[index] || '').map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          <div className="flex flex-col">
-                            <span>{item.name || item.description || 'Unnamed Item'}</span>
-                            {item.fps_item_number && (
-                              <span className="text-xs text-muted-foreground">FPS #: {item.fps_item_number}</span>
-                            )}
-                            {item.sku && (
-                              <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              In Stock: {item.quantity_in_stock}
-                              {item.unit_price && ` • $${item.unit_price}`}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Popover open={openComboboxes[index]} onOpenChange={(open) => 
+                  setOpenComboboxes(prev => ({ ...prev, [index]: open }))
+                }>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openComboboxes[index]}
+                      className="w-full justify-between"
+                    >
+                      {part.inventoryItemId
+                        ? inventoryItems.find((item) => item.id === part.inventoryItemId)?.name || 
+                          inventoryItems.find((item) => item.id === part.inventoryItemId)?.description ||
+                          "Select item..."
+                        : "Select item..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search inventory items..." />
+                      <CommandList>
+                        <CommandEmpty>No items found.</CommandEmpty>
+                        <CommandGroup className="max-h-60 overflow-auto">
+                          {inventoryItems.map((item) => (
+                            <CommandItem
+                              key={item.id}
+                              value={`${item.name || ''} ${item.description || ''} ${item.sku || ''} ${item.fps_item_number || ''}`}
+                              onSelect={() => {
+                                updatePartUsed(index, 'inventoryItemId', item.id);
+                                setOpenComboboxes(prev => ({ ...prev, [index]: false }));
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  part.inventoryItemId === item.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span>{item.name || item.description || 'Unnamed Item'}</span>
+                                {item.fps_item_number && (
+                                  <span className="text-xs text-muted-foreground">FPS #: {item.fps_item_number}</span>
+                                )}
+                                {item.sku && (
+                                  <span className="text-xs text-muted-foreground">SKU: {item.sku}</span>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  In Stock: {item.quantity_in_stock}
+                                  {item.unit_price && ` • $${item.unit_price}`}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="w-24">
                 <Label htmlFor={`quantity-${index}`}>Quantity</Label>
