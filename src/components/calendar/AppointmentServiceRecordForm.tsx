@@ -58,6 +58,42 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
     }
   };
 
+  // If isOpen is controlled externally, don't show the trigger button
+  if (isOpen !== undefined) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5" />
+              <span>Service Record for Appointment</span>
+            </DialogTitle>
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+              <div className="flex items-center space-x-1">
+                <Calendar className="h-3 w-3" />
+                <span>{formatDate(appointmentDate)}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Clock className="h-3 w-3" />
+                <span>{formatTime(appointmentTime)}</span>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <ServiceRecordForm
+            customerId={customerId}
+            onSuccess={handleServiceRecordCreated}
+            appointmentData={{
+              appointmentDate: appointmentDate,
+              appointmentTime: appointmentTime,
+              serviceType: serviceType,
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
