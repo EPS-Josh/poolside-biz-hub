@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ServiceSelect } from '@/components/calendar/ServiceSelect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -212,25 +213,10 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="service_type">Service Type *</Label>
-              <Select value={formData.service_type} onValueChange={(value) => updateFormData('service_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select service type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="regular-maintenance">Regular Maintenance</SelectItem>
-                  <SelectItem value="chemical-balance">Chemical Balance</SelectItem>
-                  <SelectItem value="equipment-repair">Equipment Repair</SelectItem>
-                  <SelectItem value="cleaning">Pool Cleaning</SelectItem>
-                  <SelectItem value="filter-maintenance">Filter Maintenance</SelectItem>
-                  <SelectItem value="filter-cleaning">Filter Cleaning</SelectItem>
-                  <SelectItem value="equipment-installation">Equipment Installation</SelectItem>
-                  <SelectItem value="inspection">Inspection</SelectItem>
-                  <SelectItem value="emergency-service">Emergency Service</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <ServiceSelect
+              value={formData.service_type}
+              onChange={(value) => updateFormData('service_type', value)}
+            />
             <div>
               <Label htmlFor="technician_name">Technician Name</Label>
               <Input
