@@ -228,6 +228,8 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
           appointmentDate={creatingServiceRecord.appointment_date}
           appointmentTime={creatingServiceRecord.appointment_time}
           onServiceRecordCreated={handleServiceRecordSuccess}
+          isOpen={!!creatingServiceRecord}
+          onOpenChange={(open) => !open && setCreatingServiceRecord(null)}
         />
       )}
     </>

@@ -13,6 +13,8 @@ interface AppointmentServiceRecordFormProps {
   appointmentDate: string;
   appointmentTime: string;
   onServiceRecordCreated?: () => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordFormProps> = ({
@@ -20,9 +22,13 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
   customerId,
   appointmentDate,
   appointmentTime,
-  onServiceRecordCreated
+  onServiceRecordCreated,
+  isOpen,
+  onOpenChange
 }) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isOpen !== undefined ? isOpen : internalOpen;
+  const setOpen = onOpenChange !== undefined ? onOpenChange : setInternalOpen;
 
   const handleServiceRecordCreated = () => {
     setOpen(false);
