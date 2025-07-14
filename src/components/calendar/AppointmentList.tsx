@@ -102,6 +102,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
   };
 
   const handleCreateServiceRecord = (appointment: any) => {
+    console.log('Creating service record for appointment:', appointment);
     setCreatingServiceRecord(appointment);
   };
 

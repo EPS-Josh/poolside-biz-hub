@@ -73,6 +73,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
   // Update form data when appointment data changes
   useEffect(() => {
     if (appointmentData) {
+      console.log('Updating form with appointment data:', appointmentData);
       setFormData(prev => ({
         ...prev,
         service_date: appointmentData.appointmentDate || prev.service_date,
