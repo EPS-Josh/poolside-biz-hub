@@ -23,21 +23,26 @@ interface PartUsed {
 interface ServiceRecordFormProps {
   customerId: string;
   onSuccess: () => void;
+  appointmentData?: {
+    appointmentDate?: string;
+    appointmentTime?: string;
+    serviceType?: string;
+  };
 }
 
-export const ServiceRecordForm = ({ customerId, onSuccess }: ServiceRecordFormProps) => {
+export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData }: ServiceRecordFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [partsUsed, setPartsUsed] = useState<PartUsed[]>([]);
   
-  // Initialize with current Phoenix date
+  // Initialize with appointment data if provided, otherwise use current Phoenix date
   const currentPhoenixDate = getCurrentPhoenixDate();
   const [formData, setFormData] = useState({
-    service_date: formatPhoenixDateForDatabase(currentPhoenixDate),
-    service_time: '',
-    service_type: '',
+    service_date: appointmentData?.appointmentDate || formatPhoenixDateForDatabase(currentPhoenixDate),
+    service_time: appointmentData?.appointmentTime || '',
+    service_type: appointmentData?.serviceType || '',
     technician_name: '',
     work_performed: '',
     chemicals_added: '',

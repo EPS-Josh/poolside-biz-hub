@@ -12,6 +12,7 @@ interface AppointmentServiceRecordFormProps {
   customerId: string;
   appointmentDate: string;
   appointmentTime: string;
+  serviceType: string;
   onServiceRecordCreated?: () => void;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -22,6 +23,7 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
   customerId,
   appointmentDate,
   appointmentTime,
+  serviceType,
   onServiceRecordCreated,
   isOpen,
   onOpenChange
@@ -85,6 +87,11 @@ export const AppointmentServiceRecordForm: React.FC<AppointmentServiceRecordForm
         <ServiceRecordForm
           customerId={customerId}
           onSuccess={handleServiceRecordCreated}
+          appointmentData={{
+            appointmentDate: appointmentDate,
+            appointmentTime: appointmentTime,
+            serviceType: serviceType,
+          }}
         />
       </DialogContent>
     </Dialog>
