@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +67,18 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData }: Se
       calcium_hardness: ''
     }
   });
+
+  // Update form data when appointment data changes
+  useEffect(() => {
+    if (appointmentData) {
+      setFormData(prev => ({
+        ...prev,
+        service_date: appointmentData.appointmentDate || prev.service_date,
+        service_time: appointmentData.appointmentTime || prev.service_time,
+        service_type: appointmentData.serviceType || prev.service_type,
+      }));
+    }
+  }, [appointmentData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
