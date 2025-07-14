@@ -28,9 +28,11 @@ interface ServiceRecordFormProps {
     appointmentTime?: string;
     serviceType?: string;
   };
+  triggerOpen?: boolean;
+  onTriggerOpenChange?: (open: boolean) => void;
 }
 
-export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData }: ServiceRecordFormProps) => {
+export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, triggerOpen, onTriggerOpenChange }: ServiceRecordFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -79,6 +81,19 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData }: Se
       }));
     }
   }, [appointmentData]);
+
+  // Handle external trigger to open dialog
+  useEffect(() => {
+    if (triggerOpen !== undefined) {
+      setOpen(triggerOpen);
+    }
+  }, [triggerOpen]);
+
+  // Handle open state changes
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    onTriggerOpenChange?.(newOpen);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,7 +176,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData }: Se
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4 mr-2" />

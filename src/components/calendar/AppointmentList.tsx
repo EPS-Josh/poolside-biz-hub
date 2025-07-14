@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
-import { AppointmentServiceRecordForm } from './AppointmentServiceRecordForm';
+import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
 import { Clock, User, Calendar, Edit, Trash2, FileText, Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -220,18 +220,17 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
         />
       )}
 
-      {creatingServiceRecord && (
-        <AppointmentServiceRecordForm
-          appointmentId={creatingServiceRecord.id}
-          customerId={creatingServiceRecord.customer_id}
-          appointmentDate={creatingServiceRecord.appointment_date}
-          appointmentTime={creatingServiceRecord.appointment_time}
-          serviceType={creatingServiceRecord.service_type}
-          onServiceRecordCreated={handleServiceRecordSuccess}
-          isOpen={true}
-          onOpenChange={(open) => !open && setCreatingServiceRecord(null)}
-        />
-      )}
+      <ServiceRecordForm
+        customerId={creatingServiceRecord?.customer_id || ''}
+        onSuccess={handleServiceRecordSuccess}
+        appointmentData={creatingServiceRecord ? {
+          appointmentDate: creatingServiceRecord.appointment_date,
+          appointmentTime: creatingServiceRecord.appointment_time,
+          serviceType: creatingServiceRecord.service_type,
+        } : undefined}
+        triggerOpen={!!creatingServiceRecord}
+        onTriggerOpenChange={(open) => !open && setCreatingServiceRecord(null)}
+      />
     </>
   );
 };
