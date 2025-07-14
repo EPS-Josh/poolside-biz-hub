@@ -249,6 +249,8 @@ const Splash = () => {
                 <div className="space-y-2 text-gray-400">
                   <p>(520) 728-3002</p>
                   <p>info@finestpoolsandspas.com</p>
+                  <p>PO Box 40144</p>
+                  <p>Tucson, AZ 85717</p>
                   <p>Serving the Greater Tucson Area</p>
                 </div>
               </div>
