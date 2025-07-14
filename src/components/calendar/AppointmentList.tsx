@@ -14,6 +14,8 @@ import { Clock, User, Calendar, Edit, Trash2, FileText, Plus } from 'lucide-reac
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
+import { useAppointmentServiceRecords } from '@/hooks/useAppointmentServiceRecords';
+import { CheckCircle } from 'lucide-react';
 
 interface AppointmentListProps {
   limit?: number;
@@ -67,6 +69,8 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
     },
     enabled: !!user
   });
+
+  const { data: serviceRecordMap = {} } = useAppointmentServiceRecords(appointments);
 
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (appointmentId: string) => {
@@ -130,6 +134,12 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                   <Badge className={getStatusColor(appointment.status)}>
                     {appointment.status}
                   </Badge>
+                  {serviceRecordMap[appointment.id] && (
+                    <div className="flex items-center space-x-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Service Complete</span>
+                    </div>
+                  )}
                   <span className="text-sm text-gray-500 flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     {format(parseDateFromDatabase(appointment.appointment_date), 'MMM d, yyyy')}

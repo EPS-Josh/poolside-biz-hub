@@ -3,6 +3,8 @@ import React from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { getAppointmentsForDate } from '@/utils/appointmentUtils';
 import { isSameDayPhoenix, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
+import { useAppointmentServiceRecords } from '@/hooks/useAppointmentServiceRecords';
+import { CheckCircle } from 'lucide-react';
 
 interface WeekViewProps {
   currentDate: Date;
@@ -20,6 +22,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
   const weekStart = startOfWeek(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = getCurrentPhoenixDate();
+  
+  const { data: serviceRecordMap = {} } = useAppointmentServiceRecords(appointments);
 
   return (
     <div>
@@ -54,11 +58,18 @@ export const WeekView: React.FC<WeekViewProps> = ({
                   return (
                     <div
                       key={apt.id}
-                      className="bg-blue-100 text-blue-800 p-2 rounded text-sm cursor-pointer hover:bg-blue-200 transition-colors"
+                      className={`p-2 rounded text-sm cursor-pointer transition-colors ${
+                        serviceRecordMap[apt.id]
+                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                          : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                      }`}
                       onClick={(e) => onAppointmentClick(apt, e)}
-                      title={`Click to edit appointment`}
+                      title={`Click to edit appointment${serviceRecordMap[apt.id] ? ' (Service Complete)' : ''}`}
                     >
-                      <div className="font-medium">{apt.appointment_time}</div>
+                      <div className="font-medium flex items-center space-x-1">
+                        {serviceRecordMap[apt.id] && <CheckCircle className="h-3 w-3" />}
+                        <span>{apt.appointment_time}</span>
+                      </div>
                       <div>{customerName}</div>
                       <div className="text-xs">{apt.service_type}</div>
                     </div>

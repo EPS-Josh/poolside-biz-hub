@@ -3,6 +3,8 @@ import React from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth } from 'date-fns';
 import { getAppointmentsForDate } from '@/utils/appointmentUtils';
 import { isSameDayPhoenix, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
+import { useAppointmentServiceRecords } from '@/hooks/useAppointmentServiceRecords';
+import { CheckCircle } from 'lucide-react';
 
 interface MonthViewProps {
   currentDate: Date;
@@ -21,6 +23,8 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd);
+  
+  const { data: serviceRecordMap = {} } = useAppointmentServiceRecords(appointments);
 
   const rows = [];
   let days = [];
@@ -65,15 +69,21 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 return (
                   <div
                     key={apt.id}
-                    className="text-xs bg-primary/10 text-primary px-1 sm:px-2 py-1 rounded truncate cursor-pointer hover:bg-primary/20 transition-colors"
+                    className={`text-xs px-1 sm:px-2 py-1 rounded truncate cursor-pointer transition-colors ${
+                      serviceRecordMap[apt.id] 
+                        ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                        : 'bg-primary/10 text-primary hover:bg-primary/20'
+                    }`}
                     onClick={(e) => onAppointmentClick(apt, e)}
-                    title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}`}
+                    title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}${serviceRecordMap[apt.id] ? ' (Service Complete)' : ''}`}
                   >
-                    <div className="hidden sm:block">
-                      {apt.appointment_time} - {customerName}
+                    <div className="hidden sm:flex items-center space-x-1">
+                      {serviceRecordMap[apt.id] && <CheckCircle className="h-3 w-3" />}
+                      <span>{apt.appointment_time} - {customerName}</span>
                     </div>
-                    <div className="sm:hidden">
-                      {apt.appointment_time}
+                    <div className="sm:hidden flex items-center space-x-1">
+                      {serviceRecordMap[apt.id] && <CheckCircle className="h-3 w-3" />}
+                      <span>{apt.appointment_time}</span>
                     </div>
                   </div>
                 );
