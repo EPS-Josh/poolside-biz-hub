@@ -7,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
-import { AppointmentServiceRecordForm } from './AppointmentServiceRecordForm';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
 import { Clock, User, Calendar, Edit, Trash2, FileText, Plus } from 'lucide-react';
@@ -222,16 +221,30 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
       )}
 
       {creatingServiceRecord && (
-        <AppointmentServiceRecordForm
-          appointmentId={creatingServiceRecord.id}
-          customerId={creatingServiceRecord.customer_id}
-          appointmentDate={creatingServiceRecord.appointment_date}
-          appointmentTime={creatingServiceRecord.appointment_time}
-          serviceType={creatingServiceRecord.service_type}
-          onServiceRecordCreated={handleServiceRecordSuccess}
-          isOpen={!!creatingServiceRecord}
-          onOpenChange={(open) => !open && setCreatingServiceRecord(null)}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[90vh] overflow-y-auto w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Service Record for {creatingServiceRecord.customers?.first_name} {creatingServiceRecord.customers?.last_name}</h2>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setCreatingServiceRecord(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </Button>
+            </div>
+            <ServiceRecordForm
+              customerId={creatingServiceRecord.customer_id}
+              onSuccess={handleServiceRecordSuccess}
+              appointmentData={{
+                appointmentDate: creatingServiceRecord.appointment_date,
+                appointmentTime: creatingServiceRecord.appointment_time,
+                serviceType: creatingServiceRecord.service_type,
+              }}
+            />
+          </div>
+        </div>
       )}
     </>
   );
