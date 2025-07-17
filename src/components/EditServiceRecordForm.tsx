@@ -221,6 +221,7 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
                   <SelectItem value="filter-maintenance">Filter Maintenance</SelectItem>
                   <SelectItem value="equipment-installation">Equipment Installation</SelectItem>
                   <SelectItem value="inspection">Inspection</SelectItem>
+                  <SelectItem value="consultation">Consultation</SelectItem>
                   <SelectItem value="emergency-service">Emergency Service</SelectItem>
                 </SelectContent>
               </Select>

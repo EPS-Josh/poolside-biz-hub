@@ -8,7 +8,8 @@ export const SERVICES = [
   'Pool Closing',
   'Equipment Installation',
   'Emergency Service',
-  'Collar Set'
+  'Collar Set',
+  'Consultation'
 ];
 
 export const TIME_SLOTS = [
