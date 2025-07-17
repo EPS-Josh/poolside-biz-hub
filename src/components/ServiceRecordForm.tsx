@@ -179,12 +179,14 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Service Record
-        </Button>
-      </DialogTrigger>
+      {!triggerOpen && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Service Record
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Service Record</DialogTitle>
