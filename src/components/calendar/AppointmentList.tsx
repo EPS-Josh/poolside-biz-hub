@@ -181,21 +181,22 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                   </div>
                 )}
 
-                {/* Consistent action buttons at the bottom */}
-                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                {/* Action buttons contained within card */}
+                <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-gray-100">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleCreateServiceRecord(appointment)}
-                    className="flex items-center space-x-1"
+                    className="flex items-center gap-1 text-xs"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Service Record</span>
+                    <Plus className="h-3 w-3" />
+                    <span>Service Record</span>
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setEditingAppointment(appointment)}
+                    className="p-2"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -204,7 +205,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                     size="sm"
                     onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
                     disabled={deleteAppointmentMutation.isPending}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 p-2"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
