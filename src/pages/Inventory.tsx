@@ -12,9 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, X } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, MoreHorizontal, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import InventoryBulkUpload from "@/components/InventoryBulkUpload";
+import { InventoryHistory } from "@/components/InventoryHistory";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface InventoryItem {
   id: string;
@@ -64,6 +66,7 @@ type SortDirection = 'asc' | 'desc';
 const Inventory = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [historyItem, setHistoryItem] = useState<InventoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState<SortField>('fps_item_number');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -915,24 +918,37 @@ const Inventory = () => {
                           <TableCell>
                             <Badge variant={stockStatus.variant}>{stockStatus.label}</Badge>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingItem(item)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => deleteItemMutation.mutate(item.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                           <TableCell>
+                             <div className="flex space-x-2">
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => setEditingItem(item)}
+                               >
+                                 <Edit className="h-4 w-4" />
+                               </Button>
+                               <DropdownMenu>
+                                 <DropdownMenuTrigger asChild>
+                                   <Button variant="outline" size="sm">
+                                     <MoreHorizontal className="h-4 w-4" />
+                                   </Button>
+                                 </DropdownMenuTrigger>
+                                 <DropdownMenuContent align="end">
+                                   <DropdownMenuItem onClick={() => setHistoryItem(item)}>
+                                     <History className="h-4 w-4 mr-2" />
+                                     View History
+                                   </DropdownMenuItem>
+                                   <DropdownMenuItem 
+                                     onClick={() => deleteItemMutation.mutate(item.id)}
+                                     className="text-destructive"
+                                   >
+                                     <Trash2 className="h-4 w-4 mr-2" />
+                                     Delete
+                                   </DropdownMenuItem>
+                                 </DropdownMenuContent>
+                               </DropdownMenu>
+                             </div>
+                           </TableCell>
                         </TableRow>
                       );
                     })}
@@ -952,6 +968,16 @@ const Inventory = () => {
             {editingItem && <ItemForm item={editingItem} />}
           </DialogContent>
         </Dialog>
+
+        {/* History Dialog */}
+        {historyItem && (
+          <InventoryHistory
+            inventoryItemId={historyItem.id}
+            itemName={historyItem.name || historyItem.description || historyItem.fps_item_number || "Unknown Item"}
+            isOpen={!!historyItem}
+            onClose={() => setHistoryItem(null)}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );
