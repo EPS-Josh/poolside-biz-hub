@@ -130,7 +130,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
           <Card key={appointment.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-wrap">
                   <Badge className={getStatusColor(appointment.status)}>
                     {appointment.status}
                   </Badge>
@@ -140,18 +140,21 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                       <span>Service Complete</span>
                     </div>
                   )}
-                  <span className="text-sm text-gray-500 flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {format(parseDateFromDatabase(appointment.appointment_date), 'MMM d, yyyy')}
-                  </span>
-                  <span className="text-sm text-gray-500 flex items-center">
-                    <Clock className="h-4 w-4 mr-1" />
-                    {appointment.appointment_time}
-                  </span>
                 </div>
               </div>
               
               <div className="space-y-3">
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>{format(parseDateFromDatabase(appointment.appointment_date), 'MMM d, yyyy')}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Clock className="h-4 w-4" />
+                    <span>{appointment.appointment_time}</span>
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <User className="h-4 w-4 text-gray-400" />
                   <span className="font-medium">
@@ -178,33 +181,32 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                   </div>
                 )}
 
-                {/* Action buttons positioned at the bottom of the card */}
-                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                {/* Consistent action buttons at the bottom */}
+                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => handleCreateServiceRecord(appointment)}
-                    className="flex items-center space-x-1 text-xs h-8"
+                    className="flex items-center space-x-1"
                   >
-                    <Plus className="h-3 w-3" />
-                    <span>Service Record</span>
+                    <Plus className="h-4 w-4" />
+                    <span>Add Service Record</span>
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setEditingAppointment(appointment)}
-                    className="h-8 w-8 p-0"
                   >
-                    <Edit className="h-3 w-3" />
+                    <Edit className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteAppointmentMutation.mutate(appointment.id)}
                     disabled={deleteAppointmentMutation.isPending}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
