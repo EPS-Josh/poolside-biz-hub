@@ -149,8 +149,17 @@ const Analytics = () => {
 
       const { data } = await query;
 
+      // Normalize service types to Title Case
+      const normalizeServiceType = (type: string) => {
+        return type
+          .split(/[-\s]/)
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+      };
+
       const typeCounts = data?.reduce((acc, record) => {
-        acc[record.service_type] = (acc[record.service_type] || 0) + 1;
+        const normalizedType = normalizeServiceType(record.service_type);
+        acc[normalizedType] = (acc[normalizedType] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {};
 
