@@ -223,17 +223,19 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
         />
       )}
 
-      <ServiceRecordForm
-        customerId={creatingServiceRecord?.customer_id || ''}
-        onSuccess={handleServiceRecordSuccess}
-        appointmentData={creatingServiceRecord ? {
-          appointmentDate: creatingServiceRecord.appointment_date,
-          appointmentTime: creatingServiceRecord.appointment_time,
-          serviceType: creatingServiceRecord.service_type,
-        } : undefined}
-        triggerOpen={!!creatingServiceRecord}
-        onTriggerOpenChange={(open) => !open && setCreatingServiceRecord(null)}
-      />
+      {creatingServiceRecord && (
+        <ServiceRecordForm
+          customerId={creatingServiceRecord.customer_id}
+          onSuccess={handleServiceRecordSuccess}
+          appointmentData={{
+            appointmentDate: creatingServiceRecord.appointment_date,
+            appointmentTime: creatingServiceRecord.appointment_time,
+            serviceType: creatingServiceRecord.service_type,
+          }}
+          triggerOpen={true}
+          onTriggerOpenChange={(open) => !open && setCreatingServiceRecord(null)}
+        />
+      )}
     </>
   );
 };
