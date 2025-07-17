@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, X, Image as ImageIcon, Expand } from 'lucide-react';
 
 interface CustomerPhoto {
   id: string;
@@ -26,6 +27,7 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
   const [photos, setPhotos] = useState<CustomerPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<CustomerPhoto | null>(null);
   const { toast } = useToast();
 
   const fetchPhotos = async () => {
@@ -227,17 +229,25 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {photos.map((photo) => (
               <div key={photo.id} className="border rounded-lg overflow-hidden">
-                <div className="relative">
+                <div className="relative group">
                   <img
                     src={photo.file_path}
                     alt={photo.file_name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-48 object-cover cursor-pointer transition-opacity hover:opacity-90"
+                    onClick={() => setSelectedPhoto(photo)}
                   />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                       onClick={() => setSelectedPhoto(photo)}>
+                    <Expand className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  </div>
                   <Button
                     variant="destructive"
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={() => handleDeletePhoto(photo.id, photo.file_path)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePhoto(photo.id, photo.file_path);
+                    }}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -259,6 +269,31 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
             ))}
           </div>
         )}
+
+        {/* Image Preview Dialog */}
+        <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+          <DialogContent className="max-w-4xl w-full h-[90vh] p-0">
+            {selectedPhoto && (
+              <div className="relative w-full h-full flex items-center justify-center bg-black">
+                <img
+                  src={selectedPhoto.file_path}
+                  alt={selectedPhoto.file_name}
+                  className="max-w-full max-h-full object-contain"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-4">
+                  <h3 className="font-medium">{selectedPhoto.file_name}</h3>
+                  {selectedPhoto.description && (
+                    <p className="text-sm text-gray-300 mt-1">{selectedPhoto.description}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2">
+                    {new Date(selectedPhoto.created_at).toLocaleDateString()}
+                    {selectedPhoto.file_size && ` • ${Math.round(selectedPhoto.file_size / 1024)} KB`}
+                  </p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
