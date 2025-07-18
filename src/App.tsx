@@ -16,6 +16,7 @@ import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
+import TSBs from "./pages/TSBs";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/tsbs" element={<TSBs />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

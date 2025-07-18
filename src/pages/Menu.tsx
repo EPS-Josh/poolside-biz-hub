@@ -13,7 +13,8 @@ import {
   Package, 
   UserCheck, 
   Building, 
-  Calendar 
+  Calendar,
+  FileText
 } from 'lucide-react';
 
 const Menu = () => {
@@ -70,6 +71,13 @@ const Menu = () => {
           icon: Calendar,
           color: "bg-red-500",
           action: () => navigate('/calendar'),
+        },
+        {
+          title: "TSB's",
+          description: "Technical Service Bulletins management",
+          icon: FileText,
+          color: "bg-indigo-500",
+          action: () => navigate('/tsbs'),
         },
       ]
     },
