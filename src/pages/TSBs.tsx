@@ -44,13 +44,18 @@ const TSBs = () => {
 
   const fetchTSBs = async () => {
     try {
+      console.log('Fetching TSBs...');
       const { data, error } = await supabase
         .from('tsbs')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      console.log('TSBs fetched successfully:', data);
       setTsbs(data || []);
     } catch (error) {
       console.error('Error fetching TSBs:', error);
@@ -65,8 +70,11 @@ const TSBs = () => {
   };
 
   useEffect(() => {
+    console.log('TSBs component mounted, fetching data...');
     fetchTSBs();
   }, []);
+
+  console.log('TSBs component rendered. Loading:', loading, 'TSBs count:', tsbs.length);
 
   const filteredTSBs = selectedCategory === 'all' 
     ? tsbs 
