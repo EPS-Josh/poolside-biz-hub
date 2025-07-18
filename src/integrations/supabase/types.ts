@@ -649,6 +649,90 @@ export type Database = {
         }
         Relationships: []
       }
+      tsbs: {
+        Row: {
+          attachments: Json | null
+          category: Database["public"]["Enums"]["tsb_category"]
+          created_at: string
+          description: string | null
+          equipment_models: string[] | null
+          estimated_time_minutes: number | null
+          id: string
+          is_active: boolean | null
+          issue_description: string | null
+          manufacturer: string | null
+          parts_required: Json | null
+          prevention_tips: string | null
+          priority: Database["public"]["Enums"]["tsb_priority"]
+          related_tsb_ids: string[] | null
+          revision_number: number | null
+          root_cause: string | null
+          safety_notes: string | null
+          solution_steps: string | null
+          symptoms: string[] | null
+          tags: string[] | null
+          title: string
+          tools_required: string[] | null
+          troubleshooting_steps: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          category: Database["public"]["Enums"]["tsb_category"]
+          created_at?: string
+          description?: string | null
+          equipment_models?: string[] | null
+          estimated_time_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          issue_description?: string | null
+          manufacturer?: string | null
+          parts_required?: Json | null
+          prevention_tips?: string | null
+          priority?: Database["public"]["Enums"]["tsb_priority"]
+          related_tsb_ids?: string[] | null
+          revision_number?: number | null
+          root_cause?: string | null
+          safety_notes?: string | null
+          solution_steps?: string | null
+          symptoms?: string[] | null
+          tags?: string[] | null
+          title: string
+          tools_required?: string[] | null
+          troubleshooting_steps?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          category?: Database["public"]["Enums"]["tsb_category"]
+          created_at?: string
+          description?: string | null
+          equipment_models?: string[] | null
+          estimated_time_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          issue_description?: string | null
+          manufacturer?: string | null
+          parts_required?: Json | null
+          prevention_tips?: string | null
+          priority?: Database["public"]["Enums"]["tsb_priority"]
+          related_tsb_ids?: string[] | null
+          revision_number?: number | null
+          root_cause?: string | null
+          safety_notes?: string | null
+          solution_steps?: string | null
+          symptoms?: string[] | null
+          tags?: string[] | null
+          title?: string
+          tools_required?: string[] | null
+          troubleshooting_steps?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -657,7 +741,18 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      tsb_category:
+        | "Pump Systems"
+        | "Filtration Systems"
+        | "Heating Systems"
+        | "Sanitization & Chemical Systems"
+        | "Control Systems & Automation"
+        | "Water Features & Accessories"
+        | "Spa/Hot Tub Specific"
+        | "Safety Equipment"
+        | "Electrical Components"
+        | "Plumbing & Hydraulics"
+      tsb_priority: "Low" | "Medium" | "High" | "Critical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -784,6 +879,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      tsb_category: [
+        "Pump Systems",
+        "Filtration Systems",
+        "Heating Systems",
+        "Sanitization & Chemical Systems",
+        "Control Systems & Automation",
+        "Water Features & Accessories",
+        "Spa/Hot Tub Specific",
+        "Safety Equipment",
+        "Electrical Components",
+        "Plumbing & Hydraulics",
+      ],
+      tsb_priority: ["Low", "Medium", "High", "Critical"],
+    },
   },
 } as const
