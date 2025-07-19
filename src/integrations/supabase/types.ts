@@ -752,6 +752,7 @@ export type Database = {
         | "Safety Equipment"
         | "Electrical Components"
         | "Plumbing & Hydraulics"
+        | "In-Floor Cleaning Systems"
       tsb_priority: "Low" | "Medium" | "High" | "Critical"
     }
     CompositeTypes: {
@@ -891,6 +892,7 @@ export const Constants = {
         "Safety Equipment",
         "Electrical Components",
         "Plumbing & Hydraulics",
+        "In-Floor Cleaning Systems",
       ],
       tsb_priority: ["Low", "Medium", "High", "Critical"],
     },
