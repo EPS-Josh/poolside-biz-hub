@@ -39,7 +39,8 @@ const TSBs = () => {
     { id: 'Spa/Hot Tub Specific', name: 'Spa/Hot Tub Specific', icon: FileText, color: 'bg-pink-500' },
     { id: 'Safety Equipment', name: 'Safety Equipment', icon: AlertTriangle, color: 'bg-yellow-500' },
     { id: 'Electrical Components', name: 'Electrical Components', icon: Zap, color: 'bg-orange-500' },
-    { id: 'Plumbing & Hydraulics', name: 'Plumbing & Hydraulics', icon: Wrench, color: 'bg-teal-500' }
+    { id: 'Plumbing & Hydraulics', name: 'Plumbing & Hydraulics', icon: Wrench, color: 'bg-teal-500' },
+    { id: 'In-Floor Cleaning Systems', name: 'In-Floor Cleaning Systems', icon: Wrench, color: 'bg-emerald-500' }
   ];
 
   const fetchTSBs = async () => {
