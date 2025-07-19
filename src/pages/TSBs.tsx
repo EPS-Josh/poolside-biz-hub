@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { TSBForm } from '@/components/TSBForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Plus, Search, AlertTriangle, Wrench, Zap } from 'lucide-react';
@@ -26,7 +28,13 @@ const TSBs = () => {
   const [tsbs, setTsbs] = useState<TSB[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  const handleTSBCreated = () => {
+    setIsCreateDialogOpen(false);
+    fetchTSBs(); // Refresh the list
+  };
 
   const categories = [
     { id: 'all', name: 'All Categories', icon: FileText, color: 'bg-gray-500' },
@@ -112,10 +120,17 @@ const TSBs = () => {
             </div>
 
             <div className="mb-6">
-              <Button className="mb-4">
-                <Plus className="h-4 w-4 mr-2" />
-                Add New TSB
-              </Button>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="mb-4">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New TSB
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <TSBForm onSuccess={handleTSBCreated} onCancel={() => setIsCreateDialogOpen(false)} />
+                </DialogContent>
+              </Dialog>
             </div>
 
             <Tabs defaultValue="categories" className="space-y-6">
@@ -175,10 +190,12 @@ const TSBs = () => {
                           <p className="text-muted-foreground mb-4">
                             Create your first TSB for this category
                           </p>
-                          <Button variant="outline">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create TSB
-                          </Button>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Create TSB
+                            </Button>
+                          </DialogTrigger>
                         </CardContent>
                       </Card>
                     ) : (
@@ -265,10 +282,12 @@ const TSBs = () => {
                         <p className="text-muted-foreground mb-4">
                           Start by adding your first Technical Service Bulletin
                         </p>
-                        <Button variant="outline">
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create First TSB
-                        </Button>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create First TSB
+                          </Button>
+                        </DialogTrigger>
                       </div>
                     </CardContent>
                   </Card>
