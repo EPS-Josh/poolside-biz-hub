@@ -190,12 +190,17 @@ const TSBs = () => {
                           <p className="text-muted-foreground mb-4">
                             Create your first TSB for this category
                           </p>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
-                              <Plus className="h-4 w-4 mr-2" />
-                              Create TSB
-                            </Button>
-                          </DialogTrigger>
+                          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Create TSB
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                              <TSBForm onSuccess={handleTSBCreated} onCancel={() => setIsCreateDialogOpen(false)} />
+                            </DialogContent>
+                          </Dialog>
                         </CardContent>
                       </Card>
                     ) : (
@@ -282,12 +287,17 @@ const TSBs = () => {
                         <p className="text-muted-foreground mb-4">
                           Start by adding your first Technical Service Bulletin
                         </p>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create First TSB
-                          </Button>
-                        </DialogTrigger>
+                        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Create First TSB
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <TSBForm onSuccess={handleTSBCreated} onCancel={() => setIsCreateDialogOpen(false)} />
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </CardContent>
                   </Card>
