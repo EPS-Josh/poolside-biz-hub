@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { X } from 'lucide-react';
+import { X, Upload, FileText, Trash2 } from 'lucide-react';
 
 const tsbSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -52,8 +52,18 @@ interface TSBFormProps {
   onCancel?: () => void;
 }
 
+interface Attachment {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  size: number;
+}
+
 export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const { toast } = useToast();
 
   const form = useForm<TSBFormData>({
@@ -81,6 +91,134 @@ export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
     return str.split(',').map(item => item.trim()).filter(item => item.length > 0);
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const uploadedAttachments: Attachment[] = [];
+
+      for (const file of Array.from(files)) {
+        // Validate file type (documents and images)
+        const allowedTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+          'text/plain',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+          toast({
+            title: "Invalid file type",
+            description: `File "${file.name}" is not a supported format`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: `File "${file.name}" is larger than 10MB`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const fileId = crypto.randomUUID();
+        const filePath = `${user.id}/${fileId}_${file.name}`;
+
+        const { data, error } = await supabase.storage
+          .from('tsb-attachments')
+          .upload(filePath, file);
+
+        if (error) throw error;
+
+        const { data: publicUrl } = supabase.storage
+          .from('tsb-attachments')
+          .getPublicUrl(filePath);
+
+        uploadedAttachments.push({
+          id: fileId,
+          name: file.name,
+          url: publicUrl.publicUrl,
+          type: file.type,
+          size: file.size
+        });
+      }
+
+      setAttachments(prev => [...prev, ...uploadedAttachments]);
+      
+      toast({
+        title: "Files uploaded",
+        description: `${uploadedAttachments.length} file(s) uploaded successfully`,
+      });
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload files",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      event.target.value = '';
+    }
+  };
+
+  const removeAttachment = async (attachmentId: string) => {
+    const attachment = attachments.find(a => a.id === attachmentId);
+    if (!attachment) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Extract file path from URL
+      const filePath = `${user.id}/${attachmentId}_${attachment.name}`;
+      
+      const { error } = await supabase.storage
+        .from('tsb-attachments')
+        .remove([filePath]);
+
+      if (error) throw error;
+
+      setAttachments(prev => prev.filter(a => a.id !== attachmentId));
+      
+      toast({
+        title: "File removed",
+        description: "Attachment removed successfully",
+      });
+    } catch (error) {
+      console.error('Error removing file:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove attachment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   const onSubmit = async (data: TSBFormData) => {
     setIsSubmitting(true);
     try {
@@ -103,6 +241,7 @@ export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
         troubleshooting_steps: data.troubleshooting_steps || null,
         tools_required: data.tools_required ? stringToArray(data.tools_required) : [],
         estimated_time_minutes: data.estimated_time_minutes ? parseInt(data.estimated_time_minutes) : null,
+        attachments: attachments.length > 0 ? JSON.parse(JSON.stringify(attachments)) : null,
         user_id: user.id,
         is_active: true,
         revision_number: 1,
@@ -425,6 +564,77 @@ export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* File Upload Section */}
+            <div className="space-y-4">
+              <div>
+                <FormLabel>Attachments</FormLabel>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Upload documents, exploded parts diagrams, images, and other reference materials
+                </p>
+                
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Drag files here or click to browse
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Supports: PDF, DOC, DOCX, XLS, XLSX, TXT, JPG, PNG, GIF, WEBP (max 10MB each)
+                    </p>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                      disabled={isUploading}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isUploading}
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                    >
+                      {isUploading ? 'Uploading...' : 'Choose Files'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Uploaded Files List */}
+                {attachments.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-medium">Uploaded Files:</p>
+                    {attachments.map((attachment) => (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm font-medium">{attachment.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(attachment.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAttachment(attachment.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end space-x-2 pt-6">
