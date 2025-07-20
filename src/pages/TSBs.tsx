@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { TSBForm } from '@/components/TSBForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Plus, Search, AlertTriangle, Wrench, Zap } from 'lucide-react';
+import { FileText, Plus, Search, AlertTriangle, Wrench, Zap, Edit3, Eye } from 'lucide-react';
 
 interface TSB {
   id: string;
@@ -29,11 +29,30 @@ const TSBs = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [selectedTSB, setSelectedTSB] = useState<TSB | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleTSBCreated = () => {
     setIsCreateDialogOpen(false);
     fetchTSBs(); // Refresh the list
+  };
+
+  const handleTSBUpdated = () => {
+    setIsEditDialogOpen(false);
+    setSelectedTSB(null);
+    fetchTSBs(); // Refresh the list
+  };
+
+  const handleViewTSB = (tsb: TSB) => {
+    setSelectedTSB(tsb);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditTSB = (tsb: TSB) => {
+    setSelectedTSB(tsb);
+    setIsEditDialogOpen(true);
   };
 
   const categories = [
@@ -219,6 +238,22 @@ const TSBs = () => {
                                     <Badge variant="outline">{tsb.manufacturer}</Badge>
                                   </div>
                                 </div>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleViewTSB(tsb)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleEditTSB(tsb)}
+                                  >
+                                    <Edit3 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </CardHeader>
                             <CardContent>
@@ -318,6 +353,22 @@ const TSBs = () => {
                                 <Badge variant="outline">{tsb.manufacturer}</Badge>
                               </div>
                             </div>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleViewTSB(tsb)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditTSB(tsb)}
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </CardHeader>
                       </Card>
@@ -326,6 +377,86 @@ const TSBs = () => {
                 )}
               </TabsContent>
             </Tabs>
+
+            {/* View TSB Dialog */}
+            <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                {selectedTSB && (
+                  <div className="space-y-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold">{selectedTSB.title}</h2>
+                        <p className="text-muted-foreground mt-1">{selectedTSB.description}</p>
+                        <div className="flex items-center space-x-2 mt-3">
+                          <Badge className={getPriorityColor(selectedTSB.priority)}>
+                            {selectedTSB.priority}
+                          </Badge>
+                          <Badge variant="outline">{selectedTSB.category}</Badge>
+                          <Badge variant="outline">{selectedTSB.manufacturer}</Badge>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsViewDialogOpen(false);
+                          handleEditTSB(selectedTSB);
+                        }}
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-6">
+                      {selectedTSB.equipment_models && selectedTSB.equipment_models.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Equipment Models</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedTSB.equipment_models.map((model, index) => (
+                              <Badge key={index} variant="secondary">{model}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedTSB.symptoms && selectedTSB.symptoms.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Common Symptoms</h3>
+                          <ul className="list-disc list-inside space-y-1">
+                            {selectedTSB.symptoms.map((symptom, index) => (
+                              <li key={index} className="text-muted-foreground">{symptom}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {selectedTSB.root_cause && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Root Cause</h3>
+                          <p className="text-muted-foreground">{selectedTSB.root_cause}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit TSB Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                {selectedTSB && (
+                  <TSBForm 
+                    initialData={selectedTSB}
+                    onSuccess={handleTSBUpdated} 
+                    onCancel={() => {
+                      setIsEditDialogOpen(false);
+                      setSelectedTSB(null);
+                    }} 
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         </main>
       </div>

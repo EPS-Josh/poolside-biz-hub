@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -48,6 +48,7 @@ const categories = [
 ];
 
 interface TSBFormProps {
+  initialData?: any;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -60,30 +61,37 @@ interface Attachment {
   size: number;
 }
 
-export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
+export function TSBForm({ initialData, onSuccess, onCancel }: TSBFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const { toast } = useToast();
 
+  // Load existing attachments when editing
+  useEffect(() => {
+    if (initialData?.attachments) {
+      setAttachments(initialData.attachments);
+    }
+  }, [initialData]);
+
   const form = useForm<TSBFormData>({
     resolver: zodResolver(tsbSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      category: 'Pump Systems',
-      priority: 'Medium',
-      manufacturer: '',
-      equipment_models: '',
-      symptoms: '',
-      root_cause: '',
-      issue_description: '',
-      solution_steps: '',
-      prevention_tips: '',
-      safety_notes: '',
-      troubleshooting_steps: '',
-      tools_required: '',
-      estimated_time_minutes: '',
+      title: initialData?.title || '',
+      description: initialData?.description || '',
+      category: initialData?.category || 'Pump Systems',
+      priority: initialData?.priority || 'Medium',
+      manufacturer: initialData?.manufacturer || '',
+      equipment_models: initialData?.equipment_models?.join(', ') || '',
+      symptoms: initialData?.symptoms?.join(', ') || '',
+      root_cause: initialData?.root_cause || '',
+      issue_description: initialData?.issue_description || '',
+      solution_steps: initialData?.solution_steps || '',
+      prevention_tips: initialData?.prevention_tips || '',
+      safety_notes: initialData?.safety_notes || '',
+      troubleshooting_steps: initialData?.troubleshooting_steps || '',
+      tools_required: initialData?.tools_required?.join(', ') || '',
+      estimated_time_minutes: initialData?.estimated_time_minutes?.toString() || '',
     },
   });
 
@@ -247,15 +255,25 @@ export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
         revision_number: 1,
       };
 
-      const { error } = await supabase
-        .from('tsbs')
-        .insert(tsbData);
+      let result;
+      if (initialData?.id) {
+        // Update existing TSB
+        result = await supabase
+          .from('tsbs')
+          .update(tsbData)
+          .eq('id', initialData.id);
+      } else {
+        // Create new TSB
+        result = await supabase
+          .from('tsbs')
+          .insert(tsbData);
+      }
 
-      if (error) throw error;
+      if (result.error) throw result.error;
 
       toast({
         title: "Success",
-        description: "TSB created successfully",
+        description: initialData?.id ? "TSB updated successfully" : "TSB created successfully",
       });
 
       form.reset();
@@ -277,9 +295,12 @@ export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Create New TSB</CardTitle>
+            <CardTitle>{initialData?.id ? 'Edit TSB' : 'Create New TSB'}</CardTitle>
             <CardDescription>
-              Add a new Technical Service Bulletin for swimming pool and spa equipment
+              {initialData?.id 
+                ? 'Update the Technical Service Bulletin' 
+                : 'Add a new Technical Service Bulletin for swimming pool and spa equipment'
+              }
             </CardDescription>
           </div>
           {onCancel && (
@@ -644,7 +665,10 @@ export function TSBForm({ onSuccess, onCancel }: TSBFormProps) {
                 </Button>
               )}
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create TSB'}
+                {isSubmitting 
+                  ? (initialData?.id ? 'Updating...' : 'Creating...') 
+                  : (initialData?.id ? 'Update TSB' : 'Create TSB')
+                }
               </Button>
             </div>
           </form>
