@@ -21,6 +21,14 @@ interface TSB {
   equipment_models: string[];
   symptoms: string[];
   root_cause: string;
+  issue_description: string;
+  solution_steps: string;
+  prevention_tips: string;
+  safety_notes: string;
+  troubleshooting_steps: string;
+  tools_required: string[];
+  estimated_time_minutes: number;
+  attachments: any[];
   created_at: string;
 }
 
@@ -84,7 +92,17 @@ const TSBs = () => {
         throw error;
       }
       console.log('TSBs fetched successfully:', data);
-      setTsbs(data || []);
+      
+      // Transform the data to match our TSB interface
+      const transformedData = data?.map(item => ({
+        ...item,
+        attachments: Array.isArray(item.attachments) ? item.attachments : [],
+        equipment_models: Array.isArray(item.equipment_models) ? item.equipment_models : [],
+        symptoms: Array.isArray(item.symptoms) ? item.symptoms : [],
+        tools_required: Array.isArray(item.tools_required) ? item.tools_required : [],
+      })) || [];
+      
+      setTsbs(transformedData);
     } catch (error) {
       console.error('Error fetching TSBs:', error);
       toast({
@@ -434,6 +452,87 @@ const TSBs = () => {
                         <div>
                           <h3 className="text-lg font-semibold mb-2">Root Cause</h3>
                           <p className="text-muted-foreground">{selectedTSB.root_cause}</p>
+                        </div>
+                      )}
+
+                      {selectedTSB.issue_description && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Issue Description</h3>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{selectedTSB.issue_description}</p>
+                        </div>
+                      )}
+
+                      {selectedTSB.solution_steps && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Solution Steps</h3>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{selectedTSB.solution_steps}</p>
+                        </div>
+                      )}
+
+                      {selectedTSB.troubleshooting_steps && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Troubleshooting Steps</h3>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{selectedTSB.troubleshooting_steps}</p>
+                        </div>
+                      )}
+
+                      {selectedTSB.tools_required && selectedTSB.tools_required.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Tools Required</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedTSB.tools_required.map((tool, index) => (
+                              <Badge key={index} variant="outline">{tool}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedTSB.estimated_time_minutes && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Estimated Time</h3>
+                          <p className="text-muted-foreground">{selectedTSB.estimated_time_minutes} minutes</p>
+                        </div>
+                      )}
+
+                      {selectedTSB.prevention_tips && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Prevention Tips</h3>
+                          <p className="text-muted-foreground whitespace-pre-wrap">{selectedTSB.prevention_tips}</p>
+                        </div>
+                      )}
+
+                      {selectedTSB.safety_notes && (
+                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <h3 className="text-lg font-semibold mb-2 text-yellow-800">Safety Notes</h3>
+                          <p className="text-yellow-700 whitespace-pre-wrap">{selectedTSB.safety_notes}</p>
+                        </div>
+                      )}
+
+                      {selectedTSB.attachments && selectedTSB.attachments.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold mb-2">Attachments</h3>
+                          <div className="grid gap-2">
+                            {selectedTSB.attachments.map((attachment, index) => (
+                              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="flex items-center space-x-3">
+                                  <FileText className="h-5 w-5 text-muted-foreground" />
+                                  <div>
+                                    <p className="font-medium">{attachment.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {attachment.type} • {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => window.open(attachment.url, '_blank')}
+                                >
+                                  View
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
