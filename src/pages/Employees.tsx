@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Shield, Key, UserPlus, Mail, Calendar } from 'lucide-react';
+import { Users, Shield, Key, UserPlus, Mail, Calendar, RefreshCw } from 'lucide-react';
 import { Header } from '@/components/Header';
 
 interface UserProfile {
@@ -256,7 +256,12 @@ export const Employees = () => {
             <h1 className="text-3xl font-bold text-foreground">Employee Management</h1>
             <p className="text-muted-foreground">Manage user accounts and permissions</p>
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={fetchUsers}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -316,7 +321,8 @@ export const Employees = () => {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         {loading ? (
