@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings } from 'lucide-react';
+import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings, Eye } from 'lucide-react';
 
 interface Manual {
   id: string;
@@ -39,8 +39,13 @@ const Manuals = () => {
 
   const fetchManuals = async () => {
     try {
-      // This would fetch from a manuals table once created
-      setManuals([]);
+      const { data, error } = await supabase
+        .from('manuals')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setManuals(data || []);
     } catch (error) {
       console.error('Error fetching manuals:', error);
       toast({
@@ -82,7 +87,25 @@ const Manuals = () => {
 
       if (uploadError) throw uploadError;
 
-      // Note: Would save to manuals table once created
+      // Save to manuals table
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
+      const { error: dbError } = await supabase
+        .from('manuals')
+        .insert({
+          user_id: user.user.id,
+          title: uploadData.title,
+          manufacturer: uploadData.manufacturer || null,
+          model: uploadData.model || null,
+          file_name: uploadData.file.name,
+          file_path: filePath,
+          file_size: uploadData.file.size,
+          file_type: uploadData.file.type || null
+        });
+
+      if (dbError) throw dbError;
+
       toast({
         title: "Success",
         description: "Manual uploaded successfully",
@@ -109,6 +132,92 @@ const Manuals = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleViewManual = async (manual: Manual) => {
+    try {
+      const { data } = await supabase.storage
+        .from('tsb-attachments')
+        .createSignedUrl(manual.file_path, 3600); // 1 hour expiry
+
+      if (data?.signedUrl) {
+        const popup = window.open(
+          data.signedUrl, 
+          'manual-viewer',
+          'width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,location=no,directories=no,status=no,menubar=no'
+        );
+        
+        if (popup) {
+          popup.focus();
+        }
+      }
+    } catch (error) {
+      console.error('Error viewing manual:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open manual",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadManual = async (manual: Manual) => {
+    try {
+      const { data } = await supabase.storage
+        .from('tsb-attachments')
+        .createSignedUrl(manual.file_path, 3600);
+
+      if (data?.signedUrl) {
+        const link = document.createElement('a');
+        link.href = data.signedUrl;
+        link.download = manual.file_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Error downloading manual:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download manual",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteManual = async (manual: Manual) => {
+    if (!confirm('Are you sure you want to delete this manual?')) return;
+
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('tsb-attachments')
+        .remove([manual.file_path]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('manuals')
+        .delete()
+        .eq('id', manual.id);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Manual deleted successfully",
+      });
+
+      fetchManuals();
+    } catch (error) {
+      console.error('Error deleting manual:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete manual",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -386,10 +495,28 @@ const Manuals = () => {
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewManual(manual)}
+                            title="View manual"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDownloadManual(manual)}
+                            title="Download manual"
+                          >
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteManual(manual)}
+                            title="Delete manual"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

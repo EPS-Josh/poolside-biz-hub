@@ -500,6 +500,48 @@ export type Database = {
         }
         Relationships: []
       }
+      manuals: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string | null
+          id: string
+          manufacturer: string | null
+          model: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type?: string | null
+          id?: string
+          manufacturer?: string | null
+          model?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string | null
+          id?: string
+          manufacturer?: string | null
+          model?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       parts_diagrams: {
         Row: {
           created_at: string
