@@ -29,6 +29,7 @@ const PartsDiagrams = () => {
   const { category } = useParams<{ category: string }>();
   const decodedCategory = category ? decodeURIComponent(category) : null;
   const [partsDiagrams, setPartsDiagrams] = useState<PartsDiagram[]>([]);
+  const [tsbCategories, setTsbCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -76,8 +77,25 @@ const PartsDiagrams = () => {
     }
   };
 
+  const fetchTsbCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tsbs')
+        .select('category')
+        .not('category', 'is', null);
+
+      if (error) throw error;
+      
+      const uniqueCategories = [...new Set(data.map(item => item.category))].sort();
+      setTsbCategories(uniqueCategories);
+    } catch (error) {
+      console.error('Error fetching TSB categories:', error);
+    }
+  };
+
   useEffect(() => {
     fetchPartsDiagrams();
+    fetchTsbCategories();
   }, []);
 
   const handleFileUpload = async (e: React.FormEvent) => {
@@ -666,14 +684,11 @@ const PartsDiagrams = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">No Category</SelectItem>
-                          <SelectItem value="Pool & Spa Equipment">Pool & Spa Equipment</SelectItem>
-                          <SelectItem value="Pump Systems">Pump Systems</SelectItem>
-                          <SelectItem value="Filtration Systems">Filtration Systems</SelectItem>
-                          <SelectItem value="Heating Systems">Heating Systems</SelectItem>
-                          <SelectItem value="Automation Systems">Automation Systems</SelectItem>
-                          <SelectItem value="Chemical Systems">Chemical Systems</SelectItem>
-                          <SelectItem value="Lighting Systems">Lighting Systems</SelectItem>
-                          <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                          {tsbCategories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
