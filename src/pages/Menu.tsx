@@ -90,7 +90,7 @@ const Menu = () => {
           description: "Manage staff and employee information",
           icon: UserCheck,
           color: "bg-teal-500",
-          action: () => console.log('Employees coming soon'),
+          action: () => navigate('/employees'),
         },
         {
           title: "Company Data",

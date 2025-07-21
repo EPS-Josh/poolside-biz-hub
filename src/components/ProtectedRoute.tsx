@@ -1,32 +1,68 @@
 
-import { ReactNode, useEffect } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  requiredRole?: 'admin' | 'manager' | 'technician' | 'customer';
+  allowedRoles?: ('admin' | 'manager' | 'technician' | 'customer')[];
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading } = useAuth();
+export const ProtectedRoute = ({ 
+  children, 
+  requiredRole,
+  allowedRoles 
+}: ProtectedRouteProps) => {
+  const { user, loading: authLoading } = useAuth();
+  const { hasRole, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
 
-  if (loading) {
+  // Show loading while checking auth and roles
+  if (authLoading || (user && rolesLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div>Loading...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return null;
+  }
+
+  // Check role requirements if specified
+  if (requiredRole && !hasRole(requiredRole)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You need {requiredRole} privileges to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check allowed roles if specified
+  if (allowedRoles && !allowedRoles.some(role => hasRole(role))) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
