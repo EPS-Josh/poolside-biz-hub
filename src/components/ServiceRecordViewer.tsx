@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, User, Wrench, Beaker, FileText, Activity, Package, CheckCircle } from 'lucide-react';
 import { toPhoenixTime } from '@/utils/phoenixTimeUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ServiceRecord {
   id: string;
+  customer_id: string;
   service_date: string;
   service_time?: string;
   service_type: string;
