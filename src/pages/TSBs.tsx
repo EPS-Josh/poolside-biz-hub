@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { TSBForm } from '@/components/TSBForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Plus, Search, AlertTriangle, Wrench, Zap, Edit3, Eye, ChevronDown, ChevronUp, BookOpen, Settings } from 'lucide-react';
+import { FileText, Plus, Search, AlertTriangle, Wrench, Zap, Edit3, Eye, ChevronDown, ChevronUp, BookOpen, Settings, ArrowLeft, Home, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface TSB {
@@ -155,9 +155,65 @@ const TSBs = () => {
         <Header />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Technical Service Bulletins</h1>
-              <p className="text-muted-foreground">Manage and track technical service bulletins for swimming pool and spa equipment repair</p>
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground"
+              >
+                <Home className="h-4 w-4" />
+                <span>Menu</span>
+              </Button>
+              <span>/</span>
+              {selectedCategory !== 'all' ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedCategory('all')}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    TSBs
+                  </Button>
+                  <span>/</span>
+                  <span className="text-foreground font-medium">
+                    {categories.find(c => c.id === selectedCategory)?.name}
+                  </span>
+                </>
+              ) : (
+                <span className="text-foreground font-medium">TSBs</span>
+              )}
+            </div>
+            
+            {/* Header with Back Button */}
+            <div className="mb-8 flex items-center space-x-4">
+              {selectedCategory !== 'all' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedCategory('all')}
+                  className="flex items-center space-x-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to Categories</span>
+                </Button>
+              )}
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold text-foreground mb-2">
+                  {selectedCategory !== 'all' 
+                    ? categories.find(c => c.id === selectedCategory)?.name 
+                    : 'Technical Service Bulletins'
+                  }
+                </h1>
+                <p className="text-muted-foreground">
+                  {selectedCategory !== 'all'
+                    ? 'Technical service bulletins for this category'
+                    : 'Manage and track technical service bulletins for swimming pool and spa equipment repair'
+                  }
+                </p>
+              </div>
             </div>
 
             <div className="mb-6">
@@ -211,20 +267,8 @@ const TSBs = () => {
 
                 {selectedCategory !== 'all' && (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-2xl font-semibold">
-                        {categories.find(c => c.id === selectedCategory)?.name}
-                      </h2>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setSelectedCategory('all')}
-                      >
-                        View All Categories
-                      </Button>
-                    </div>
-                    
-                    {/* Manuals and Parts Diagrams buttons */}
-                    <div className="flex space-x-4 mb-6">
+                    {/* Navigation buttons for Manuals and Parts Diagrams */}
+                    <div className="flex flex-wrap gap-3 mb-6">
                       <Button 
                         variant="outline" 
                         onClick={() => navigate('/manuals')}
@@ -240,6 +284,14 @@ const TSBs = () => {
                       >
                         <Settings className="h-4 w-4" />
                         <span>Parts Diagrams</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/inventory')}
+                        className="flex items-center space-x-2"
+                      >
+                        <Package className="h-4 w-4" />
+                        <span>Inventory</span>
                       </Button>
                     </div>
                     
