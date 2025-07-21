@@ -47,9 +47,9 @@ const Manuals = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Filter by category if provided - include uncategorized items too
+      // Filter by category if provided
       if (decodedCategory) {
-        query = query.or(`category.eq.${decodedCategory},category.is.null`);
+        query = query.eq('category', decodedCategory);
       }
 
       const { data, error } = await query;
