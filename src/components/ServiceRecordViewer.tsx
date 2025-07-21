@@ -2,7 +2,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, User, Wrench, Beaker, FileText, Activity } from 'lucide-react';
+import { Calendar, Clock, User, Wrench, Beaker, FileText, Activity, Package, CheckCircle } from 'lucide-react';
 import { toPhoenixTime } from '@/utils/phoenixTimeUtils';
 
 interface ServiceRecord {
@@ -224,6 +224,62 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                 </CardContent>
               </Card>
             )}
+
+            {/* Parts Used */}
+            {record.parts_used && record.parts_used.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <Package className="h-5 w-5 text-primary" />
+                    <span>Parts Used</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {record.parts_used.map((part: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center border-b border-gray-100 pb-2">
+                        <div>
+                          <span className="font-medium">{part.description || part.name || 'Part'}</span>
+                          {part.partNumber && (
+                            <span className="text-sm text-muted-foreground ml-2">({part.partNumber})</span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <span className="font-medium">Qty: {part.quantity}</span>
+                          {part.cost && (
+                            <div className="text-sm text-muted-foreground">${part.cost}</div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Service Status */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center space-x-2 text-lg">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Service Status</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-3">
+                  <Badge className={getStatusColor(record.service_status)} variant="outline">
+                    {record.service_status.replace('-', ' ')}
+                  </Badge>
+                  <span className="text-gray-700">
+                    {record.service_status === 'completed' && 'Service has been completed successfully'}
+                    {record.service_status === 'in-progress' && 'Service is currently in progress'}
+                    {record.service_status === 'scheduled' && 'Service is scheduled'}
+                    {record.service_status === 'cancelled' && 'Service has been cancelled'}
+                    {!['completed', 'in-progress', 'scheduled', 'cancelled'].includes(record.service_status) && 'Service status updated'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Notes Section */}
