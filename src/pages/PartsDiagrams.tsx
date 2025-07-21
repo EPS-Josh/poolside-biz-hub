@@ -140,7 +140,15 @@ const PartsDiagrams = () => {
         .createSignedUrl(diagram.file_path, 3600); // 1 hour expiry
 
       if (data?.signedUrl) {
-        window.open(data.signedUrl, '_blank');
+        const popup = window.open(
+          data.signedUrl, 
+          'diagram-viewer',
+          'width=800,height=600,scrollbars=yes,resizable=yes,toolbar=no,location=no,directories=no,status=no,menubar=no'
+        );
+        
+        if (popup) {
+          popup.focus();
+        }
       }
     } catch (error) {
       console.error('Error viewing diagram:', error);
