@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, Upload, FileText, Download, Trash2, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings } from 'lucide-react';
 
 interface Manual {
   id: string;
@@ -34,6 +35,7 @@ const Manuals = () => {
   });
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchManuals = async () => {
     try {

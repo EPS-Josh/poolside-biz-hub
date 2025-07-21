@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Upload, FileImage, Download, Trash2, Plus, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Settings, Upload, FileImage, Download, Trash2, Plus, Eye, ArrowLeft, Home, BookOpen, FileText } from 'lucide-react';
 
 interface PartsDiagram {
   id: string;
@@ -35,6 +36,7 @@ const PartsDiagrams = () => {
   const [uploading, setUploading] = useState(false);
   const [viewingDiagram, setViewingDiagram] = useState<PartsDiagram | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const fetchPartsDiagrams = async () => {
     try {
@@ -225,12 +227,68 @@ const PartsDiagrams = () => {
         <Header />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground"
+              >
+                <Home className="h-4 w-4" />
+                <span>Menu</span>
+              </Button>
+              <span>/</span>
+              <span className="text-foreground font-medium">Parts Diagrams</span>
+            </div>
+            
+            {/* Header with Navigation */}
             <div className="mb-8">
+              <div className="flex items-center space-x-4 mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/')}
+                  className="flex items-center space-x-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to Menu</span>
+                </Button>
+              </div>
+              
               <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center space-x-3">
                 <Settings className="h-8 w-8" />
                 <span>Parts Diagrams</span>
               </h1>
               <p className="text-muted-foreground">Upload and manage parts diagrams for equipment repair reference</p>
+              
+              {/* Quick Navigation */}
+              <div className="flex flex-wrap gap-3 mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/manuals')}
+                  className="flex items-center space-x-2"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span>Manuals</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/tsbs')}
+                  className="flex items-center space-x-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>TSBs</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/inventory')}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Inventory</span>
+                </Button>
+              </div>
             </div>
 
             <div className="mb-6">
