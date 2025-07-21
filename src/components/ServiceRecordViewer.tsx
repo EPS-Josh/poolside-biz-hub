@@ -44,6 +44,16 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
     });
   };
 
+  const formatDateTime = (timestampString: string) => {
+    const date = new Date(timestampString);
+    return toPhoenixTime(date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString([], { 
@@ -256,7 +266,7 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                     <span>Next Service: <span className="font-medium">{formatDate(record.next_service_date)}</span></span>
                   )}
                 </div>
-                <span>Report Generated: <span className="font-medium">{formatDate(record.created_at)}</span></span>
+                <span>Report Generated: <span className="font-medium">{formatDateTime(record.created_at)}</span></span>
               </div>
             </CardContent>
           </Card>
