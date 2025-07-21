@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Upload, FileImage, Download, Trash2, Plus } from 'lucide-react';
+import { Settings, Upload, FileImage, Download, Trash2, Plus, Eye } from 'lucide-react';
 
 interface PartsDiagram {
   id: string;
@@ -33,6 +33,7 @@ const PartsDiagrams = () => {
     file: null as File | null
   });
   const [uploading, setUploading] = useState(false);
+  const [viewingDiagram, setViewingDiagram] = useState<PartsDiagram | null>(null);
   const { toast } = useToast();
 
   const fetchPartsDiagrams = async () => {
@@ -130,6 +131,84 @@ const PartsDiagrams = () => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleViewDiagram = async (diagram: PartsDiagram) => {
+    try {
+      const { data } = await supabase.storage
+        .from('tsb-attachments')
+        .createSignedUrl(diagram.file_path, 3600); // 1 hour expiry
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error viewing diagram:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open diagram",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadDiagram = async (diagram: PartsDiagram) => {
+    try {
+      const { data } = await supabase.storage
+        .from('tsb-attachments')
+        .createSignedUrl(diagram.file_path, 3600);
+
+      if (data?.signedUrl) {
+        const link = document.createElement('a');
+        link.href = data.signedUrl;
+        link.download = diagram.file_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Error downloading diagram:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download diagram",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteDiagram = async (diagram: PartsDiagram) => {
+    if (!confirm('Are you sure you want to delete this diagram?')) return;
+
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('tsb-attachments')
+        .remove([diagram.file_path]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('parts_diagrams')
+        .delete()
+        .eq('id', diagram.id);
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Success",
+        description: "Diagram deleted successfully",
+      });
+
+      fetchPartsDiagrams();
+    } catch (error) {
+      console.error('Error deleting diagram:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete diagram",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -342,10 +421,28 @@ const PartsDiagrams = () => {
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewDiagram(diagram)}
+                            title="View diagram"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDownloadDiagram(diagram)}
+                            title="Download diagram"
+                          >
                             <Download className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteDiagram(diagram)}
+                            title="Delete diagram"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
