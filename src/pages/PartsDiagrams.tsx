@@ -37,8 +37,13 @@ const PartsDiagrams = () => {
 
   const fetchPartsDiagrams = async () => {
     try {
-      // This would fetch from a parts_diagrams table once created
-      setPartsDiagrams([]);
+      const { data, error } = await supabase
+        .from('parts_diagrams')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPartsDiagrams(data || []);
     } catch (error) {
       console.error('Error fetching parts diagrams:', error);
       toast({
@@ -80,7 +85,25 @@ const PartsDiagrams = () => {
 
       if (uploadError) throw uploadError;
 
-      // Note: Would save to parts_diagrams table once created
+      // Save to parts_diagrams table
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) throw new Error('User not authenticated');
+
+      const { error: dbError } = await supabase
+        .from('parts_diagrams')
+        .insert({
+          user_id: user.user.id,
+          title: uploadData.title,
+          manufacturer: uploadData.manufacturer || null,
+          model: uploadData.model || null,
+          file_name: uploadData.file.name,
+          file_path: filePath,
+          file_size: uploadData.file.size,
+          file_type: uploadData.file.type || null
+        });
+
+      if (dbError) throw dbError;
+
       toast({
         title: "Success",
         description: "Parts diagram uploaded successfully",
