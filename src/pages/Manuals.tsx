@@ -38,6 +38,7 @@ const Manuals = () => {
     title: '',
     manufacturer: '',
     model: '',
+    category: '',
     file: null as File | null
   });
   const [uploading, setUploading] = useState(false);
@@ -133,7 +134,7 @@ const Manuals = () => {
           title: uploadData.title,
           manufacturer: uploadData.manufacturer || null,
           model: uploadData.model || null,
-          category: decodedCategory || null,
+          category: uploadData.category || decodedCategory || null,
           file_name: uploadData.file.name,
           file_path: filePath,
           file_size: uploadData.file.size,
@@ -148,7 +149,7 @@ const Manuals = () => {
       });
 
       setIsUploadDialogOpen(false);
-      setUploadData({ title: '', manufacturer: '', model: '', file: null });
+      setUploadData({ title: '', manufacturer: '', model: '', category: '', file: null });
       fetchManuals();
     } catch (error) {
       console.error('Error uploading manual:', error);
@@ -432,6 +433,26 @@ const Manuals = () => {
                     </div>
                     
                     <div>
+                      <Label htmlFor="category">Category</Label>
+                      <Select
+                        value={uploadData.category}
+                        onValueChange={(value) => setUploadData({ ...uploadData, category: value === 'none' ? '' : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={decodedCategory ? `Default: ${decodedCategory}` : "Select category (optional)"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No Category</SelectItem>
+                          {tsbCategories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
                       <Label htmlFor="file">File *</Label>
                       <Input
                         id="file"
@@ -468,7 +489,6 @@ const Manuals = () => {
                 </DialogContent>
               </Dialog>
             </div>
-
             {loading ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">Loading manuals...</p>
@@ -526,7 +546,27 @@ const Manuals = () => {
                             placeholder="e.g., SuperFlo VS"
                           />
                         </div>
-                        
+                         
+                         <div>
+                           <Label htmlFor="category">Category</Label>
+                           <Select
+                             value={uploadData.category}
+                             onValueChange={(value) => setUploadData({ ...uploadData, category: value === 'none' ? '' : value })}
+                           >
+                             <SelectTrigger>
+                               <SelectValue placeholder={decodedCategory ? `Default: ${decodedCategory}` : "Select category (optional)"} />
+                             </SelectTrigger>
+                             <SelectContent>
+                               <SelectItem value="none">No Category</SelectItem>
+                               {tsbCategories.map((category) => (
+                                 <SelectItem key={category} value={category}>
+                                   {category}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         </div>
+                         
                         <div>
                           <Label htmlFor="file">File *</Label>
                           <Input
