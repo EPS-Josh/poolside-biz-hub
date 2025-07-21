@@ -502,6 +502,7 @@ export type Database = {
       }
       manuals: {
         Row: {
+          category: string | null
           created_at: string
           file_name: string
           file_path: string
@@ -515,6 +516,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           file_name: string
           file_path: string
@@ -528,6 +530,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           file_name?: string
           file_path?: string
@@ -544,6 +547,7 @@ export type Database = {
       }
       parts_diagrams: {
         Row: {
+          category: string | null
           created_at: string
           file_name: string
           file_path: string
@@ -557,6 +561,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           file_name: string
           file_path: string
@@ -570,6 +575,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           file_name?: string
           file_path?: string

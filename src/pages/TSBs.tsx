@@ -271,7 +271,7 @@ const TSBs = () => {
                     <div className="flex flex-wrap gap-3 mb-6">
                       <Button 
                         variant="outline" 
-                        onClick={() => navigate('/manuals')}
+                        onClick={() => navigate(`/manuals/${encodeURIComponent(selectedCategory)}`)}
                         className="flex items-center space-x-2"
                       >
                         <BookOpen className="h-4 w-4" />
@@ -279,7 +279,7 @@ const TSBs = () => {
                       </Button>
                       <Button 
                         variant="outline" 
-                        onClick={() => navigate('/parts-diagrams')}
+                        onClick={() => navigate(`/parts-diagrams/${encodeURIComponent(selectedCategory)}`)}
                         className="flex items-center space-x-2"
                       >
                         <Settings className="h-4 w-4" />

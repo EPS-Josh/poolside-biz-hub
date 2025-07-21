@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings, Eye } from 'lucide-react';
 
 interface Manual {
@@ -17,6 +17,7 @@ interface Manual {
   title: string;
   manufacturer: string;
   model: string;
+  category: string;
   file_name: string;
   file_path: string;
   file_size: number;
@@ -24,6 +25,8 @@ interface Manual {
 }
 
 const Manuals = () => {
+  const { category } = useParams<{ category: string }>();
+  const decodedCategory = category ? decodeURIComponent(category) : null;
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -39,10 +42,17 @@ const Manuals = () => {
 
   const fetchManuals = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('manuals')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Filter by category if provided
+      if (decodedCategory) {
+        query = query.eq('category', decodedCategory);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setManuals(data || []);
@@ -98,6 +108,7 @@ const Manuals = () => {
           title: uploadData.title,
           manufacturer: uploadData.manufacturer || null,
           model: uploadData.model || null,
+          category: decodedCategory || null,
           file_name: uploadData.file.name,
           file_path: filePath,
           file_size: uploadData.file.size,
@@ -247,6 +258,12 @@ const Manuals = () => {
                 TSBs
               </Button>
               <span>/</span>
+              {decodedCategory && (
+                <>
+                  <span className="text-muted-foreground">{decodedCategory}</span>
+                  <span>/</span>
+                </>
+              )}
               <span className="text-foreground font-medium">Manuals</span>
             </div>
             
@@ -267,14 +284,20 @@ const Manuals = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center space-x-3">
                 <BookOpen className="h-8 w-8" />
                 <span>Equipment Manuals</span>
+                {decodedCategory && <span className="text-lg font-normal text-muted-foreground">- {decodedCategory}</span>}
               </h1>
-              <p className="text-muted-foreground">Upload and manage equipment manuals and documentation</p>
+              <p className="text-muted-foreground">
+                {decodedCategory 
+                  ? `Upload and manage equipment manuals for ${decodedCategory}`
+                  : 'Upload and manage equipment manuals and documentation'
+                }
+              </p>
               
               {/* Quick Navigation */}
               <div className="flex flex-wrap gap-3 mt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate('/parts-diagrams')}
+                  onClick={() => navigate(decodedCategory ? `/parts-diagrams/${encodeURIComponent(decodedCategory)}` : '/parts-diagrams')}
                   className="flex items-center space-x-2"
                 >
                   <Settings className="h-4 w-4" />
@@ -391,7 +414,10 @@ const Manuals = () => {
                   <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">No Manuals Found</h3>
                   <p className="text-muted-foreground mb-4">
-                    Start by uploading your first equipment manual
+                    {decodedCategory 
+                      ? `Start by uploading your first equipment manual for ${decodedCategory}`
+                      : 'Start by uploading your first equipment manual'
+                    }
                   </p>
                   <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
                     <DialogTrigger asChild>

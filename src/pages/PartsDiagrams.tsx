@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Settings, Upload, FileImage, Download, Trash2, Plus, Eye, ArrowLeft, Home, BookOpen, FileText } from 'lucide-react';
 
 interface PartsDiagram {
@@ -17,6 +17,7 @@ interface PartsDiagram {
   title: string;
   manufacturer: string;
   model: string;
+  category: string;
   file_name: string;
   file_path: string;
   file_size: number;
@@ -24,6 +25,8 @@ interface PartsDiagram {
 }
 
 const PartsDiagrams = () => {
+  const { category } = useParams<{ category: string }>();
+  const decodedCategory = category ? decodeURIComponent(category) : null;
   const [partsDiagrams, setPartsDiagrams] = useState<PartsDiagram[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -40,10 +43,17 @@ const PartsDiagrams = () => {
 
   const fetchPartsDiagrams = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('parts_diagrams')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Filter by category if provided
+      if (decodedCategory) {
+        query = query.eq('category', decodedCategory);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setPartsDiagrams(data || []);
@@ -99,6 +109,7 @@ const PartsDiagrams = () => {
           title: uploadData.title,
           manufacturer: uploadData.manufacturer || null,
           model: uploadData.model || null,
+          category: decodedCategory || null,
           file_name: uploadData.file.name,
           file_path: filePath,
           file_size: uploadData.file.size,
@@ -248,6 +259,12 @@ const PartsDiagrams = () => {
                 TSBs
               </Button>
               <span>/</span>
+              {decodedCategory && (
+                <>
+                  <span className="text-muted-foreground">{decodedCategory}</span>
+                  <span>/</span>
+                </>
+              )}
               <span className="text-foreground font-medium">Parts Diagrams</span>
             </div>
             
@@ -268,14 +285,20 @@ const PartsDiagrams = () => {
               <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center space-x-3">
                 <Settings className="h-8 w-8" />
                 <span>Parts Diagrams</span>
+                {decodedCategory && <span className="text-lg font-normal text-muted-foreground">- {decodedCategory}</span>}
               </h1>
-              <p className="text-muted-foreground">Upload and manage parts diagrams for equipment repair reference</p>
+              <p className="text-muted-foreground">
+                {decodedCategory 
+                  ? `Upload and manage parts diagrams for ${decodedCategory} equipment`
+                  : 'Upload and manage parts diagrams for equipment repair reference'
+                }
+              </p>
               
               {/* Quick Navigation */}
               <div className="flex flex-wrap gap-3 mt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate('/manuals')}
+                  onClick={() => navigate(decodedCategory ? `/manuals/${encodeURIComponent(decodedCategory)}` : '/manuals')}
                   className="flex items-center space-x-2"
                 >
                   <BookOpen className="h-4 w-4" />
@@ -392,7 +415,10 @@ const PartsDiagrams = () => {
                   <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">No Parts Diagrams Found</h3>
                   <p className="text-muted-foreground mb-4">
-                    Start by uploading your first parts diagram
+                    {decodedCategory 
+                      ? `Start by uploading your first parts diagram for ${decodedCategory}`
+                      : 'Start by uploading your first parts diagram'
+                    }
                   </p>
                   <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
                     <DialogTrigger asChild>
