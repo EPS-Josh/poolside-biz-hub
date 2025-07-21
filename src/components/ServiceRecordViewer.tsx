@@ -239,15 +239,15 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                     {record.parts_used.map((part: any, index: number) => (
                       <div key={index} className="flex justify-between items-center border-b border-gray-100 pb-2">
                         <div>
-                          <span className="font-medium">{part.description || part.name || 'Part'}</span>
-                          {part.partNumber && (
-                            <span className="text-sm text-muted-foreground ml-2">({part.partNumber})</span>
+                          <span className="font-medium">{part.itemName || part.description || part.name || 'Part'}</span>
+                          {part.inventoryItemId && (
+                            <span className="text-sm text-muted-foreground ml-2">ID: {part.inventoryItemId.slice(-8)}</span>
                           )}
                         </div>
                         <div className="text-right">
                           <span className="font-medium">Qty: {part.quantity}</span>
-                          {part.cost && (
-                            <div className="text-sm text-muted-foreground">${part.cost}</div>
+                          {part.unitPrice && (
+                            <div className="text-sm text-muted-foreground">${part.unitPrice} each</div>
                           )}
                         </div>
                       </div>
