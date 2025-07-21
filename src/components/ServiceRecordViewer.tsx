@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ServiceRecord {
   id: string;
-  customer_id: string;
+  customer_id?: string;
   service_date: string;
   service_time?: string;
   service_type: string;
@@ -34,6 +34,54 @@ interface ServiceRecordViewerProps {
 }
 
 export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecordViewerProps) => {
+  const [customerName, setCustomerName] = useState<string>('');
+  const [partsWithDetails, setPartsWithDetails] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCustomerAndParts = async () => {
+      if (!record) return;
+
+      // Fetch customer name
+      if (record.customer_id) {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('first_name, last_name')
+          .eq('id', record.customer_id)
+          .single();
+        
+        if (customer) {
+          setCustomerName(`${customer.first_name} ${customer.last_name}`);
+        }
+      }
+
+      // Fetch parts details with manufacturer item numbers
+      if (record.parts_used && record.parts_used.length > 0) {
+        const partsWithMfgNumbers = await Promise.all(
+          record.parts_used.map(async (part: any) => {
+            if (part.inventoryItemId) {
+              const { data: inventoryItem } = await supabase
+                .from('inventory_items')
+                .select('item_number, fps_item_number')
+                .eq('id', part.inventoryItemId)
+                .single();
+              
+              return {
+                ...part,
+                mfgItemNumber: inventoryItem?.item_number || inventoryItem?.fps_item_number || null
+              };
+            }
+            return part;
+          })
+        );
+        setPartsWithDetails(partsWithMfgNumbers);
+      } else {
+        setPartsWithDetails([]);
+      }
+    };
+
+    fetchCustomerAndParts();
+  }, [record]);
+
   if (!record) return null;
 
   const formatDate = (dateString: string) => {
@@ -78,7 +126,10 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Service Report</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            Service Report
+            {customerName && <div className="text-lg font-medium text-muted-foreground mt-1">Customer: {customerName}</div>}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -228,7 +279,7 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
             )}
 
             {/* Parts Used */}
-            {record.parts_used && record.parts_used.length > 0 && (
+            {partsWithDetails && partsWithDetails.length > 0 && (
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center space-x-2 text-lg">
@@ -238,13 +289,15 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {record.parts_used.map((part: any, index: number) => (
+                    {partsWithDetails.map((part: any, index: number) => (
                       <div key={index} className="flex justify-between items-center border-b border-gray-100 pb-2">
                         <div>
-                          <span className="font-medium">{part.itemName || part.description || part.name || 'Part'}</span>
-                          {part.inventoryItemId && (
-                            <span className="text-sm text-muted-foreground ml-2">ID: {part.inventoryItemId.slice(-8)}</span>
-                          )}
+                          <div className="font-medium">
+                            {part.mfgItemNumber && (
+                              <span className="text-sm text-muted-foreground mr-2">MFG Item # {part.mfgItemNumber}</span>
+                            )}
+                            {part.itemName || part.description || part.name || 'Part'}
+                          </div>
                         </div>
                         <div className="text-right">
                           <span className="font-medium">Qty: {part.quantity}</span>

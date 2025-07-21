@@ -16,6 +16,7 @@ import { toPhoenixTime } from '@/utils/phoenixTimeUtils';
 
 interface ServiceRecord {
   id: string;
+  customer_id?: string;
   service_date: string;
   service_time?: string;
   service_type: string;
