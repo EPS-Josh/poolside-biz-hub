@@ -48,9 +48,9 @@ const PartsDiagrams = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      // Filter by category if provided
+      // Filter by category if provided - include uncategorized items too
       if (decodedCategory) {
-        query = query.eq('category', decodedCategory);
+        query = query.or(`category.eq.${decodedCategory},category.is.null`);
       }
 
       const { data, error } = await query;
