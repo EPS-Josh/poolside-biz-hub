@@ -23,20 +23,22 @@ interface UserProfile {
   roles: string[];
 }
 
-type AppRole = 'admin' | 'manager' | 'technician' | 'customer';
+type AppRole = 'admin' | 'manager' | 'technician' | 'customer' | 'guest';
 
 const roleColors = {
   admin: 'bg-red-100 text-red-800 border-red-200',
   manager: 'bg-blue-100 text-blue-800 border-blue-200',
   technician: 'bg-green-100 text-green-800 border-green-200',
-  customer: 'bg-gray-100 text-gray-800 border-gray-200'
+  customer: 'bg-purple-100 text-purple-800 border-purple-200',
+  guest: 'bg-gray-100 text-gray-800 border-gray-200',
 };
 
 const roleDescriptions = {
   admin: 'Full system access and user management',
-  manager: 'Customer management, scheduling, and reporting',
-  technician: 'Service records and appointments',
-  customer: 'Limited access to own service history'
+  manager: 'Access to analytics and team management',
+  technician: 'Field service and customer management',
+  customer: 'Limited access to their own data',
+  guest: 'View-only access (except Employees & Company Data)',
 };
 
 export const Employees = () => {
@@ -313,6 +315,7 @@ export const Employees = () => {
                       <SelectItem value="manager">Manager</SelectItem>
                       <SelectItem value="technician">Technician</SelectItem>
                       <SelectItem value="customer">Customer</SelectItem>
+                      <SelectItem value="guest">Guest</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -417,7 +420,7 @@ export const Employees = () => {
                             <SelectValue placeholder="Select role to add" />
                           </SelectTrigger>
                           <SelectContent>
-                            {(['admin', 'manager', 'technician', 'customer'] as AppRole[])
+                            {(['admin', 'manager', 'technician', 'customer', 'guest'] as AppRole[])
                               .filter(role => !userProfile.roles.includes(role))
                               .map((role) => (
                                 <SelectItem key={role} value={role}>
