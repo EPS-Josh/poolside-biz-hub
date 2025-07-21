@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Settings, Upload, FileImage, Download, Trash2, Plus, Eye, ArrowLeft, Home, BookOpen, FileText } from 'lucide-react';
+import { Settings, Upload, FileImage, Download, Trash2, Plus, Eye, ArrowLeft, Home, BookOpen, FileText, Edit } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface PartsDiagram {
   id: string;
@@ -30,6 +31,8 @@ const PartsDiagrams = () => {
   const [partsDiagrams, setPartsDiagrams] = useState<PartsDiagram[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingDiagram, setEditingDiagram] = useState<PartsDiagram | null>(null);
   const [uploadData, setUploadData] = useState({
     title: '',
     manufacturer: '',
@@ -50,7 +53,11 @@ const PartsDiagrams = () => {
 
       // Filter by category if provided
       if (decodedCategory) {
-        query = query.eq('category', decodedCategory);
+        if (decodedCategory === 'Uncategorized') {
+          query = query.is('category', null);
+        } else {
+          query = query.eq('category', decodedCategory);
+        }
       }
 
       const { data, error } = await query;
@@ -227,6 +234,46 @@ const PartsDiagrams = () => {
       toast({
         title: "Error",
         description: "Failed to delete diagram",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditDiagram = (diagram: PartsDiagram) => {
+    setEditingDiagram(diagram);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateDiagram = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDiagram) return;
+
+    try {
+      const { error } = await supabase
+        .from('parts_diagrams')
+        .update({
+          title: editingDiagram.title,
+          manufacturer: editingDiagram.manufacturer || null,
+          model: editingDiagram.model || null,
+          category: editingDiagram.category || null,
+        })
+        .eq('id', editingDiagram.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Parts diagram updated successfully",
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingDiagram(null);
+      fetchPartsDiagrams();
+    } catch (error) {
+      console.error('Error updating diagram:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update diagram",
         variant: "destructive",
       });
     }
@@ -533,6 +580,14 @@ const PartsDiagrams = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
+                            onClick={() => handleEditDiagram(diagram)}
+                            title="Edit diagram"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
                             onClick={() => handleDownloadDiagram(diagram)}
                             title="Download diagram"
                           >
@@ -560,6 +615,85 @@ const PartsDiagrams = () => {
                 ))}
               </div>
             )}
+
+            {/* Edit Diagram Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit Parts Diagram</DialogTitle>
+                </DialogHeader>
+                {editingDiagram && (
+                  <form onSubmit={handleUpdateDiagram} className="space-y-4">
+                    <div>
+                      <Label htmlFor="edit-title">Diagram Title *</Label>
+                      <Input
+                        id="edit-title"
+                        value={editingDiagram.title}
+                        onChange={(e) => setEditingDiagram({ ...editingDiagram, title: e.target.value })}
+                        placeholder="e.g., Pool Pump Parts Diagram"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="edit-manufacturer">Manufacturer</Label>
+                      <Input
+                        id="edit-manufacturer"
+                        value={editingDiagram.manufacturer || ''}
+                        onChange={(e) => setEditingDiagram({ ...editingDiagram, manufacturer: e.target.value })}
+                        placeholder="e.g., Pentair"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="edit-model">Model</Label>
+                      <Input
+                        id="edit-model"
+                        value={editingDiagram.model || ''}
+                        onChange={(e) => setEditingDiagram({ ...editingDiagram, model: e.target.value })}
+                        placeholder="e.g., SuperFlo VS"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="edit-category">Category</Label>
+                      <Select
+                        value={editingDiagram.category || ''}
+                        onValueChange={(value) => setEditingDiagram({ ...editingDiagram, category: value === 'none' ? null : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No Category</SelectItem>
+                          <SelectItem value="Pool & Spa Equipment">Pool & Spa Equipment</SelectItem>
+                          <SelectItem value="Pump Systems">Pump Systems</SelectItem>
+                          <SelectItem value="Filtration Systems">Filtration Systems</SelectItem>
+                          <SelectItem value="Heating Systems">Heating Systems</SelectItem>
+                          <SelectItem value="Automation Systems">Automation Systems</SelectItem>
+                          <SelectItem value="Chemical Systems">Chemical Systems</SelectItem>
+                          <SelectItem value="Lighting Systems">Lighting Systems</SelectItem>
+                          <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <Button type="submit" className="flex-1">
+                        Update Diagram
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         </main>
       </div>

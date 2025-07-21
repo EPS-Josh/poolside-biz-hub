@@ -265,6 +265,29 @@ const TSBs = () => {
                   ))}
                 </div>
 
+                {/* Uncategorized Items Section */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium text-foreground mb-4">Uncategorized Items</h3>
+                  <div className="flex flex-wrap gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate('/manuals/Uncategorized')}
+                      className="flex items-center space-x-2"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      <span>Uncategorized Manuals</span>
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate('/parts-diagrams/Uncategorized')}
+                      className="flex items-center space-x-2"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Uncategorized Parts Diagrams</span>
+                    </Button>
+                  </div>
+                </div>
+
                 {selectedCategory !== 'all' && (
                   <div className="space-y-4">
                     {/* Navigation buttons for Manuals and Parts Diagrams */}

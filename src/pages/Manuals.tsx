@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings, Eye } from 'lucide-react';
+import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings, Eye, Edit } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Manual {
   id: string;
@@ -30,6 +31,8 @@ const Manuals = () => {
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingManual, setEditingManual] = useState<Manual | null>(null);
   const [uploadData, setUploadData] = useState({
     title: '',
     manufacturer: '',
@@ -49,7 +52,11 @@ const Manuals = () => {
 
       // Filter by category if provided
       if (decodedCategory) {
-        query = query.eq('category', decodedCategory);
+        if (decodedCategory === 'Uncategorized') {
+          query = query.is('category', null);
+        } else {
+          query = query.eq('category', decodedCategory);
+        }
       }
 
       const { data, error } = await query;
@@ -226,6 +233,46 @@ const Manuals = () => {
       toast({
         title: "Error",
         description: "Failed to delete manual",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditManual = (manual: Manual) => {
+    setEditingManual(manual);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateManual = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingManual) return;
+
+    try {
+      const { error } = await supabase
+        .from('manuals')
+        .update({
+          title: editingManual.title,
+          manufacturer: editingManual.manufacturer || null,
+          model: editingManual.model || null,
+          category: editingManual.category || null,
+        })
+        .eq('id', editingManual.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Manual updated successfully",
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingManual(null);
+      fetchManuals();
+    } catch (error) {
+      console.error('Error updating manual:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update manual",
         variant: "destructive",
       });
     }
@@ -532,6 +579,14 @@ const Manuals = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
+                            onClick={() => handleEditManual(manual)}
+                            title="Edit manual"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
                             onClick={() => handleDownloadManual(manual)}
                             title="Download manual"
                           >
@@ -559,6 +614,85 @@ const Manuals = () => {
                 ))}
               </div>
             )}
+
+            {/* Edit Manual Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit Manual</DialogTitle>
+                </DialogHeader>
+                {editingManual && (
+                  <form onSubmit={handleUpdateManual} className="space-y-4">
+                    <div>
+                      <Label htmlFor="edit-title">Manual Title *</Label>
+                      <Input
+                        id="edit-title"
+                        value={editingManual.title}
+                        onChange={(e) => setEditingManual({ ...editingManual, title: e.target.value })}
+                        placeholder="e.g., Pool Pump Installation Guide"
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="edit-manufacturer">Manufacturer</Label>
+                      <Input
+                        id="edit-manufacturer"
+                        value={editingManual.manufacturer || ''}
+                        onChange={(e) => setEditingManual({ ...editingManual, manufacturer: e.target.value })}
+                        placeholder="e.g., Pentair"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="edit-model">Model</Label>
+                      <Input
+                        id="edit-model"
+                        value={editingManual.model || ''}
+                        onChange={(e) => setEditingManual({ ...editingManual, model: e.target.value })}
+                        placeholder="e.g., SuperFlo VS"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="edit-category">Category</Label>
+                      <Select
+                        value={editingManual.category || ''}
+                        onValueChange={(value) => setEditingManual({ ...editingManual, category: value === 'none' ? null : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No Category</SelectItem>
+                          <SelectItem value="Pool & Spa Equipment">Pool & Spa Equipment</SelectItem>
+                          <SelectItem value="Pump Systems">Pump Systems</SelectItem>
+                          <SelectItem value="Filtration Systems">Filtration Systems</SelectItem>
+                          <SelectItem value="Heating Systems">Heating Systems</SelectItem>
+                          <SelectItem value="Automation Systems">Automation Systems</SelectItem>
+                          <SelectItem value="Chemical Systems">Chemical Systems</SelectItem>
+                          <SelectItem value="Lighting Systems">Lighting Systems</SelectItem>
+                          <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <Button type="submit" className="flex-1">
+                        Update Manual
+                      </Button>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsEditDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         </main>
       </div>
