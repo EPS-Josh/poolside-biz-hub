@@ -117,12 +117,77 @@ const Manuals = () => {
         <Header />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
+            {/* Breadcrumb Navigation */}
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground"
+              >
+                <Home className="h-4 w-4" />
+                <span>Menu</span>
+              </Button>
+              <span>/</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/tsbs')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                TSBs
+              </Button>
+              <span>/</span>
+              <span className="text-foreground font-medium">Manuals</span>
+            </div>
+            
+            {/* Header with Navigation */}
             <div className="mb-8">
+              <div className="flex items-center space-x-4 mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/tsbs')}
+                  className="flex items-center space-x-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to TSBs</span>
+                </Button>
+              </div>
+              
               <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center space-x-3">
                 <BookOpen className="h-8 w-8" />
                 <span>Equipment Manuals</span>
               </h1>
-              <p className="text-muted-foreground">Upload and manage equipment manuals for easy reference</p>
+              <p className="text-muted-foreground">Upload and manage equipment manuals and documentation</p>
+              
+              {/* Quick Navigation */}
+              <div className="flex flex-wrap gap-3 mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/parts-diagrams')}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Parts Diagrams</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/tsbs')}
+                  className="flex items-center space-x-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>TSBs</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/inventory')}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Inventory</span>
+                </Button>
+              </div>
             </div>
 
             <div className="mb-6">

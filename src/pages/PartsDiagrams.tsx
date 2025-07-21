@@ -239,6 +239,15 @@ const PartsDiagrams = () => {
                 <span>Menu</span>
               </Button>
               <span>/</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/tsbs')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                TSBs
+              </Button>
+              <span>/</span>
               <span className="text-foreground font-medium">Parts Diagrams</span>
             </div>
             
@@ -248,11 +257,11 @@ const PartsDiagrams = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/tsbs')}
                   className="flex items-center space-x-2"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span>Back to Menu</span>
+                  <span>Back to TSBs</span>
                 </Button>
               </div>
               
