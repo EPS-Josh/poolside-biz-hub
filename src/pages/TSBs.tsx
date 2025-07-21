@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TSBForm } from '@/components/TSBForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Plus, Search, AlertTriangle, Wrench, Zap, Edit3, Eye } from 'lucide-react';
+import { FileText, Plus, Search, AlertTriangle, Wrench, Zap, Edit3, Eye, ChevronDown, ChevronUp, BookOpen, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface TSB {
   id: string;
@@ -40,7 +42,9 @@ const TSBs = () => {
   const [selectedTSB, setSelectedTSB] = useState<TSB | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [expandedTSB, setExpandedTSB] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleTSBCreated = () => {
     setIsCreateDialogOpen(false);
@@ -209,13 +213,33 @@ const TSBs = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-semibold">
-                        {categories.find(c => c.id === selectedCategory)?.name} TSBs
+                        {categories.find(c => c.id === selectedCategory)?.name}
                       </h2>
                       <Button 
                         variant="outline" 
                         onClick={() => setSelectedCategory('all')}
                       >
                         View All Categories
+                      </Button>
+                    </div>
+                    
+                    {/* Manuals and Parts Diagrams buttons */}
+                    <div className="flex space-x-4 mb-6">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/manuals')}
+                        className="flex items-center space-x-2"
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        <span>Manuals</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/parts-diagrams')}
+                        className="flex items-center space-x-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Parts Diagrams</span>
                       </Button>
                     </div>
                     
@@ -241,74 +265,144 @@ const TSBs = () => {
                         </CardContent>
                       </Card>
                     ) : (
-                      <div className="grid gap-4">
+                      <div className="space-y-2">
                         {filteredTSBs.map((tsb) => (
-                          <Card key={tsb.id} className="hover:shadow-md transition-shadow">
-                            <CardHeader>
-                              <div className="flex items-start justify-between">
-                                <div className="space-y-1 flex-1">
-                                  <CardTitle className="text-lg">{tsb.title}</CardTitle>
-                                  <CardDescription>{tsb.description}</CardDescription>
-                                  <div className="flex items-center space-x-2 pt-2">
-                                    <Badge className={getPriorityColor(tsb.priority)}>
-                                      {tsb.priority}
-                                    </Badge>
-                                    <Badge variant="outline">{tsb.manufacturer}</Badge>
-                                  </div>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleViewTSB(tsb)}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => handleEditTSB(tsb)}
-                                  >
-                                    <Edit3 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-3">
-                                {tsb.equipment_models && tsb.equipment_models.length > 0 && (
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Equipment Models:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                      {tsb.equipment_models.map((model, index) => (
-                                        <Badge key={index} variant="secondary" className="text-xs">{model}</Badge>
-                                      ))}
+                          <Card key={tsb.id} className="border-l-4 border-l-primary">
+                            <Collapsible 
+                              open={expandedTSB === tsb.id} 
+                              onOpenChange={(open) => setExpandedTSB(open ? tsb.id : null)}
+                            >
+                              <CollapsibleTrigger asChild>
+                                <div className="w-full p-4 hover:bg-muted/50 cursor-pointer transition-colors">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      <h3 className="text-lg font-medium text-foreground hover:text-primary">
+                                        {tsb.title}
+                                      </h3>
+                                      <Badge className={getPriorityColor(tsb.priority)}>
+                                        {tsb.priority}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditTSB(tsb);
+                                        }}
+                                      >
+                                        <Edit3 className="h-4 w-4" />
+                                      </Button>
+                                      {expandedTSB === tsb.id ? (
+                                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                      )}
                                     </div>
                                   </div>
-                                )}
-                                
-                                {tsb.symptoms && tsb.symptoms.length > 0 && (
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Common Symptoms:</p>
-                                    <ul className="text-sm text-muted-foreground list-disc list-inside">
-                                      {tsb.symptoms.slice(0, 3).map((symptom, index) => (
-                                        <li key={index}>{symptom}</li>
-                                      ))}
-                                      {tsb.symptoms.length > 3 && (
-                                        <li className="text-xs italic">+{tsb.symptoms.length - 3} more...</li>
+                                </div>
+                              </CollapsibleTrigger>
+                              
+                              <CollapsibleContent>
+                                <div className="px-4 pb-4 border-t">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                    <div className="space-y-4">
+                                      {tsb.description && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Description</h4>
+                                          <p className="text-sm text-muted-foreground">{tsb.description}</p>
+                                        </div>
                                       )}
-                                    </ul>
+                                      
+                                      {tsb.issue_description && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Issue Description</h4>
+                                          <p className="text-sm text-muted-foreground">{tsb.issue_description}</p>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.root_cause && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Root Cause</h4>
+                                          <p className="text-sm text-muted-foreground">{tsb.root_cause}</p>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.equipment_models && tsb.equipment_models.length > 0 && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Equipment Models</h4>
+                                          <div className="flex flex-wrap gap-1">
+                                            {tsb.equipment_models.map((model, index) => (
+                                              <Badge key={index} variant="secondary" className="text-xs">{model}</Badge>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.symptoms && tsb.symptoms.length > 0 && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Symptoms</h4>
+                                          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                                            {tsb.symptoms.map((symptom, index) => (
+                                              <li key={index}>{symptom}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                      {tsb.solution_steps && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Solution Steps</h4>
+                                          <div className="text-sm text-muted-foreground whitespace-pre-wrap">{tsb.solution_steps}</div>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.troubleshooting_steps && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Troubleshooting Steps</h4>
+                                          <div className="text-sm text-muted-foreground whitespace-pre-wrap">{tsb.troubleshooting_steps}</div>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.prevention_tips && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Prevention Tips</h4>
+                                          <div className="text-sm text-muted-foreground whitespace-pre-wrap">{tsb.prevention_tips}</div>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.safety_notes && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Safety Notes</h4>
+                                          <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md border border-yellow-200 dark:border-yellow-800">{tsb.safety_notes}</div>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.tools_required && tsb.tools_required.length > 0 && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Tools Required</h4>
+                                          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                                            {tsb.tools_required.map((tool, index) => (
+                                              <li key={index}>{tool}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      )}
+                                      
+                                      {tsb.estimated_time_minutes && (
+                                        <div>
+                                          <h4 className="font-medium text-foreground mb-2">Estimated Time</h4>
+                                          <p className="text-sm text-muted-foreground">{tsb.estimated_time_minutes} minutes</p>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                )}
-
-                                {tsb.root_cause && (
-                                  <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Root Cause:</p>
-                                    <p className="text-sm text-muted-foreground">{tsb.root_cause}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </CardContent>
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
                           </Card>
                         ))}
                       </div>

@@ -17,6 +17,8 @@ import NotFound from "./pages/NotFound";
 import Inventory from "./pages/Inventory";
 import Analytics from "./pages/Analytics";
 import TSBs from "./pages/TSBs";
+import Manuals from "./pages/Manuals";
+import PartsDiagrams from "./pages/PartsDiagrams";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/tsbs" element={<TSBs />} />
+            <Route path="/manuals" element={<Manuals />} />
+            <Route path="/parts-diagrams" element={<PartsDiagrams />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
