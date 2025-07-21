@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { EditServiceRecordForm } from '@/components/EditServiceRecordForm';
+import { ServiceRecordViewer } from '@/components/ServiceRecordViewer';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, User, Wrench, Beaker, FileText, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, Wrench, Beaker, FileText, ChevronDown, ChevronUp, Pencil, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -43,6 +44,7 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
   const [loading, setLoading] = useState(true);
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set());
   const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<ServiceRecord | null>(null);
 
   const fetchServiceRecords = async () => {
     if (!user) return;
@@ -202,7 +204,16 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => setViewingRecord(record)}
+                            title="View Report"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setEditingRecord(record)}
+                            title="Edit Record"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -363,6 +374,12 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
           onSuccess={handleEditSuccess}
         />
       )}
+
+      <ServiceRecordViewer
+        record={viewingRecord}
+        open={!!viewingRecord}
+        onOpenChange={(open) => !open && setViewingRecord(null)}
+      />
     </>
   );
 };
