@@ -265,25 +265,25 @@ const TSBs = () => {
                   ))}
                 </div>
 
-                {/* Uncategorized Items Section */}
+                {/* All Items Section */}
                 <div className="mb-8">
-                  <h3 className="text-lg font-medium text-foreground mb-4">Uncategorized Items</h3>
+                  <h3 className="text-lg font-medium text-foreground mb-4">All Items</h3>
                   <div className="flex flex-wrap gap-3">
                     <Button 
                       variant="outline" 
-                      onClick={() => navigate('/manuals/Uncategorized')}
+                      onClick={() => navigate('/manuals')}
                       className="flex items-center space-x-2"
                     >
                       <BookOpen className="h-4 w-4" />
-                      <span>Uncategorized Manuals</span>
+                      <span>All Manuals</span>
                     </Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => navigate('/parts-diagrams/Uncategorized')}
+                      onClick={() => navigate('/parts-diagrams')}
                       className="flex items-center space-x-2"
                     >
                       <Settings className="h-4 w-4" />
-                      <span>Uncategorized Parts Diagrams</span>
+                      <span>All Parts Diagrams</span>
                     </Button>
                   </div>
                 </div>
