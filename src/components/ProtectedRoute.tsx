@@ -6,14 +6,16 @@ import { useUserRoles } from '@/hooks/useUserRoles';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: 'admin' | 'manager' | 'technician' | 'customer';
-  allowedRoles?: ('admin' | 'manager' | 'technician' | 'customer')[];
+  requiredRole?: 'admin' | 'manager' | 'technician' | 'customer' | 'guest';
+  allowedRoles?: ('admin' | 'manager' | 'technician' | 'customer' | 'guest')[];
+  excludedRoles?: ('admin' | 'manager' | 'technician' | 'customer' | 'guest')[];
 }
 
 export const ProtectedRoute = ({ 
   children, 
   requiredRole,
-  allowedRoles 
+  allowedRoles,
+  excludedRoles 
 }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { hasRole, loading: rolesLoading } = useUserRoles();
@@ -55,6 +57,18 @@ export const ProtectedRoute = ({
 
   // Check allowed roles if specified
   if (allowedRoles && !allowedRoles.some(role => hasRole(role))) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check excluded roles if specified
+  if (excludedRoles && excludedRoles.some(role => hasRole(role))) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

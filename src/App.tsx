@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Splash from "./pages/Splash";
 import BPA from "./pages/BPA";
 import Auth from "./pages/Auth";
@@ -37,11 +38,19 @@ const App = () => (
             <Route path="/customers" element={<Customers />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/customer/:id" element={<CustomerDetails />} />
-            <Route path="/company-data" element={<CompanyData />} />
+            <Route path="/company-data" element={
+              <ProtectedRoute excludedRoles={['guest']}>
+                <CompanyData />
+              </ProtectedRoute>
+            } />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/analytics" element={<Analytics />} />
-            <Route path="/employees" element={<Employees />} />
+            <Route path="/employees" element={
+              <ProtectedRoute excludedRoles={['guest']}>
+                <Employees />
+              </ProtectedRoute>
+            } />
           <Route path="/tsbs" element={<TSBs />} />
           <Route path="/manuals" element={<Manuals />} />
           <Route path="/manuals/:category" element={<Manuals />} />

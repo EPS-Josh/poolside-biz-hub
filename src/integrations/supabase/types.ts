@@ -869,7 +869,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "technician" | "customer"
+      app_role: "admin" | "manager" | "technician" | "customer" | "guest"
       tsb_category:
         | "Pump Systems"
         | "Filtration Systems"
@@ -1010,7 +1010,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "technician", "customer"],
+      app_role: ["admin", "manager", "technician", "customer", "guest"],
       tsb_category: [
         "Pump Systems",
         "Filtration Systems",
