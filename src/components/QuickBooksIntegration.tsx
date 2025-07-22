@@ -35,12 +35,28 @@ interface InvoiceSync {
   service_records: ServiceRecord;
 }
 
+interface QuickBooksInvoice {
+  id: string;
+  doc_number: string;
+  txn_date: string;
+  total_amt: number;
+  customer_ref: {
+    value: string;
+    name?: string;
+  };
+  balance: number;
+  printed_status: string;
+  email_status: string;
+}
+
 export const QuickBooksIntegration = () => {
   const [connection, setConnection] = useState<QuickBooksConnection | null>(null);
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [invoiceSyncs, setInvoiceSyncs] = useState<InvoiceSync[]>([]);
+  const [qbInvoices, setQbInvoices] = useState<QuickBooksInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [fetchingInvoices, setFetchingInvoices] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -265,6 +281,39 @@ export const QuickBooksIntegration = () => {
     }
   };
 
+  const fetchQBInvoices = async () => {
+    setFetchingInvoices(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('quickbooks-integration', {
+        body: {
+          action: 'fetch_invoices',
+          data: {}
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        setQbInvoices(data.invoices || []);
+        toast({
+          title: "Success",
+          description: `Fetched ${data.invoices?.length || 0} invoices from QuickBooks`,
+        });
+      } else {
+        throw new Error(data.error || 'Failed to fetch invoices');
+      }
+    } catch (error: any) {
+      console.error('Error fetching invoices:', error);
+      toast({
+        title: "Fetch Failed",
+        description: error.message || "Failed to fetch invoices from QuickBooks",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingInvoices(false);
+    }
+  };
+
   const getSyncStatus = (serviceRecordId: string) => {
     return invoiceSyncs.find(sync => sync.service_record_id === serviceRecordId);
   };
@@ -409,6 +458,87 @@ export const QuickBooksIntegration = () => {
                               <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             ) : null}
                             {syncStatus ? 'Retry Sync' : 'Sync to QB'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* QuickBooks Invoices */}
+      {connection && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              QuickBooks Invoices
+              <Button 
+                onClick={fetchQBInvoices}
+                disabled={fetchingInvoices}
+                size="sm"
+                variant="outline"
+              >
+                {fetchingInvoices ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Fetch Invoices
+              </Button>
+            </CardTitle>
+            <CardDescription>
+              View existing invoices from QuickBooks Online and manually match them with service records
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {qbInvoices.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  Click "Fetch Invoices" to load invoices from QuickBooks
+                </p>
+              ) : (
+                qbInvoices.map((invoice) => {
+                  // Check if this invoice is already matched with a service record
+                  const matchedSync = invoiceSyncs.find(sync => sync.quickbooks_invoice_id === invoice.id);
+                  
+                  return (
+                    <div
+                      key={invoice.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium">
+                            Invoice #{invoice.doc_number}
+                          </h4>
+                          <Badge variant={matchedSync ? "default" : "outline"}>
+                            {matchedSync ? "Matched" : "Unmatched"}
+                          </Badge>
+                          <Badge variant="secondary">
+                            ${invoice.total_amt.toFixed(2)}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Customer: {invoice.customer_ref.name || invoice.customer_ref.value} • 
+                          Date: {new Date(invoice.txn_date).toLocaleDateString()} • 
+                          Balance: ${invoice.balance.toFixed(2)}
+                        </p>
+                        {matchedSync && (
+                          <p className="text-sm text-green-600 mt-1">
+                            ✓ Matched with service record
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!matchedSync && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled // TODO: Implement manual matching
+                          >
+                            Match Record
                           </Button>
                         )}
                       </div>

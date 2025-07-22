@@ -379,7 +379,152 @@ serve(async (req) => {
           quickbooks_invoice_id: qbInvoiceId,
           sync_status: 'synced',
           last_synced_at: new Date().toISOString(),
+      });
+    }
+
+    // Handle fetching invoices from QuickBooks
+    if (action === 'fetch_invoices') {
+      console.log('=== FETCH INVOICES FROM QB ===');
+      
+      // Get QuickBooks connection
+      const { data: connection, error: connError } = await supabaseClient
+        .from('quickbooks_connections')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (connError || !connection) {
+        console.log('No QB connection found:', connError);
+        return new Response(JSON.stringify({ 
+          error: 'QuickBooks connection not found. Please connect to QuickBooks first.' 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+
+      // Function to refresh QuickBooks token
+      const refreshQuickBooksToken = async () => {
+        console.log('Refreshing QuickBooks token...');
+        
+        const credentials = `${clientId}:${clientSecret}`;
+        const encodedCredentials = btoa(credentials);
+        
+        const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${encodedCredentials}`,
+          },
+          body: `grant_type=refresh_token&refresh_token=${connection.refresh_token}`,
+        });
+
+        if (!tokenResponse.ok) {
+          const errorText = await tokenResponse.text();
+          console.error('Token refresh failed:', errorText);
+          throw new Error(`Token refresh failed: ${errorText}`);
+        }
+
+        const tokenData = await tokenResponse.json();
+        console.log('Token refreshed successfully');
+
+        // Update the connection with new tokens
+        await supabaseClient
+          .from('quickbooks_connections')
+          .update({
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token || connection.refresh_token,
+            token_expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', connection.id);
+
+        return tokenData.access_token;
+      };
+
+      let accessToken = connection.access_token;
+      const quickbooksBaseUrl = `https://quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
+      
+      const getAuthHeaders = () => ({
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      });
+
+      // Helper function to make QuickBooks API calls with token refresh retry
+      const makeQBRequest = async (url: string, options: any, retryCount = 0) => {
+        const response = await fetch(url, {
+          ...options,
+          headers: getAuthHeaders(),
+        });
+
+        // Capture intuit_tid for troubleshooting
+        const intuitTid = response.headers.get('intuit_tid');
+        if (intuitTid) {
+          console.log('QuickBooks API intuit_tid:', intuitTid);
+        }
+
+        // If we get 401 (token expired) and haven't retried yet, refresh token and retry
+        if (response.status === 401 && retryCount === 0) {
+          console.log('Token expired, refreshing...');
+          accessToken = await refreshQuickBooksToken();
+          return makeQBRequest(url, options, 1); // Retry once
+        }
+
+        return response;
+      };
+
+      try {
+        // Fetch recent invoices from QuickBooks
+        console.log('Fetching invoices from QuickBooks...');
+        const invoicesResponse = await makeQBRequest(
+          `${quickbooksBaseUrl}/invoice?maxresults=50&orderby=TxnDate desc`, 
+          {
+            method: 'GET',
+          }
+        );
+
+        if (!invoicesResponse.ok) {
+          const errorText = await invoicesResponse.text();
+          console.error('Failed to fetch invoices:', errorText);
+          throw new Error(`Failed to fetch invoices: ${errorText}`);
+        }
+
+        const invoicesResult = await invoicesResponse.json();
+        console.log('Invoices fetched successfully');
+
+        const invoices = invoicesResult.QueryResponse?.Invoice || [];
+        
+        return new Response(JSON.stringify({ 
+          success: true,
+          invoices: invoices.map(invoice => ({
+            id: invoice.Id,
+            doc_number: invoice.DocNumber,
+            txn_date: invoice.TxnDate,
+            total_amt: invoice.TotalAmt,
+            customer_ref: invoice.CustomerRef,
+            line: invoice.Line || [],
+            balance: invoice.Balance || 0,
+            printed_status: invoice.PrintStatus,
+            email_status: invoice.EmailStatus,
+            created_time: invoice.MetaData?.CreateTime,
+            last_updated_time: invoice.MetaData?.LastUpdatedTime
+          }))
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+      } catch (error) {
+        console.error('Error fetching invoices:', error);
+        return new Response(JSON.stringify({ 
+          error: error.message || 'Failed to fetch invoices from QuickBooks'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
 
       console.log('Sync status updated in database');
 
