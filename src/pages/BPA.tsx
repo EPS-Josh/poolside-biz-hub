@@ -2,6 +2,7 @@
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MetricsCard } from '@/components/MetricsCard';
+import { QuickBooksIntegration } from '@/components/QuickBooksIntegration';
 import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 
 const BPA = () => {
@@ -53,6 +54,11 @@ const BPA = () => {
                   icon={metric.icon}
                 />
               ))}
+            </div>
+
+            {/* QuickBooks Integration */}
+            <div className="mb-8">
+              <QuickBooksIntegration />
             </div>
 
             {/* Placeholder for future content */}
