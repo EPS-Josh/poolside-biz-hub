@@ -23,6 +23,7 @@ interface ServiceRecord {
   next_service_date?: string;
   total_time_minutes?: number;
   service_status: string;
+  invoicing_status?: string;
   created_at: string;
   parts_used?: any[];
 }
@@ -321,17 +322,29 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center space-x-3">
-                  <Badge className={getStatusColor(record.service_status)} variant="outline">
-                    {record.service_status.replace('-', ' ')}
-                  </Badge>
-                  <span className="text-gray-700">
-                    {record.service_status === 'completed' && 'Service has been completed successfully'}
-                    {record.service_status === 'in-progress' && 'Service is currently in progress'}
-                    {record.service_status === 'scheduled' && 'Service is scheduled'}
-                    {record.service_status === 'cancelled' && 'Service has been cancelled'}
-                    {!['completed', 'in-progress', 'scheduled', 'cancelled'].includes(record.service_status) && 'Service status updated'}
-                  </span>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Badge className={getStatusColor(record.service_status)} variant="outline">
+                      {record.service_status.replace('-', ' ')}
+                    </Badge>
+                    <span className="text-gray-700">
+                      {record.service_status === 'completed' && 'Service has been completed successfully'}
+                      {record.service_status === 'in-progress' && 'Service is currently in progress'}
+                      {record.service_status === 'scheduled' && 'Service is scheduled'}
+                      {record.service_status === 'cancelled' && 'Service has been cancelled'}
+                      {!['completed', 'in-progress', 'scheduled', 'cancelled'].includes(record.service_status) && 'Service status updated'}
+                    </span>
+                  </div>
+                  {record.invoicing_status && (
+                    <div className="flex items-center space-x-3">
+                      <span className="text-sm font-medium text-muted-foreground">Invoicing:</span>
+                      <Badge variant="secondary">
+                        {record.invoicing_status === 'ready_for_qb' && 'Ready for QB'}
+                        {record.invoicing_status === 'not_to_be_invoiced' && 'Not to be Invoiced'}
+                        {record.invoicing_status === 'connected_to_future_record' && 'Connected to Future Record'}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

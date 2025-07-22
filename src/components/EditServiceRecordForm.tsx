@@ -34,6 +34,7 @@ interface ServiceRecord {
   next_service_date?: string;
   total_time_minutes?: number;
   service_status: string;
+  invoicing_status?: string;
   created_at: string;
   parts_used?: any;
 }
@@ -63,6 +64,7 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
     next_service_date: '',
     total_time_minutes: '',
     service_status: 'completed',
+    invoicing_status: 'ready_for_qb',
     before_readings: {
       ph: '',
       chlorine: '',
@@ -94,6 +96,7 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
         next_service_date: record.next_service_date || '',
         total_time_minutes: record.total_time_minutes?.toString() || '',
         service_status: record.service_status,
+        invoicing_status: record.invoicing_status || 'ready_for_qb',
         before_readings: {
           ph: record.before_readings?.ph || '',
           chlorine: record.before_readings?.chlorine || '',
@@ -140,6 +143,7 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
           next_service_date: formData.next_service_date || null,
           total_time_minutes: formData.total_time_minutes ? parseInt(formData.total_time_minutes) : null,
           service_status: formData.service_status,
+          invoicing_status: formData.invoicing_status,
           before_readings: formData.before_readings,
           after_readings: formData.after_readings,
           parts_used: partsUsed.length > 0 ? JSON.parse(JSON.stringify(partsUsed)) : null
@@ -427,6 +431,20 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <Label htmlFor="invoicing_status">Invoicing Status</Label>
+            <Select value={formData.invoicing_status} onValueChange={(value) => updateFormData('invoicing_status', value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ready_for_qb">Ready for QB</SelectItem>
+                <SelectItem value="not_to_be_invoiced">Not to be Invoiced</SelectItem>
+                <SelectItem value="connected_to_future_record">Connected to Future Record</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end space-x-2">

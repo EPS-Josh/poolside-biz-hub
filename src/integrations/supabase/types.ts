@@ -748,6 +748,7 @@ export type Database = {
           customer_notes: string | null
           equipment_serviced: string | null
           id: string
+          invoicing_status: string
           next_service_date: string | null
           parts_used: Json | null
           photos_taken: string[] | null
@@ -771,6 +772,7 @@ export type Database = {
           customer_notes?: string | null
           equipment_serviced?: string | null
           id?: string
+          invoicing_status?: string
           next_service_date?: string | null
           parts_used?: Json | null
           photos_taken?: string[] | null
@@ -794,6 +796,7 @@ export type Database = {
           customer_notes?: string | null
           equipment_serviced?: string | null
           id?: string
+          invoicing_status?: string
           next_service_date?: string | null
           parts_used?: Json | null
           photos_taken?: string[] | null

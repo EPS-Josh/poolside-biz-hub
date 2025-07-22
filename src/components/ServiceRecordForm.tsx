@@ -55,6 +55,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
     next_service_date: '',
     total_time_minutes: '',
     service_status: 'completed',
+    invoicing_status: 'ready_for_qb',
     before_readings: {
       ph: '',
       chlorine: '',
@@ -124,7 +125,8 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
           service_status: formData.service_status,
           before_readings: formData.before_readings,
           after_readings: formData.after_readings,
-          parts_used: partsUsed.length > 0 ? JSON.parse(JSON.stringify(partsUsed)) : null
+          parts_used: partsUsed.length > 0 ? JSON.parse(JSON.stringify(partsUsed)) : null,
+          invoicing_status: formData.invoicing_status
         });
 
       if (error) throw error;
@@ -149,6 +151,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
         next_service_date: '',
         total_time_minutes: '',
         service_status: 'completed',
+        invoicing_status: 'ready_for_qb',
         before_readings: { ph: '', chlorine: '', alkalinity: '', cyanuric_acid: '', calcium_hardness: '' },
         after_readings: { ph: '', chlorine: '', alkalinity: '', cyanuric_acid: '', calcium_hardness: '' }
       });
@@ -420,6 +423,20 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <Label htmlFor="invoicing_status">Invoicing Status</Label>
+            <Select value={formData.invoicing_status} onValueChange={(value) => updateFormData('invoicing_status', value)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ready_for_qb">Ready for QB</SelectItem>
+                <SelectItem value="not_to_be_invoiced">Not to be Invoiced</SelectItem>
+                <SelectItem value="connected_to_future_record">Connected to Future Record</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end space-x-2">
