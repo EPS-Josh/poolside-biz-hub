@@ -195,11 +195,20 @@ export const QuickBooksIntegration = () => {
       } else {
         throw new Error(data.error || 'Failed to sync invoice');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error syncing invoice:', error);
+      
+      // Try to get more detailed error info
+      let errorMessage = error.message || "Failed to sync invoice to QuickBooks";
+      
+      // If it's a FunctionsHttpError, the real error is in the function response
+      if (error.name === 'FunctionsHttpError') {
+        errorMessage = "QuickBooks sync failed. Check the console for details.";
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to sync invoice to QuickBooks",
+        title: "Sync Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
