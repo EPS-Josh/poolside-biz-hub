@@ -109,7 +109,7 @@ serve(async (req) => {
         }
 
         case 'oauth_callback': {
-          const { code, realmId } = data;
+          const { code, realmId, redirect_uri } = data;
           
           let clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
           let clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
@@ -131,7 +131,7 @@ serve(async (req) => {
             body: new URLSearchParams({
               grant_type: 'authorization_code',
               code: code,
-              redirect_uri: `${Deno.env.get('SUPABASE_URL')}/functions/v1/quickbooks-integration`,
+              redirect_uri: redirect_uri, // Use the same redirect_uri that was used in the auth URL
             }),
           });
 

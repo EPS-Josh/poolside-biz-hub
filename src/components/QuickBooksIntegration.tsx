@@ -115,7 +115,11 @@ export const QuickBooksIntegration = () => {
         const { data, error } = await supabase.functions.invoke('quickbooks-integration', {
           body: {
             action: 'oauth_callback',
-            data: { code, realmId }
+            data: { 
+              code, 
+              realmId,
+              redirect_uri: `${window.location.origin}/bpa`
+            }
           }
         });
 
