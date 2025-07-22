@@ -115,8 +115,11 @@ serve(async (req) => {
       // Create customer in QuickBooks
       const qbCustomer = {
         Name: `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`,
-        CompanyName: serviceRecord.customers.company || undefined,
       };
+      
+      if (serviceRecord.customers.company) {
+        qbCustomer.CompanyName = serviceRecord.customers.company;
+      }
 
       console.log('Creating customer in QuickBooks...');
       const customerResponse = await fetch(`${quickbooksBaseUrl}/customer`, {
