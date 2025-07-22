@@ -78,10 +78,15 @@ serve(async (req) => {
         case 'get_oauth_url': {
           const { redirect_uri } = data;
           
-          const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
-          const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
+          // Get credentials and trim any whitespace
+          let clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
+          let clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
           
-          console.log('Client ID from env:', JSON.stringify(clientId));
+          if (clientId) clientId = clientId.trim();
+          if (clientSecret) clientSecret = clientSecret.trim();
+          
+          console.log('Client ID (trimmed):', JSON.stringify(clientId));
+          console.log('Client ID length:', clientId?.length);
           
           if (!clientId || !clientSecret) {
             throw new Error('QuickBooks credentials not configured');
@@ -92,6 +97,8 @@ serve(async (req) => {
           const state = Math.random().toString(36).substring(7);
           
           const authUrl = `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&state=${state}`;
+          
+          console.log('Generated auth URL:', authUrl);
 
           return new Response(JSON.stringify({ 
             success: true, 
@@ -104,8 +111,11 @@ serve(async (req) => {
         case 'oauth_callback': {
           const { code, realmId } = data;
           
-          const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
-          const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
+          let clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
+          let clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
+          
+          if (clientId) clientId = clientId.trim();
+          if (clientSecret) clientSecret = clientSecret.trim();
           
           if (!clientId || !clientSecret) {
             throw new Error('QuickBooks credentials not configured');
