@@ -134,8 +134,11 @@ serve(async (req) => {
 
       if (!customerResponse.ok) {
         console.error('Customer creation failed');
+        console.error('Status:', customerResponse.status);
+        console.error('Response body:', JSON.stringify(customerResult, null, 2));
         return new Response(JSON.stringify({ 
-          error: `QuickBooks customer error: ${customerResult.fault?.error?.[0]?.detail || 'Unknown error'}` 
+          error: `QuickBooks customer error: ${customerResult.fault?.error?.[0]?.detail || customerResult.Fault?.Error?.[0]?.Detail || 'Unknown error'}`,
+          details: customerResult
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
