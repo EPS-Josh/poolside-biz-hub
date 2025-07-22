@@ -112,41 +112,66 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       };
 
-      // Create customer in QuickBooks
-      const qbCustomer = {
-        Name: `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`,
-      };
+      // Create customer in QuickBooks - check if customer already exists first
+      const customerName = `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`;
       
-      if (serviceRecord.customers.company) {
-        qbCustomer.CompanyName = serviceRecord.customers.company;
-      }
-
-      console.log('Creating customer in QuickBooks...');
-      const customerResponse = await fetch(`${quickbooksBaseUrl}/customer`, {
-        method: 'POST',
+      // First try to find existing customer
+      console.log('Searching for existing customer...');
+      const searchResponse = await fetch(`${quickbooksBaseUrl}/customer?where=Name='${encodeURIComponent(customerName)}'`, {
+        method: 'GET',
         headers: authHeaders,
-        body: JSON.stringify(qbCustomer),
       });
 
-      console.log('Customer response status:', customerResponse.status);
-      const customerResult = await customerResponse.json();
-      console.log('Customer response:', JSON.stringify(customerResult, null, 2));
-
-      if (!customerResponse.ok) {
-        console.error('Customer creation failed');
-        console.error('Status:', customerResponse.status);
-        console.error('Response body:', JSON.stringify(customerResult, null, 2));
-        return new Response(JSON.stringify({ 
-          error: `QuickBooks customer error: ${customerResult.fault?.error?.[0]?.detail || customerResult.Fault?.Error?.[0]?.Detail || 'Unknown error'}`,
-          details: customerResult
-        }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+      let qbCustomerId;
+      
+      if (searchResponse.ok) {
+        const searchResult = await searchResponse.json();
+        console.log('Customer search result:', JSON.stringify(searchResult, null, 2));
+        
+        if (searchResult.QueryResponse?.Customer && searchResult.QueryResponse.Customer.length > 0) {
+          qbCustomerId = searchResult.QueryResponse.Customer[0].Id;
+          console.log('Found existing customer with ID:', qbCustomerId);
+        }
       }
+      
+      // If customer doesn't exist, create new one
+      if (!qbCustomerId) {
+        const qbCustomer = {
+          Name: customerName,
+        };
+        
+        // Only add CompanyName if it exists and is not empty
+        if (serviceRecord.customers.company && serviceRecord.customers.company.trim()) {
+          qbCustomer.CompanyName = serviceRecord.customers.company.trim();
+        }
 
-      const qbCustomerId = customerResult.QueryResponse?.Customer?.[0]?.Id || customerResult.customer?.Id;
-      console.log('Customer created with ID:', qbCustomerId);
+        console.log('Creating customer in QuickBooks...');
+        const customerResponse = await fetch(`${quickbooksBaseUrl}/customer`, {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify(qbCustomer),
+        });
+
+        console.log('Customer response status:', customerResponse.status);
+        const customerResult = await customerResponse.json();
+        console.log('Customer response:', JSON.stringify(customerResult, null, 2));
+
+        if (!customerResponse.ok) {
+          console.error('Customer creation failed');
+          console.error('Status:', customerResponse.status);
+          console.error('Response body:', JSON.stringify(customerResult, null, 2));
+          return new Response(JSON.stringify({ 
+            error: `QuickBooks customer error: ${customerResult.fault?.error?.[0]?.detail || customerResult.Fault?.Error?.[0]?.Detail || 'Unknown error'}`,
+            details: customerResult
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        qbCustomerId = customerResult.QueryResponse?.Customer?.[0]?.Id || customerResult.customer?.Id;
+        console.log('Customer created with ID:', qbCustomerId);
+      }
 
       // Create invoice
       const invoice = {
