@@ -344,13 +344,22 @@ serve(async (req) => {
             };
           }
 
+          console.log('Creating customer in QuickBooks...');
+          console.log('QuickBooks base URL:', quickbooksBaseUrl);
+          console.log('Customer data:', JSON.stringify(qbCustomer, null, 2));
+          console.log('Auth headers:', { ...authHeaders, 'Authorization': '[REDACTED]' });
+          
           const customerResponse = await fetch(`${quickbooksBaseUrl}/customer`, {
             method: 'POST',
             headers: authHeaders,
             body: JSON.stringify({ customer: qbCustomer }),
           });
 
+          console.log('Customer API response status:', customerResponse.status);
+          console.log('Customer API response headers:', Object.fromEntries(customerResponse.headers.entries()));
+          
           const customerResult = await customerResponse.json();
+          console.log('Customer API response body:', JSON.stringify(customerResult, null, 2));
           
           if (!customerResponse.ok) {
             throw new Error(`QuickBooks customer API error: ${customerResult.fault?.error?.[0]?.detail || 'Unknown error'}`);
