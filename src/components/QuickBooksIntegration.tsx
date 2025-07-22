@@ -49,6 +49,7 @@ export const QuickBooksIntegration = () => {
   }, []);
 
   const loadData = async () => {
+    setLoading(true);
     try {
       // Load QuickBooks connection
       const { data: connectionData } = await supabase
