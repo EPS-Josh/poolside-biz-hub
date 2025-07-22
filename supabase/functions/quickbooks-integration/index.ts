@@ -379,6 +379,17 @@ serve(async (req) => {
           quickbooks_invoice_id: qbInvoiceId,
           sync_status: 'synced',
           last_synced_at: new Date().toISOString(),
+        });
+
+      console.log('Sync status updated in database');
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Invoice synced to QuickBooks successfully',
+        quickbooks_invoice_id: qbInvoiceId,
+        quickbooks_customer_id: qbCustomerId
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -524,18 +535,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-    }
-
-      console.log('Sync status updated in database');
-
-      return new Response(JSON.stringify({ 
-        success: true,
-        message: 'Invoice synced to QuickBooks successfully',
-        quickbooks_invoice_id: qbInvoiceId,
-        quickbooks_customer_id: qbCustomerId
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
