@@ -20,6 +20,8 @@ import Analytics from "./pages/Analytics";
 import TSBs from "./pages/TSBs";
 import Manuals from "./pages/Manuals";
 import PartsDiagrams from "./pages/PartsDiagrams";
+import EULA from "./pages/EULA";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { Employees } from "./pages/Employees";
 
 const queryClient = new QueryClient();
@@ -56,6 +58,8 @@ const App = () => (
           <Route path="/manuals/:category" element={<Manuals />} />
           <Route path="/parts-diagrams" element={<PartsDiagrams />} />
           <Route path="/parts-diagrams/:category" element={<PartsDiagrams />} />
+          <Route path="/eula" element={<EULA />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
