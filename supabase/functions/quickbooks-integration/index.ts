@@ -127,15 +127,85 @@ serve(async (req) => {
       const customerResult = await customerResponse.json();
       console.log('Customer creation response:', JSON.stringify(customerResult, null, 2));
 
+      if (!customerResponse.ok) {
+        console.error('Customer creation failed:', customerResult);
+        return new Response(JSON.stringify({ 
+          error: `Failed to create customer in QuickBooks: ${customerResult.fault?.error?.[0]?.detail || 'Unknown error'}` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const qbCustomerId = customerResult.QueryResponse?.Customer?.[0]?.Id || customerResult.customer?.Id;
+      console.log('Customer created with ID:', qbCustomerId);
+
+      // Now create the invoice
+      const invoice = {
+        customerRef: {
+          value: qbCustomerId,
+        },
+        txnDate: serviceRecord.service_date,
+        line: [
+          {
+            amount: 100, // Default service amount
+            detailType: "SalesItemLineDetail",
+            salesItemLineDetail: {
+              itemRef: {
+                value: "HOURS",
+                name: "Service Hours"
+              },
+              qty: 1,
+              unitPrice: 100,
+              taxCodeRef: {
+                value: "NON"
+              }
+            },
+          },
+        ],
+      };
+
+      console.log('Creating invoice in QuickBooks...');
+      const invoiceResponse = await fetch(`${quickbooksBaseUrl}/invoice`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify(invoice),
+      });
+
+      console.log('Invoice creation response status:', invoiceResponse.status);
+      const invoiceResult = await invoiceResponse.json();
+
+      if (!invoiceResponse.ok) {
+        console.error('Invoice creation failed:', invoiceResult);
+        return new Response(JSON.stringify({ 
+          error: `Failed to create invoice in QuickBooks: ${invoiceResult.fault?.error?.[0]?.detail || 'Unknown error'}` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const qbInvoiceId = invoiceResult.QueryResponse?.Invoice?.[0]?.Id || invoiceResult.invoice?.Id;
+      console.log('Invoice created with ID:', qbInvoiceId);
+
+      // Update sync status in database
+      await supabaseClient
+        .from('quickbooks_invoice_sync')
+        .upsert({
+          user_id: user.id,
+          service_record_id: data.service_record_id,
+          quickbooks_invoice_id: qbInvoiceId,
+          sync_status: 'synced',
+          last_synced_at: new Date().toISOString(),
+        });
+
+      console.log('Sync status updated in database');
+
       return new Response(JSON.stringify({ 
         success: true,
-        message: 'Partial implementation - customer creation attempted',
-        debug: {
-          serviceRecord: serviceRecord.id,
-          customer: `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`,
-          customerResponseStatus: customerResponse.status,
-          customerResult: customerResult
-        }
+        message: 'Invoice synced to QuickBooks successfully',
+        quickbooks_invoice_id: qbInvoiceId,
+        quickbooks_customer_id: qbCustomerId
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
