@@ -435,6 +435,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
                 <SelectItem value="ready_for_qb">Ready for QB</SelectItem>
                 <SelectItem value="not_to_be_invoiced">Not to be Invoiced</SelectItem>
                 <SelectItem value="connected_to_future_record">Connected to Future Record</SelectItem>
+                <SelectItem value="bill_to_company">Bill to Company</SelectItem>
               </SelectContent>
             </Select>
           </div>
