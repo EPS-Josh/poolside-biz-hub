@@ -54,6 +54,9 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== QuickBooks Integration Function Started ===');
+    console.log('Request method:', req.method);
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -64,16 +67,24 @@ serve(async (req) => {
       }
     );
 
+    console.log('Supabase client created');
+
     // Get user from auth
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    console.log('Auth check - User ID:', user?.id);
+    console.log('Auth error:', authError);
+    
     if (authError || !user) {
+      console.log('Authentication failed');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const { action, data } = await req.json();
+    const requestBody = await req.json();
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    const { action, data } = requestBody;
 
     // Actions that don't require an existing connection
     if (action === 'get_oauth_url' || action === 'oauth_callback') {
@@ -162,6 +173,14 @@ serve(async (req) => {
         }
       }
     }
+
+    console.log('=== Checking Environment Variables ===');
+    console.log('QUICKBOOKS_CLIENT_ID exists:', !!Deno.env.get('QUICKBOOKS_CLIENT_ID'));
+    console.log('QUICKBOOKS_CLIENT_SECRET exists:', !!Deno.env.get('QUICKBOOKS_CLIENT_SECRET'));
+    console.log('SUPABASE_URL exists:', !!Deno.env.get('SUPABASE_URL'));
+    console.log('SUPABASE_ANON_KEY exists:', !!Deno.env.get('SUPABASE_ANON_KEY'));
+
+    console.log('=== Looking for QuickBooks Connection ===');
 
     // Get QuickBooks connection for actions that require it
     const { data: connection, error: connError } = await supabaseClient
