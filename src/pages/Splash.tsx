@@ -133,7 +133,7 @@ const Splash = () => {
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-center space-x-3">
                     <Phone className="h-5 w-5 text-blue-600" />
-                    <span className="text-foreground">(520) 728-3002</span>
+                    <a href="tel:+15207283002" className="hover:underline">(520) 728-3002</a>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Mail className="h-5 w-5 text-blue-600" />
@@ -218,13 +218,15 @@ const Splash = () => {
                   Get Started Today
                 </Button>
               </ServiceRequestForm>
-              <Button 
-                size="lg" 
-                variant="outline"
-                className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950"
-              >
-                Call (520) 728-3002
-              </Button>
+              <a href="tel:+15207283002">
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="px-8 py-3 text-lg border-cyan-600 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950"
+                >
+                  Call (520) 728-3002
+                </Button>
+              </a>
             </div>
           </div>
         </main>
@@ -247,7 +249,7 @@ const Splash = () => {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
                 <div className="space-y-2 text-gray-400">
-                  <p>(520) 728-3002</p>
+                  <a href="tel:+15207283002" className="hover:underline">(520) 728-3002</a>
                   <p>info@finestpoolsandspas.com</p>
                   <p>PO Box 40144</p>
                   <p>Tucson, AZ 85717</p>
