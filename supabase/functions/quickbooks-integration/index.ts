@@ -301,30 +301,81 @@ serve(async (req) => {
 
         // Ensure customer is synced first
         console.log('Syncing customer first for service record...');
-        const customerSyncResponse = await fetch(req.url, {
-          method: 'POST',
-          headers: {
-            ...req.headers,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'sync_customer',
-            data: { customer_id: serviceRecord.customer_id }
-          }),
-        });
-
-        console.log('Customer sync response status:', customerSyncResponse.status);
-        const customerSync = await customerSyncResponse.json();
-        console.log('Customer sync result:', JSON.stringify(customerSync, null, 2));
         
-        if (!customerSync.success) {
-          throw new Error(`Failed to sync customer to QuickBooks: ${customerSync.error || 'Unknown error'}`);
+        // Check if already synced
+        const { data: existingSync } = await supabaseClient
+          .from('quickbooks_customer_sync')
+          .select('*')
+          .eq('customer_id', serviceRecord.customer_id)
+          .eq('sync_status', 'synced')
+          .maybeSingle();
+
+        let qbCustomerId: string;
+        
+        if (existingSync) {
+          qbCustomerId = existingSync.quickbooks_customer_id;
+          console.log('Customer already synced, using existing QB ID:', qbCustomerId);
+        } else {
+          // Sync customer to QuickBooks
+          const qbCustomer: QuickBooksCustomer = {
+            name: `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`,
+            companyName: serviceRecord.customers.company || undefined,
+          };
+
+          if (serviceRecord.customers.email) {
+            qbCustomer.contactInfo = {
+              emailAddr: { address: serviceRecord.customers.email }
+            };
+          }
+
+          if (serviceRecord.customers.phone) {
+            qbCustomer.contactInfo = {
+              ...qbCustomer.contactInfo,
+              telephoneNumber: { freeFormNumber: serviceRecord.customers.phone }
+            };
+          }
+
+          if (serviceRecord.customers.address) {
+            qbCustomer.billAddr = {
+              line1: serviceRecord.customers.address,
+              city: serviceRecord.customers.city || undefined,
+              countrySubDivisionCode: serviceRecord.customers.state || undefined,
+              postalCode: serviceRecord.customers.zip_code || undefined,
+            };
+          }
+
+          const customerResponse = await fetch(`${quickbooksBaseUrl}/customer`, {
+            method: 'POST',
+            headers: authHeaders,
+            body: JSON.stringify({ customer: qbCustomer }),
+          });
+
+          const customerResult = await customerResponse.json();
+          
+          if (!customerResponse.ok) {
+            throw new Error(`QuickBooks customer API error: ${customerResult.fault?.error?.[0]?.detail || 'Unknown error'}`);
+          }
+
+          qbCustomerId = customerResult.QueryResponse?.Customer?.[0]?.Id || customerResult.customer?.Id;
+
+          // Update sync status
+          await supabaseClient
+            .from('quickbooks_customer_sync')
+            .upsert({
+              user_id: user.id,
+              customer_id: serviceRecord.customer_id,
+              quickbooks_customer_id: qbCustomerId,
+              sync_status: 'synced',
+              last_synced_at: new Date().toISOString(),
+            });
+          
+          console.log('Customer synced successfully, QB ID:', qbCustomerId);
         }
 
         // Create invoice in QuickBooks
         const invoice: QuickBooksInvoice = {
           customerRef: {
-            value: customerSync.quickbooks_customer_id,
+            value: qbCustomerId,
           },
           txnDate: serviceRecord.service_date,
           line: [
