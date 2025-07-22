@@ -166,6 +166,12 @@ serve(async (req) => {
           headers: getAuthHeaders(),
         });
 
+        // Capture intuit_tid for troubleshooting
+        const intuitTid = response.headers.get('intuit_tid');
+        if (intuitTid) {
+          console.log('QuickBooks API intuit_tid:', intuitTid);
+        }
+
         // If we get 401 (token expired) and haven't retried yet, refresh token and retry
         if (response.status === 401 && retryCount === 0) {
           console.log('Token expired, refreshing...');
