@@ -236,8 +236,16 @@ serve(async (req) => {
       });
 
       // Create customer in QuickBooks - check if customer already exists first
-      const customerName = `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`;
+      const rawCustomerName = `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`;
       
+      // Sanitize customer name for QuickBooks (remove invalid characters and limit length)
+      const customerName = rawCustomerName
+        .replace(/[:\n\t\r]/g, ' ') // Replace problematic characters with spaces
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim()
+        .substring(0, 100); // QuickBooks has a 100 character limit for Name field
+      
+      console.log('Customer name:', customerName);
       // Helper function to make QuickBooks API calls with token refresh retry
       const makeQBRequest = async (url: string, options: any, retryCount = 0) => {
         const response = await fetch(url, {
