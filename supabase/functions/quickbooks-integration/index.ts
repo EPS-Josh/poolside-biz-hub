@@ -295,10 +295,12 @@ serve(async (req) => {
           .single();
 
         if (serviceError || !serviceRecord) {
-          throw new Error('Service record not found');
+          console.error('Service record error:', serviceError);
+          throw new Error(`Service record not found: ${serviceError?.message || 'Unknown error'}`);
         }
 
         // Ensure customer is synced first
+        console.log('Syncing customer first for service record...');
         const customerSyncResponse = await fetch(req.url, {
           method: 'POST',
           headers: {
@@ -311,9 +313,12 @@ serve(async (req) => {
           }),
         });
 
+        console.log('Customer sync response status:', customerSyncResponse.status);
         const customerSync = await customerSyncResponse.json();
+        console.log('Customer sync result:', JSON.stringify(customerSync, null, 2));
+        
         if (!customerSync.success) {
-          throw new Error('Failed to sync customer to QuickBooks');
+          throw new Error(`Failed to sync customer to QuickBooks: ${customerSync.error || 'Unknown error'}`);
         }
 
         // Create invoice in QuickBooks
@@ -422,9 +427,15 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('QuickBooks integration error:', error);
+    console.error('QuickBooks integration error details:');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', JSON.stringify(error, null, 2));
+    
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
+      error: error.message || 'Internal server error',
+      details: error.stack || 'No stack trace available'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
