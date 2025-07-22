@@ -44,6 +44,7 @@ export const QuickBooksIntegration = () => {
 
   useEffect(() => {
     loadData();
+    handleOAuthCallback();
   }, []);
 
   const loadData = async () => {
@@ -101,6 +102,42 @@ export const QuickBooksIntegration = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOAuthCallback = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const realmId = urlParams.get('realmId');
+
+    if (code && realmId) {
+      try {
+        const { data, error } = await supabase.functions.invoke('quickbooks-integration', {
+          body: {
+            action: 'oauth_callback',
+            data: { code, realmId }
+          }
+        });
+
+        if (error) throw error;
+
+        if (data.success) {
+          toast({
+            title: "Success",
+            description: "Successfully connected to QuickBooks!",
+          });
+          // Clear the URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+          loadData(); // Refresh the data
+        }
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        toast({
+          title: "Connection Error",
+          description: error.message || "Failed to complete QuickBooks connection",
+          variant: "destructive",
+        });
+      }
     }
   };
 
