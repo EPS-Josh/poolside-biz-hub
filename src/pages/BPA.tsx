@@ -3,9 +3,11 @@ import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MetricsCard } from '@/components/MetricsCard';
 import { QuickBooksIntegration } from '@/components/QuickBooksIntegration';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
 
 const BPA = () => {
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
   // Mock data - in a real app, this would come from your API
   const metrics = [
     {
@@ -42,19 +44,24 @@ const BPA = () => {
               <p className="text-muted-foreground">Monitor your business performance and key metrics</p>
             </div>
             
-            {/* Metrics Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {metrics.map((metric, index) => (
-                <MetricsCard
-                  key={index}
-                  title={metric.title}
-                  value={metric.value}
-                  change={metric.change}
-                  changeType={metric.changeType}
-                  icon={metric.icon}
-                />
-              ))}
-            </div>
+            {/* Company Key Metrics - Admin Only */}
+            {isAdmin() && !rolesLoading && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-semibold text-foreground mb-4">Company Key Metrics</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {metrics.map((metric, index) => (
+                    <MetricsCard
+                      key={index}
+                      title={metric.title}
+                      value={metric.value}
+                      change={metric.change}
+                      changeType={metric.changeType}
+                      icon={metric.icon}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* QuickBooks Integration */}
             <div className="mb-8">
