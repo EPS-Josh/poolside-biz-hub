@@ -175,27 +175,24 @@ serve(async (req) => {
 
       // Create invoice
       const invoice = {
-        customerRef: {
-          value: qbCustomerId,
-        },
-        txnDate: serviceRecord.service_date,
-        line: [
+        Line: [
           {
-            amount: 100,
-            detailType: "SalesItemLineDetail",
-            salesItemLineDetail: {
-              itemRef: {
-                value: "HOURS",
-                name: "Service Hours"
+            Amount: 100.00,
+            DetailType: "SalesItemLineDetail",
+            SalesItemLineDetail: {
+              ItemRef: {
+                value: "1",  // Default service item - QuickBooks creates this by default
+                name: "Services"
               },
-              qty: 1,
-              unitPrice: 100,
-              taxCodeRef: {
-                value: "NON"
-              }
-            },
-          },
+              Qty: 1,
+              UnitPrice: 100.00
+            }
+          }
         ],
+        CustomerRef: {
+          value: qbCustomerId
+        },
+        TxnDate: serviceRecord.service_date
       };
 
       console.log('Creating invoice in QuickBooks...');
