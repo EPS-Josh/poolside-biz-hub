@@ -57,7 +57,86 @@ serve(async (req) => {
       });
     }
 
-    // QuickBooks sync logic
+    // Handle OAuth URL generation
+    if (action === 'get_oauth_url') {
+      const redirectUri = data.redirect_uri || `${req.headers.get('origin')}/bpa`;
+      const state = crypto.randomUUID();
+      
+      const oauthUrl = `https://appcenter.intuit.com/connect/oauth2?` +
+        `client_id=${clientId}&` +
+        `scope=com.intuit.quickbooks.accounting&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `response_type=code&` +
+        `access_type=offline&` +
+        `state=${state}`;
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        oauth_url: oauthUrl 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle OAuth callback
+    if (action === 'oauth_callback') {
+      const { code, realmId, redirect_uri } = data;
+      
+      console.log('=== OAUTH CALLBACK ===');
+      console.log('Code:', code);
+      console.log('Realm ID:', realmId);
+      
+      try {
+        // Exchange code for tokens
+        const credentials = `${clientId}:${clientSecret}`;
+        const encodedCredentials = btoa(credentials);
+        
+        const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${encodedCredentials}`,
+          },
+          body: `grant_type=authorization_code&code=${code}&redirect_uri=${encodeURIComponent(redirect_uri)}`,
+        });
+
+        const tokenData = await tokenResponse.json();
+        console.log('Token response status:', tokenResponse.status);
+        
+        if (!tokenResponse.ok) {
+          throw new Error(`Token exchange failed: ${JSON.stringify(tokenData)}`);
+        }
+
+        // Store connection in database
+        await supabaseClient
+          .from('quickbooks_connections')
+          .upsert({
+            user_id: user.id,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            company_id: realmId,
+            token_expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          });
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          message: 'QuickBooks connection established successfully'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        return new Response(JSON.stringify({ 
+          error: error.message || 'OAuth callback failed' 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
     if (action === 'sync_invoice') {
       console.log('=== SYNC INVOICE STARTED ===');
       console.log('Service record ID:', data.service_record_id);
@@ -234,7 +313,7 @@ serve(async (req) => {
           });
         }
 
-        qbCustomerId = customerResult.QueryResponse?.Customer?.[0]?.Id || customerResult.customer?.Id;
+        qbCustomerId = customerResult.QueryResponse?.Customer?.[0]?.Id;
         console.log('Customer created with ID:', qbCustomerId);
       }
 
@@ -280,7 +359,7 @@ serve(async (req) => {
         });
       }
 
-      const qbInvoiceId = invoiceResult.QueryResponse?.Invoice?.[0]?.Id || invoiceResult.invoice?.Id;
+      const qbInvoiceId = invoiceResult.QueryResponse?.Invoice?.[0]?.Id;
       console.log('Invoice created with ID:', qbInvoiceId);
 
       // Update sync status
