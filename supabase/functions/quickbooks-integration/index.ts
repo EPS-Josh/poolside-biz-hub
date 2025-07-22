@@ -148,7 +148,7 @@ serve(async (req) => {
 
       // QuickBooks API setup
       let accessToken = connection.access_token;
-      const quickbooksBaseUrl = `https://sandbox-quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
+      const quickbooksBaseUrl = `https://quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
       
       const getAuthHeaders = () => ({
         'Authorization': `Bearer ${accessToken}`,
