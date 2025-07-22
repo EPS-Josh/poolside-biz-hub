@@ -148,7 +148,7 @@ const Splash = () => {
               <div className="relative">
                 <img 
                   src="/lovable-uploads/4b8a1bc2-18f7-41c2-8f2c-7dd1d22ec65a.png"
-                  alt="Beautiful infinity pool with desert landscape"
+                  alt="Tucson infinity pool with desert background – Finest Pools & Spas"
                   className="rounded-lg shadow-lg"
                 />
               </div>
