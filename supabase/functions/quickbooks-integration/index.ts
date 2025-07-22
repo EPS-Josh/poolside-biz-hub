@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -109,9 +108,9 @@ serve(async (req) => {
       const refreshQuickBooksToken = async () => {
         console.log('Refreshing QuickBooks token...');
         
-        // Create base64 encoded credentials for Deno
+        // Create base64 encoded credentials for Deno using btoa (available in Deno)
         const credentials = `${clientId}:${clientSecret}`;
-        const encodedCredentials = base64Encode(new TextEncoder().encode(credentials));
+        const encodedCredentials = btoa(credentials);
         
         const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
           method: 'POST',
