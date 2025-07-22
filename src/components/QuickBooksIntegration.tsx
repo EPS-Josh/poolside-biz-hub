@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ExternalLink, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { parseDateFromDatabase, toPhoenixTime } from '@/utils/phoenixTimeUtils';
 
 interface QuickBooksConnection {
   id: string;
@@ -320,7 +321,7 @@ export const QuickBooksIntegration = () => {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {record.service_type} • {new Date(record.service_date).toLocaleDateString()}
+                          {record.service_type} • {toPhoenixTime(parseDateFromDatabase(record.service_date)).toLocaleDateString()}
                         </p>
                         {syncStatus?.error_message && (
                           <p className="text-sm text-red-600 mt-1">
