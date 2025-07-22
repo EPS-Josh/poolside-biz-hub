@@ -281,6 +281,31 @@ export const QuickBooksIntegration = () => {
     }
   };
 
+  const clearInvoicesToSync = async () => {
+    try {
+      const { error } = await supabase
+        .from('service_records')
+        .update({ invoicing_status: 'not_to_be_invoiced' })
+        .eq('invoicing_status', 'ready_for_qb');
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Cleared all invoices from sync list",
+      });
+      
+      loadData(); // Refresh the data
+    } catch (error) {
+      console.error('Error clearing invoices:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear invoices to sync",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchQBInvoices = async () => {
     setFetchingInvoices(true);
     try {
@@ -391,7 +416,16 @@ export const QuickBooksIntegration = () => {
       {connection && (
         <Card>
           <CardHeader>
-            <CardTitle>Invoice Sync</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              Invoice Sync
+              <Button 
+                onClick={clearInvoicesToSync}
+                size="sm"
+                variant="outline"
+              >
+                Clear List
+              </Button>
+            </CardTitle>
             <CardDescription>
               Sync your service records as invoices to QuickBooks Online
             </CardDescription>
