@@ -72,7 +72,89 @@ serve(async (req) => {
 
     const { action, data } = await req.json();
 
-    // Get QuickBooks connection
+    // Actions that don't require an existing connection
+    if (action === 'get_oauth_url' || action === 'oauth_callback') {
+      switch (action) {
+        case 'get_oauth_url': {
+          const { redirect_uri } = data;
+          
+          const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
+          const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
+          
+          if (!clientId || !clientSecret) {
+            throw new Error('QuickBooks credentials not configured');
+          }
+
+          const redirectUri = encodeURIComponent(redirect_uri);
+          const scope = encodeURIComponent('com.intuit.quickbooks.accounting');
+          const state = Math.random().toString(36).substring(7);
+          
+          const authUrl = `https://appcenter.intuit.com/connect/oauth2?` +
+            `client_id=${clientId}&` +
+            `scope=${scope}&` +
+            `redirect_uri=${redirectUri}&` +
+            `response_type=code&` +
+            `access_type=offline&` +
+            `state=${state}`;
+
+          return new Response(JSON.stringify({ 
+            success: true, 
+            oauth_url: authUrl 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        case 'oauth_callback': {
+          const { code, realmId } = data;
+          
+          const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
+          const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
+          
+          if (!clientId || !clientSecret) {
+            throw new Error('QuickBooks credentials not configured');
+          }
+
+          // Exchange code for tokens
+          const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+            },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              code: code,
+              redirect_uri: `${Deno.env.get('SUPABASE_URL')}/functions/v1/quickbooks-integration`,
+            }),
+          });
+
+          const tokens = await tokenResponse.json();
+          
+          if (!tokenResponse.ok) {
+            throw new Error(`OAuth error: ${tokens.error_description || 'Unknown error'}`);
+          }
+
+          // Store connection
+          await supabaseClient
+            .from('quickbooks_connections')
+            .upsert({
+              user_id: user.id,
+              company_id: realmId,
+              access_token: tokens.access_token,
+              refresh_token: tokens.refresh_token,
+              token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+              is_active: true,
+            });
+
+          return new Response(JSON.stringify({ success: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+    }
+
+    // Get QuickBooks connection for actions that require it
     const { data: connection, error: connError } = await supabaseClient
       .from('quickbooks_connections')
       .select('*')
@@ -304,53 +386,6 @@ serve(async (req) => {
           success: true, 
           quickbooks_invoice_id: qbInvoiceId 
         }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      case 'oauth_callback': {
-        const { code, realmId } = data;
-        
-        const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
-        const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
-        
-        if (!clientId || !clientSecret) {
-          throw new Error('QuickBooks credentials not configured');
-        }
-
-        // Exchange code for tokens
-        const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-          },
-          body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            code: code,
-            redirect_uri: `${Deno.env.get('SUPABASE_URL')}/functions/v1/quickbooks-integration`,
-          }),
-        });
-
-        const tokens = await tokenResponse.json();
-        
-        if (!tokenResponse.ok) {
-          throw new Error(`OAuth error: ${tokens.error_description || 'Unknown error'}`);
-        }
-
-        // Store connection
-        await supabaseClient
-          .from('quickbooks_connections')
-          .upsert({
-            user_id: user.id,
-            company_id: realmId,
-            access_token: tokens.access_token,
-            refresh_token: tokens.refresh_token,
-            token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-            is_active: true,
-          });
-
-        return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }

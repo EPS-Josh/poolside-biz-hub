@@ -104,21 +104,31 @@ export const QuickBooksIntegration = () => {
     }
   };
 
-  const connectToQuickBooks = () => {
-    const clientId = 'YOUR_QUICKBOOKS_CLIENT_ID'; // This should come from your QB app
-    const redirectUri = encodeURIComponent(`${window.location.origin}/bpa`);
-    const scope = encodeURIComponent('com.intuit.quickbooks.accounting');
-    const state = Math.random().toString(36).substring(7);
-    
-    const authUrl = `https://appcenter.intuit.com/connect/oauth2?` +
-      `client_id=${clientId}&` +
-      `scope=${scope}&` +
-      `redirect_uri=${redirectUri}&` +
-      `response_type=code&` +
-      `access_type=offline&` +
-      `state=${state}`;
-    
-    window.open(authUrl, '_blank', 'width=600,height=700');
+  const connectToQuickBooks = async () => {
+    try {
+      // Get the client ID from our edge function (which has access to secrets)
+      const { data, error } = await supabase.functions.invoke('quickbooks-integration', {
+        body: {
+          action: 'get_oauth_url',
+          data: { redirect_uri: `${window.location.origin}/bpa` }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.oauth_url) {
+        window.open(data.oauth_url, '_blank', 'width=600,height=700');
+      } else {
+        throw new Error('Failed to generate OAuth URL');
+      }
+    } catch (error) {
+      console.error('Error connecting to QuickBooks:', error);
+      toast({
+        title: "Connection Error",
+        description: error.message || "Failed to connect to QuickBooks. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const syncInvoice = async (serviceRecordId: string) => {
