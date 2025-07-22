@@ -279,6 +279,7 @@ serve(async (req) => {
 
       case 'sync_invoice': {
         const { service_record_id } = data;
+        console.log('Starting invoice sync for service record:', service_record_id);
         
         // Get service record with customer data
         const { data: serviceRecord, error: serviceError } = await supabaseClient
@@ -363,6 +364,8 @@ serve(async (req) => {
           }
         }
 
+        console.log('Creating invoice in QuickBooks:', JSON.stringify(invoice, null, 2));
+        
         const response = await fetch(`${quickbooksBaseUrl}/invoice`, {
           method: 'POST',
           headers: authHeaders,
@@ -371,11 +374,17 @@ serve(async (req) => {
 
         const result = await response.json();
         
+        console.log('QuickBooks API response status:', response.status);
+        console.log('QuickBooks API response:', JSON.stringify(result, null, 2));
+        
         if (!response.ok) {
-          throw new Error(`QuickBooks API error: ${result.fault?.error?.[0]?.detail || 'Unknown error'}`);
+          const errorDetail = result.fault?.error?.[0]?.detail || result.Fault?.Error?.[0]?.Detail || JSON.stringify(result);
+          console.error('QuickBooks API error:', errorDetail);
+          throw new Error(`QuickBooks API error: ${errorDetail}`);
         }
 
         const qbInvoiceId = result.QueryResponse?.Invoice?.[0]?.Id || result.invoice?.Id;
+        console.log('Extracted QB Invoice ID:', qbInvoiceId);
 
         // Update sync status
         await supabaseClient
