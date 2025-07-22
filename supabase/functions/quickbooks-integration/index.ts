@@ -180,9 +180,65 @@ serve(async (req) => {
       });
     }
 
+    // Check if token is expired and refresh if needed
+    const now = new Date();
+    const expiresAt = new Date(connection.token_expires_at);
+    
+    console.log('Token expires at:', expiresAt);
+    console.log('Current time:', now);
+    console.log('Token expired?', now >= expiresAt);
+
+    let accessToken = connection.access_token;
+    
+    if (now >= expiresAt) {
+      console.log('Token expired, refreshing...');
+      // Token is expired, refresh it
+      let clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
+      let clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
+      
+      if (clientId) clientId = clientId.trim();
+      if (clientSecret) clientSecret = clientSecret.trim();
+      
+      if (!clientId || !clientSecret) {
+        throw new Error('QuickBooks credentials not configured');
+      }
+
+      const refreshResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: connection.refresh_token,
+        }),
+      });
+
+      const refreshTokens = await refreshResponse.json();
+      
+      if (!refreshResponse.ok) {
+        console.error('Token refresh failed:', refreshTokens);
+        throw new Error(`Token refresh failed: ${refreshTokens.error_description || 'Unknown error'}`);
+      }
+
+      // Update connection with new tokens
+      await supabaseClient
+        .from('quickbooks_connections')
+        .update({
+          access_token: refreshTokens.access_token,
+          refresh_token: refreshTokens.refresh_token || connection.refresh_token,
+          token_expires_at: new Date(Date.now() + refreshTokens.expires_in * 1000).toISOString(),
+        })
+        .eq('id', connection.id);
+
+      accessToken = refreshTokens.access_token;
+      console.log('Token refreshed successfully');
+    }
+
     const quickbooksBaseUrl = `https://sandbox-quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
     const authHeaders = {
-      'Authorization': `Bearer ${connection.access_token}`,
+      'Authorization': `Bearer ${accessToken}`,
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
