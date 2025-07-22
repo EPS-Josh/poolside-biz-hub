@@ -201,6 +201,30 @@ export const QuickBooksIntegration = () => {
       // Try to get more detailed error info
       let errorMessage = error.message || "Failed to sync invoice to QuickBooks";
       
+      // Check if this is a token/auth error
+      if (errorMessage.includes('invalid_grant') || 
+          errorMessage.includes('Token refresh failed') ||
+          errorMessage.includes('Incorrect Token type')) {
+        errorMessage = "QuickBooks connection is invalid. Please reconnect to QuickBooks.";
+        
+        // Clear the invalid connection
+        if (connection) {
+          await supabase
+            .from('quickbooks_connections')
+            .update({ is_active: false })
+            .eq('id', connection.id);
+          
+          setConnection(null);
+          
+          toast({
+            title: "Connection Issue",
+            description: "Your QuickBooks connection has expired. Please reconnect.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
       // If it's a FunctionsHttpError, the real error is in the function response
       if (error.name === 'FunctionsHttpError') {
         errorMessage = "QuickBooks sync failed. Check the console for details.";
@@ -213,6 +237,31 @@ export const QuickBooksIntegration = () => {
       });
     } finally {
       setSyncing(null);
+    }
+  };
+
+  const disconnectQuickBooks = async () => {
+    if (!connection) return;
+    
+    try {
+      await supabase
+        .from('quickbooks_connections')
+        .update({ is_active: false })
+        .eq('id', connection.id);
+      
+      setConnection(null);
+      
+      toast({
+        title: "Disconnected",
+        description: "Successfully disconnected from QuickBooks",
+      });
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to disconnect from QuickBooks",
+        variant: "destructive",
+      });
     }
   };
 
@@ -274,10 +323,15 @@ export const QuickBooksIntegration = () => {
                     Connected: {new Date(connection.created_at).toLocaleDateString()}
                   </p>
                 </div>
-                <Button variant="outline" onClick={loadData} size="sm">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={loadData} size="sm">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                  <Button variant="outline" onClick={disconnectQuickBooks} size="sm">
+                    Disconnect
+                  </Button>
+                </div>
               </div>
             </div>
           )}
