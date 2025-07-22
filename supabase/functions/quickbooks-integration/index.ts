@@ -89,13 +89,7 @@ serve(async (req) => {
           const scope = encodeURIComponent('com.intuit.quickbooks.accounting');
           const state = Math.random().toString(36).substring(7);
           
-          const authUrl = `https://appcenter.intuit.com/connect/oauth2?` +
-            `client_id=${clientId}&` +
-            `scope=${scope}&` +
-            `redirect_uri=${redirectUri}&` +
-            `response_type=code&` +
-            `access_type=offline&` +
-            `state=${state}`;
+          const authUrl = `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&state=${state}`;
 
           return new Response(JSON.stringify({ 
             success: true, 
