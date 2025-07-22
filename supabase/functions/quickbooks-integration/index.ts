@@ -39,6 +39,9 @@ interface QuickBooksInvoice {
       };
       qty?: number;
       unitPrice?: number;
+      taxCodeRef?: {
+        value: string;
+      };
     };
   }>;
   dueDate?: string;
@@ -325,11 +328,14 @@ serve(async (req) => {
               detailType: "SalesItemLineDetail",
               salesItemLineDetail: {
                 itemRef: {
-                  value: "1", // Default service item - needs to be created in QB
-                  name: serviceRecord.service_type || "Pool Service",
+                  value: "HOURS", // Try using a standard item type
+                  name: "Hours"
                 },
                 qty: 1,
                 unitPrice: 100,
+                taxCodeRef: {
+                  value: "NON" // Non-taxable
+                }
               },
             },
           ],
@@ -352,11 +358,14 @@ serve(async (req) => {
                   detailType: "SalesItemLineDetail",
                   salesItemLineDetail: {
                     itemRef: {
-                      value: "1", // Default part item - needs QB setup
+                      value: "HOURS", // Use standard item reference
                       name: inventoryItem.name || inventoryItem.description || "Pool Part",
                     },
                     qty: part.quantity,
                     unitPrice: inventoryItem.unit_price || 0,
+                    taxCodeRef: {
+                      value: "NON" // Non-taxable
+                    }
                   },
                 });
               }
