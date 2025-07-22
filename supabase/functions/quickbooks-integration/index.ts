@@ -101,28 +101,34 @@ serve(async (req) => {
         });
 
         const tokenData = await tokenResponse.json();
-        console.log('Token response status:', tokenResponse.status);
         
-        if (!tokenResponse.ok) {
+        if (!tokenResponse.ok || tokenData.error) {
+          console.error('Token exchange error:', tokenData);
           throw new Error(`Token exchange failed: ${JSON.stringify(tokenData)}`);
         }
 
-        // Store connection in database
-        await supabaseClient
+        console.log('Token exchange successful');
+
+        // Store tokens in database
+        const { error: dbError } = await supabaseClient
           .from('quickbooks_connections')
           .upsert({
             user_id: user.id,
+            company_id: realmId,
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token,
-            company_id: realmId,
             token_expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
             is_active: true,
-            updated_at: new Date().toISOString(),
           });
+
+        if (dbError) {
+          console.error('Database error:', dbError);
+          throw new Error(`Database error: ${dbError.message}`);
+        }
 
         return new Response(JSON.stringify({ 
           success: true,
-          message: 'QuickBooks connection established successfully'
+          message: 'QuickBooks connected successfully' 
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -137,6 +143,8 @@ serve(async (req) => {
         });
       }
     }
+
+    // Handle invoice sync
     if (action === 'sync_invoice') {
       console.log('=== SYNC INVOICE STARTED ===');
       console.log('Service record ID:', data.service_record_id);
@@ -160,21 +168,30 @@ serve(async (req) => {
       }
 
       console.log('QB connection found, company ID:', connection.company_id);
-      
+
       // Get service record with customer data
       const { data: serviceRecord, error: serviceError } = await supabaseClient
         .from('service_records')
         .select(`
           *,
-          customers (*)
+          customers (
+            first_name,
+            last_name,
+            email,
+            phone,
+            company,
+            address,
+            city,
+            state,
+            zip_code
+          )
         `)
         .eq('id', data.service_record_id)
         .single();
 
       if (serviceError || !serviceRecord) {
-        console.error('Service record error:', serviceError);
         return new Response(JSON.stringify({ 
-          error: `Service record not found: ${serviceError?.message || 'Unknown error'}` 
+          error: 'Service record not found' 
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -187,7 +204,6 @@ serve(async (req) => {
       const refreshQuickBooksToken = async () => {
         console.log('Refreshing QuickBooks token...');
         
-        // Create base64 encoded credentials for Deno using btoa (available in Deno)
         const credentials = `${clientId}:${clientSecret}`;
         const encodedCredentials = btoa(credentials);
         
@@ -200,8 +216,6 @@ serve(async (req) => {
           body: `grant_type=refresh_token&refresh_token=${connection.refresh_token}`,
         });
 
-        console.log('Token refresh response status:', tokenResponse.status);
-        
         if (!tokenResponse.ok) {
           const errorText = await tokenResponse.text();
           console.error('Token refresh failed:', errorText);
@@ -225,7 +239,6 @@ serve(async (req) => {
         return tokenData.access_token;
       };
 
-      // QuickBooks API setup
       let accessToken = connection.access_token;
       const quickbooksBaseUrl = `https://quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
       
@@ -235,17 +248,6 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       });
 
-      // Create customer in QuickBooks - check if customer already exists first
-      const rawCustomerName = `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`;
-      
-      // Sanitize customer name for QuickBooks (remove invalid characters and limit length)
-      const customerName = rawCustomerName
-        .replace(/[:\n\t\r]/g, ' ') // Replace problematic characters with spaces
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .trim()
-        .substring(0, 100); // QuickBooks has a 100 character limit for Name field
-      
-      console.log('Customer name:', customerName);
       // Helper function to make QuickBooks API calls with token refresh retry
       const makeQBRequest = async (url: string, options: any, retryCount = 0) => {
         const response = await fetch(url, {
@@ -269,51 +271,63 @@ serve(async (req) => {
         return response;
       };
 
-      // First try to find existing customer
+      // Search for existing customer
       console.log('Searching for existing customer...');
-      const searchResponse = await makeQBRequest(`${quickbooksBaseUrl}/customer?where=Name='${encodeURIComponent(customerName)}'`, {
-        method: 'GET',
-      });
-
-      let qbCustomerId;
+      const customerName = `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`.trim();
+      console.log('Customer name:', customerName);
       
-      if (searchResponse.ok) {
-        const searchResult = await searchResponse.json();
-        console.log('Customer search result:', JSON.stringify(searchResult, null, 2));
-        
-        if (searchResult.QueryResponse?.Customer && searchResult.QueryResponse.Customer.length > 0) {
-          qbCustomerId = searchResult.QueryResponse.Customer[0].Id;
+      // Sanitize customer name for QuickBooks
+      const sanitizedCustomerName = customerName
+        .replace(/[^\w\s&.-]/g, '') // Remove problematic characters
+        .replace(/\s+/g, ' ') // Normalize spaces
+        .trim()
+        .substring(0, 100); // Limit length
+
+      const existingCustomerResponse = await makeQBRequest(
+        `${quickbooksBaseUrl}/customer?query=Name='${encodeURIComponent(sanitizedCustomerName)}'`,
+        { method: 'GET' }
+      );
+
+      let qbCustomerId = null;
+      if (existingCustomerResponse.ok) {
+        const existingCustomerData = await existingCustomerResponse.json();
+        const customers = existingCustomerData.QueryResponse?.Customer || [];
+        if (customers.length > 0) {
+          qbCustomerId = customers[0].Id;
           console.log('Found existing customer with ID:', qbCustomerId);
         }
       }
       
-      // If customer doesn't exist, create new one
+      // Create customer if not found
       if (!qbCustomerId) {
-        const qbCustomer = {
-          Name: customerName,
+        console.log('Creating customer in QuickBooks...');
+        
+        const qbCustomer: any = {
+          Name: sanitizedCustomerName,
         };
         
-        // Only add CompanyName if it exists and is not empty
-        if (serviceRecord.customers.company && serviceRecord.customers.company.trim()) {
+        if (serviceRecord.customers.company?.trim()) {
           qbCustomer.CompanyName = serviceRecord.customers.company.trim();
         }
 
-        console.log('Creating customer in QuickBooks...');
-        const customerResponse = await makeQBRequest(`${quickbooksBaseUrl}/customer`, {
-          method: 'POST',
-          body: JSON.stringify(qbCustomer),
-        });
+        const customerResponse = await makeQBRequest(
+          `${quickbooksBaseUrl}/customer`,
+          {
+            method: 'POST',
+            body: JSON.stringify(qbCustomer),
+          }
+        );
 
-        console.log('Customer response status:', customerResponse.status);
+        const customerResponseStatus = customerResponse.status;
+        console.log('Customer response status:', customerResponseStatus);
+
         const customerResult = await customerResponse.json();
         console.log('Customer response:', JSON.stringify(customerResult, null, 2));
 
         if (!customerResponse.ok) {
-          console.error('Customer creation failed');
-          console.error('Status:', customerResponse.status);
-          console.error('Response body:', JSON.stringify(customerResult, null, 2));
+          console.log('Customer creation failed');
           return new Response(JSON.stringify({ 
-            error: `QuickBooks customer error: ${customerResult.fault?.error?.[0]?.detail || customerResult.Fault?.Error?.[0]?.Detail || 'Unknown error'}`,
+            error: 'Failed to create customer in QuickBooks',
             details: customerResult
           }), {
             status: 400,
@@ -326,47 +340,46 @@ serve(async (req) => {
       }
 
       // Create invoice
-      const invoice = {
+      const invoiceData = {
+        CustomerRef: {
+          value: qbCustomerId
+        },
         Line: [
           {
             Amount: 100.00,
             DetailType: "SalesItemLineDetail",
             SalesItemLineDetail: {
               ItemRef: {
-                value: "1",  // Default service item - QuickBooks creates this by default
-                name: "Services"
+                value: "1"
               },
-              Qty: 1,
               UnitPrice: 100.00
             }
           }
         ],
-        CustomerRef: {
-          value: qbCustomerId
-        },
-        TxnDate: serviceRecord.service_date
+        TotalAmt: 100.00
       };
 
-      console.log('Creating invoice in QuickBooks...');
-      const invoiceResponse = await makeQBRequest(`${quickbooksBaseUrl}/invoice`, {
-        method: 'POST',
-        body: JSON.stringify(invoice),
-      });
-
-      console.log('Invoice response status:', invoiceResponse.status);
-      const invoiceResult = await invoiceResponse.json();
-      console.log('Invoice response:', JSON.stringify(invoiceResult, null, 2));
+      const invoiceResponse = await makeQBRequest(
+        `${quickbooksBaseUrl}/invoice`,
+        {
+          method: 'POST',
+          body: JSON.stringify(invoiceData),
+        }
+      );
 
       if (!invoiceResponse.ok) {
-        console.error('Invoice creation failed');
+        const errorText = await invoiceResponse.text();
+        console.error('Invoice creation failed:', errorText);
         return new Response(JSON.stringify({ 
-          error: `QuickBooks invoice error: ${invoiceResult.fault?.error?.[0]?.detail || 'Unknown error'}` 
+          error: 'Failed to create invoice in QuickBooks',
+          details: errorText
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
+      const invoiceResult = await invoiceResponse.json();
       const qbInvoiceId = invoiceResult.QueryResponse?.Invoice?.[0]?.Id;
       console.log('Invoice created with ID:', qbInvoiceId);
 
@@ -509,7 +522,7 @@ serve(async (req) => {
         
         return new Response(JSON.stringify({ 
           success: true,
-          invoices: invoices.map(invoice => ({
+          invoices: invoices.map((invoice: any) => ({
             id: invoice.Id,
             doc_number: invoice.DocNumber,
             txn_date: invoice.TxnDate,
