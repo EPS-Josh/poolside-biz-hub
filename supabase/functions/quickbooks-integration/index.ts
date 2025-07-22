@@ -104,22 +104,79 @@ serve(async (req) => {
 
       console.log('Service record found for customer:', serviceRecord.customers.first_name, serviceRecord.customers.last_name);
 
+      // Function to refresh QuickBooks token
+      const refreshQuickBooksToken = async () => {
+        console.log('Refreshing QuickBooks token...');
+        
+        const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: connection.refresh_token,
+          }),
+        });
+
+        if (!tokenResponse.ok) {
+          const errorText = await tokenResponse.text();
+          console.error('Token refresh failed:', errorText);
+          throw new Error(`Token refresh failed: ${errorText}`);
+        }
+
+        const tokenData = await tokenResponse.json();
+        console.log('Token refreshed successfully');
+
+        // Update the connection with new tokens
+        await supabaseClient
+          .from('quickbooks_connections')
+          .update({
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token || connection.refresh_token,
+            token_expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', connection.id);
+
+        return tokenData.access_token;
+      };
+
       // QuickBooks API setup
+      let accessToken = connection.access_token;
       const quickbooksBaseUrl = `https://sandbox-quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
-      const authHeaders = {
-        'Authorization': `Bearer ${connection.access_token}`,
+      
+      const getAuthHeaders = () => ({
+        'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-      };
+      });
 
       // Create customer in QuickBooks - check if customer already exists first
       const customerName = `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`;
       
+      // Helper function to make QuickBooks API calls with token refresh retry
+      const makeQBRequest = async (url: string, options: any, retryCount = 0) => {
+        const response = await fetch(url, {
+          ...options,
+          headers: getAuthHeaders(),
+        });
+
+        // If we get 401 (token expired) and haven't retried yet, refresh token and retry
+        if (response.status === 401 && retryCount === 0) {
+          console.log('Token expired, refreshing...');
+          accessToken = await refreshQuickBooksToken();
+          return makeQBRequest(url, options, 1); // Retry once
+        }
+
+        return response;
+      };
+
       // First try to find existing customer
       console.log('Searching for existing customer...');
-      const searchResponse = await fetch(`${quickbooksBaseUrl}/customer?where=Name='${encodeURIComponent(customerName)}'`, {
+      const searchResponse = await makeQBRequest(`${quickbooksBaseUrl}/customer?where=Name='${encodeURIComponent(customerName)}'`, {
         method: 'GET',
-        headers: authHeaders,
       });
 
       let qbCustomerId;
@@ -146,9 +203,8 @@ serve(async (req) => {
         }
 
         console.log('Creating customer in QuickBooks...');
-        const customerResponse = await fetch(`${quickbooksBaseUrl}/customer`, {
+        const customerResponse = await makeQBRequest(`${quickbooksBaseUrl}/customer`, {
           method: 'POST',
-          headers: authHeaders,
           body: JSON.stringify(qbCustomer),
         });
 
@@ -196,9 +252,8 @@ serve(async (req) => {
       };
 
       console.log('Creating invoice in QuickBooks...');
-      const invoiceResponse = await fetch(`${quickbooksBaseUrl}/invoice`, {
+      const invoiceResponse = await makeQBRequest(`${quickbooksBaseUrl}/invoice`, {
         method: 'POST',
-        headers: authHeaders,
         body: JSON.stringify(invoice),
       });
 
