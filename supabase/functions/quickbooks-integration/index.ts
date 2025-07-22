@@ -81,13 +81,60 @@ serve(async (req) => {
 
       console.log('QB connection found, company ID:', connection.company_id);
       
+      // Get service record with customer data
+      const { data: serviceRecord, error: serviceError } = await supabaseClient
+        .from('service_records')
+        .select(`
+          *,
+          customers (*)
+        `)
+        .eq('id', data.service_record_id)
+        .single();
+
+      if (serviceError || !serviceRecord) {
+        console.error('Service record error:', serviceError);
+        return new Response(JSON.stringify({ 
+          error: `Service record not found: ${serviceError?.message || 'Unknown error'}` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('Service record found for customer:', serviceRecord.customers.first_name, serviceRecord.customers.last_name);
+
+      // Create a simple invoice in QuickBooks
+      const quickbooksBaseUrl = `https://sandbox-quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
+      const authHeaders = {
+        'Authorization': `Bearer ${connection.access_token}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+
+      // First, create a simple customer in QuickBooks
+      const qbCustomer = {
+        Name: `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`,
+        CompanyName: serviceRecord.customers.company || undefined,
+      };
+
+      const customerResponse = await fetch(`${quickbooksBaseUrl}/customer`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify(qbCustomer),
+      });
+
+      console.log('Customer creation response status:', customerResponse.status);
+      const customerResult = await customerResponse.json();
+      console.log('Customer creation response:', JSON.stringify(customerResult, null, 2));
+
       return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'QuickBooks connection found but sync logic not implemented yet',
+        success: true,
+        message: 'Partial implementation - customer creation attempted',
         debug: {
-          connectionExists: true,
-          companyId: connection.company_id,
-          serviceRecordId: data.service_record_id
+          serviceRecord: serviceRecord.id,
+          customer: `${serviceRecord.customers.first_name} ${serviceRecord.customers.last_name}`,
+          customerResponseStatus: customerResponse.status,
+          customerResult: customerResult
         }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
