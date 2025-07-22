@@ -59,16 +59,35 @@ serve(async (req) => {
 
     // Simple test response
     if (action === 'sync_invoice') {
-      console.log('Sync invoice action received');
+      console.log('Sync invoice action received for service record:', data.service_record_id);
+      
+      // Get QuickBooks connection
+      const { data: connection, error: connError } = await supabaseClient
+        .from('quickbooks_connections')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (connError || !connection) {
+        console.log('No QB connection found:', connError);
+        return new Response(JSON.stringify({ 
+          error: 'QuickBooks connection not found. Please connect to QuickBooks first.' 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('QB connection found, company ID:', connection.company_id);
       
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Function is working but sync not implemented yet',
+        error: 'QuickBooks connection found but sync logic not implemented yet',
         debug: {
-          action,
-          data,
-          userId: user.id,
-          hasCredentials: !!clientId && !!clientSecret
+          connectionExists: true,
+          companyId: connection.company_id,
+          serviceRecordId: data.service_record_id
         }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
