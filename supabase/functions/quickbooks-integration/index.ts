@@ -81,6 +81,8 @@ serve(async (req) => {
           const clientId = Deno.env.get('QUICKBOOKS_CLIENT_ID');
           const clientSecret = Deno.env.get('QUICKBOOKS_CLIENT_SECRET');
           
+          console.log('Client ID from env:', clientId);
+          
           if (!clientId || !clientSecret) {
             throw new Error('QuickBooks credentials not configured');
           }
