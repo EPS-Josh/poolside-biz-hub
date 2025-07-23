@@ -507,7 +507,7 @@ serve(async (req) => {
         // Fetch recent invoices from QuickBooks
         console.log('Fetching invoices from QuickBooks...');
         const invoicesResponse = await makeQBRequest(
-          `${quickbooksBaseUrl}/invoice?maxresults=50&orderby=TxnDate desc`, 
+          `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice MAXRESULTS 50`,
           {
             method: 'GET',
           }
