@@ -136,6 +136,9 @@ const BPA = () => {
     return `${sign}${percent.toFixed(1)}%`;
   };
 
+  console.log('BPA Debug - profitLossData:', profitLossData);
+  console.log('BPA Debug - qbConnection:', qbConnection);
+
   const metrics = [
     {
       title: 'Monthly Revenue',
