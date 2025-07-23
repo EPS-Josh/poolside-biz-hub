@@ -554,6 +554,227 @@ serve(async (req) => {
       }
     }
 
+    // Handle profit and loss data
+    if (action === 'fetch_profit_loss') {
+      console.log('=== FETCH PROFIT AND LOSS DATA ===');
+      
+      try {
+        const { data: connection, error: connError } = await supabaseClient
+          .from('quickbooks_connections')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        console.log('Connection query result:', { connection: !!connection, error: connError });
+
+        if (connError || !connection) {
+          return new Response(JSON.stringify({ error: 'No active QuickBooks connection found' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          });
+        }
+
+        console.log('QB connection found, company ID:', connection.company_id);
+        console.log('Fetching profit and loss data from QuickBooks...');
+
+        // Function to refresh QuickBooks token
+        const refreshQuickBooksToken = async () => {
+          console.log('Refreshing QuickBooks token...');
+          
+          const credentials = `${clientId}:${clientSecret}`;
+          const encodedCredentials = btoa(credentials);
+          
+          const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'Authorization': `Basic ${encodedCredentials}`,
+            },
+            body: `grant_type=refresh_token&refresh_token=${connection.refresh_token}`,
+          });
+
+          if (!tokenResponse.ok) {
+            const errorText = await tokenResponse.text();
+            console.error('Token refresh failed:', errorText);
+            throw new Error(`Token refresh failed: ${errorText}`);
+          }
+
+          const tokenData = await tokenResponse.json();
+          console.log('Token refreshed successfully');
+
+          // Update the connection with new tokens
+          await supabaseClient
+            .from('quickbooks_connections')
+            .update({
+              access_token: tokenData.access_token,
+              refresh_token: tokenData.refresh_token || connection.refresh_token,
+              token_expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', connection.id);
+
+          return tokenData.access_token;
+        };
+
+        let accessToken = connection.access_token;
+        const quickbooksBaseUrl = `https://quickbooks.api.intuit.com/v3/company/${connection.company_id}`;
+        
+        const getAuthHeaders = () => ({
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+          'intuit_tid': crypto.randomUUID(),
+        });
+
+        // Helper function to make QuickBooks API calls with token refresh retry
+        const makeQBRequest = async (url: string, options: any, retryCount = 0) => {
+          const response = await fetch(url, {
+            ...options,
+            headers: getAuthHeaders(),
+          });
+
+          // Capture intuit_tid for troubleshooting
+          const intuitTid = response.headers.get('intuit_tid');
+          if (intuitTid) {
+            console.log('QuickBooks API intuit_tid:', intuitTid);
+          }
+
+          // If we get 401 (token expired) and haven't retried yet, refresh token and retry
+          if (response.status === 401 && retryCount === 0) {
+            console.log('Token expired, refreshing...');
+            accessToken = await refreshQuickBooksToken();
+            return makeQBRequest(url, options, 1); // Retry once
+          }
+
+          return response;
+        };
+
+        // Get current date and calculate date range
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth() + 1;
+        const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+        // Format dates for QuickBooks API (YYYY-MM-DD)
+        const currentMonthStart = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
+        const lastMonthStart = `${lastMonthYear}-${lastMonth.toString().padStart(2, '0')}-01`;
+        const lastMonthEnd = new Date(currentYear, currentMonth - 1, 0).toISOString().split('T')[0];
+
+        // Fetch current month P&L report
+        const currentMonthResponse = await makeQBRequest(
+          `${quickbooksBaseUrl}/reports/ProfitAndLoss?start_date=${currentMonthStart}&end_date=${currentDate.toISOString().split('T')[0]}`,
+          { method: 'GET' }
+        );
+
+        // Fetch last month P&L report
+        const lastMonthResponse = await makeQBRequest(
+          `${quickbooksBaseUrl}/reports/ProfitAndLoss?start_date=${lastMonthStart}&end_date=${lastMonthEnd}`,
+          { method: 'GET' }
+        );
+
+        if (!currentMonthResponse.ok || !lastMonthResponse.ok) {
+          console.error('QB API Error - Current:', currentMonthResponse.status, await currentMonthResponse.text());
+          console.error('QB API Error - Last:', lastMonthResponse.status, await lastMonthResponse.text());
+          return new Response(JSON.stringify({ error: 'Failed to fetch P&L data from QuickBooks' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          });
+        }
+
+        const currentMonthData = await currentMonthResponse.json();
+        const lastMonthData = await lastMonthResponse.json();
+
+        console.log('P&L data fetched successfully');
+
+        // Extract key metrics from P&L reports
+        const extractMetrics = (reportData: any) => {
+          const rows = reportData.QueryResponse?.Report?.Rows || [];
+          let totalRevenue = 0;
+          let totalExpenses = 0;
+          let netIncome = 0;
+
+          // Parse the P&L report structure to extract revenue and expenses
+          const findRowByName = (rows: any[], name: string): any => {
+            for (const row of rows) {
+              if (row.ColData && row.ColData[0]?.value?.includes(name)) {
+                return row;
+              }
+              if (row.Rows) {
+                const found = findRowByName(row.Rows, name);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+
+          // Look for income/revenue section
+          const incomeRow = findRowByName(rows, 'Income') || findRowByName(rows, 'Revenue');
+          if (incomeRow && incomeRow.ColData && incomeRow.ColData[1]) {
+            totalRevenue = parseFloat(incomeRow.ColData[1].value?.replace(/[,$]/g, '') || '0');
+          }
+
+          // Look for expenses section
+          const expenseRow = findRowByName(rows, 'Total Expenses') || findRowByName(rows, 'Expenses');
+          if (expenseRow && expenseRow.ColData && expenseRow.ColData[1]) {
+            totalExpenses = parseFloat(expenseRow.ColData[1].value?.replace(/[,$]/g, '') || '0');
+          }
+
+          // Look for net income
+          const netIncomeRow = findRowByName(rows, 'Net Income') || findRowByName(rows, 'Net Ordinary Income');
+          if (netIncomeRow && netIncomeRow.ColData && netIncomeRow.ColData[1]) {
+            netIncome = parseFloat(netIncomeRow.ColData[1].value?.replace(/[,$]/g, '') || '0');
+          }
+
+          return { totalRevenue, totalExpenses, netIncome };
+        };
+
+        const currentMetrics = extractMetrics(currentMonthData);
+        const lastMonthMetrics = extractMetrics(lastMonthData);
+
+        // Calculate changes
+        const revenueChange = lastMonthMetrics.totalRevenue > 0 
+          ? ((currentMetrics.totalRevenue - lastMonthMetrics.totalRevenue) / lastMonthMetrics.totalRevenue) * 100 
+          : 0;
+
+        const profitChange = lastMonthMetrics.netIncome !== 0 
+          ? ((currentMetrics.netIncome - lastMonthMetrics.netIncome) / Math.abs(lastMonthMetrics.netIncome)) * 100 
+          : 0;
+
+        const currentProfitMargin = currentMetrics.totalRevenue > 0 
+          ? (currentMetrics.netIncome / currentMetrics.totalRevenue) * 100 
+          : 0;
+
+        const lastMonthProfitMargin = lastMonthMetrics.totalRevenue > 0 
+          ? (lastMonthMetrics.netIncome / lastMonthMetrics.totalRevenue) * 100 
+          : 0;
+
+        const marginChange = currentProfitMargin - lastMonthProfitMargin;
+
+        return new Response(JSON.stringify({
+          currentRevenue: currentMetrics.totalRevenue,
+          currentGrossProfit: currentMetrics.netIncome,
+          currentProfitMargin: currentProfitMargin,
+          revenueChange: revenueChange,
+          profitChange: profitChange,
+          marginChange: marginChange,
+          currentExpenses: currentMetrics.totalExpenses,
+          lastMonthRevenue: lastMonthMetrics.totalRevenue,
+          lastMonthProfit: lastMonthMetrics.netIncome
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+
+      } catch (error) {
+        console.error('Error fetching P&L data:', error);
+        return new Response(JSON.stringify({ error: 'Failed to fetch P&L data' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -12,14 +12,41 @@ import { subMonths, startOfMonth } from 'date-fns';
 const BPA = () => {
   const { isAdmin, loading: rolesLoading } = useUserRoles();
 
-  // Fetch P&L data
-  const { data: profitLossData } = useQuery({
-    queryKey: ['profit-loss-metrics'],
+  // Check if QuickBooks is connected
+  const { data: qbConnection } = useQuery({
+    queryKey: ['quickbooks-connection'],
     queryFn: async () => {
-      // Get current month and last month data
+      const { data } = await supabase
+        .from('quickbooks_connections')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+      return data;
+    }
+  });
+
+  // Fetch P&L data from QuickBooks or fallback to service records
+  const { data: profitLossData } = useQuery({
+    queryKey: ['profit-loss-metrics', qbConnection?.id],
+    queryFn: async () => {
+      // If QuickBooks is connected, fetch data from QB
+      if (qbConnection) {
+        try {
+          const { data, error } = await supabase.functions.invoke('quickbooks-integration', {
+            body: { action: 'fetch_profit_loss' }
+          });
+
+          if (error) throw error;
+          return data;
+        } catch (error) {
+          console.error('Error fetching QB P&L data:', error);
+          // Fall through to service records calculation
+        }
+      }
+
+      // Fallback: Calculate from service records
       const currentMonth = startOfMonth(new Date());
       const lastMonth = startOfMonth(subMonths(new Date(), 1));
-      const twoMonthsAgo = startOfMonth(subMonths(new Date(), 2));
 
       // Current month services
       const { data: currentServices } = await supabase
@@ -91,7 +118,8 @@ const BPA = () => {
         profitChange,
         marginChange
       };
-    }
+    },
+    enabled: !rolesLoading
   });
 
   const formatCurrency = (amount: number) => {
@@ -146,7 +174,13 @@ const BPA = () => {
             {/* Company Key Metrics - Admin Only */}
             {isAdmin() && !rolesLoading && (
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-foreground mb-4">Company Key Metrics</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-semibold text-foreground">Company Key Metrics</h2>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className={`h-2 w-2 rounded-full ${qbConnection ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                    <span>Data source: {qbConnection ? 'QuickBooks' : 'Service Records'}</span>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {metrics.map((metric, index) => (
                     <MetricsCard
