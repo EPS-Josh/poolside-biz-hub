@@ -717,12 +717,11 @@ export const QuickBooksIntegration = () => {
                 return (
                   <div
                     key={record.id}
-                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
                       isSelected ? 'bg-blue-50 border-blue-200' : 
                       isAlreadyMatched ? 'bg-gray-50 border-gray-200' : 
                       'hover:bg-gray-50'
                     }`}
-                    onClick={() => !isAlreadyMatched && toggleServiceRecord(record.id)}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -747,8 +746,11 @@ export const QuickBooksIntegration = () => {
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => toggleServiceRecord(record.id)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleServiceRecord(record.id);
+                          }}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                         />
                       )}
                     </div>
