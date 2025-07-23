@@ -745,26 +745,87 @@ serve(async (req) => {
 
         const currentMonthData = await currentMonthResponse.json();
         console.log('P&L report fetched successfully');
+        console.log('P&L Report structure sample:', JSON.stringify(currentMonthData, null, 2).substring(0, 1000));
 
-        // Basic parsing of P&L data - this is a simplified version
-        // The actual P&L structure from QuickBooks can be complex
+        // Parse P&L data with improved logic
         let currentRevenue = 0;
         let currentExpenses = 0;
 
-        // Try to extract revenue and expenses from the P&L report
         const reportRows = currentMonthData.QueryResponse?.Report?.Rows || [];
-        
-        // QuickBooks P&L reports have a nested structure - we'll try to find revenue
-        for (const row of reportRows) {
-          if (row.ColData && row.ColData[0]?.value?.toLowerCase().includes('total income')) {
-            currentRevenue = parseFloat(row.ColData[1]?.value?.replace(/[,$]/g, '') || '0');
+        console.log('Number of report rows:', reportRows.length);
+
+        // Function to recursively search through P&L rows
+        const extractFinancialData = (rows: any[], depth = 0) => {
+          let revenue = 0;
+          let expenses = 0;
+          
+          for (const row of rows) {
+            if (row.ColData && row.ColData[0]?.value) {
+              const rowName = row.ColData[0].value.toLowerCase();
+              const rowValue = row.ColData[1]?.value;
+              
+              console.log(`${' '.repeat(depth * 2)}Row: "${rowName}" = "${rowValue}"`);
+              
+              // Look for various revenue indicators
+              if (rowName.includes('total income') || 
+                  rowName.includes('gross receipts') ||
+                  rowName.includes('sales') ||
+                  rowName.includes('revenue') ||
+                  rowName.includes('service revenue') ||
+                  rowName.includes('income')) {
+                const value = parseFloat(rowValue?.replace(/[,$]/g, '') || '0');
+                if (value > revenue) {
+                  revenue = value;
+                  console.log(`Found revenue: ${revenue} from "${rowName}"`);
+                }
+              }
+              
+              // Look for expense indicators
+              if (rowName.includes('total expenses') || 
+                  rowName.includes('total operating expenses') ||
+                  rowName.includes('expenses')) {
+                const value = parseFloat(rowValue?.replace(/[,$]/g, '') || '0');
+                if (value > expenses) {
+                  expenses = value;
+                  console.log(`Found expenses: ${expenses} from "${rowName}"`);
+                }
+              }
+            }
+            
+            // Recursively search sub-rows
+            if (row.Rows && Array.isArray(row.Rows)) {
+              const subData = extractFinancialData(row.Rows, depth + 1);
+              if (subData.revenue > revenue) revenue = subData.revenue;
+              if (subData.expenses > expenses) expenses = subData.expenses;
+            }
           }
-          if (row.ColData && row.ColData[0]?.value?.toLowerCase().includes('total expenses')) {
-            currentExpenses = parseFloat(row.ColData[1]?.value?.replace(/[,$]/g, '') || '0');
+          
+          return { revenue, expenses };
+        };
+
+        const extracted = extractFinancialData(reportRows);
+        currentRevenue = extracted.revenue;
+        currentExpenses = extracted.expenses;
+
+        console.log('Final extracted values - Revenue:', currentRevenue, 'Expenses:', currentExpenses);
+
+        // If we still don't have revenue data, try the invoice fallback
+        if (currentRevenue === 0) {
+          console.log('No revenue found in P&L, falling back to invoice data...');
+          const invoicesResponse = await makeQBRequest(
+            `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice WHERE TxnDate >= '${currentMonthStart}' AND TxnDate <= '${currentMonthEnd}' MAXRESULTS 50`,
+            { method: 'GET' }
+          );
+
+          if (invoicesResponse.ok) {
+            const invoicesResult = await invoicesResponse.json();
+            const currentInvoices = invoicesResult.QueryResponse?.Invoice || [];
+            currentRevenue = currentInvoices.reduce((total: number, invoice: any) => {
+              return total + (parseFloat(invoice.TotalAmt) || 0);
+            }, 0);
+            console.log('Revenue from invoices fallback:', currentRevenue);
           }
         }
-
-        console.log('Extracted from P&L - Revenue:', currentRevenue, 'Expenses:', currentExpenses);
 
         const currentGrossProfit = currentRevenue - currentExpenses;
         const currentProfitMargin = currentRevenue > 0 ? (currentGrossProfit / currentRevenue) * 100 : 0;
