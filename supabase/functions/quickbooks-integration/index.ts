@@ -820,6 +820,14 @@ serve(async (req) => {
           if (invoicesResponse.ok) {
             const invoicesResult = await invoicesResponse.json();
             const currentInvoices = invoicesResult.QueryResponse?.Invoice || [];
+            
+            console.log(`Found ${currentInvoices.length} invoices for period ${currentMonthStart} to ${currentMonthEnd}`);
+            
+            // Debug: log each invoice
+            currentInvoices.forEach((invoice: any, index: number) => {
+              console.log(`Invoice ${index + 1}: Date=${invoice.TxnDate}, Amount=${invoice.TotalAmt}, DocNumber=${invoice.DocNumber}`);
+            });
+            
             currentRevenue = currentInvoices.reduce((total: number, invoice: any) => {
               return total + (parseFloat(invoice.TotalAmt) || 0);
             }, 0);
