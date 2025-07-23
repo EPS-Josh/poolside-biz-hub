@@ -19,6 +19,7 @@ interface ServiceRecord {
   id: string;
   service_date: string;
   service_type: string;
+  invoicing_status?: string;
   customers: {
     first_name: string;
     last_name: string;
@@ -54,9 +55,12 @@ export const QuickBooksIntegration = () => {
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [invoiceSyncs, setInvoiceSyncs] = useState<InvoiceSync[]>([]);
   const [qbInvoices, setQbInvoices] = useState<QuickBooksInvoice[]>([]);
+  const [allServiceRecords, setAllServiceRecords] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [fetchingInvoices, setFetchingInvoices] = useState(false);
+  const [matchingMode, setMatchingMode] = useState<string | null>(null);
+  const [selectedServiceRecords, setSelectedServiceRecords] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -94,6 +98,24 @@ export const QuickBooksIntegration = () => {
         .limit(20);
 
       setServiceRecords(recordsData || []);
+
+      // Load all service records for manual matching
+      const { data: allRecordsData } = await supabase
+        .from('service_records')
+        .select(`
+          id,
+          service_date,
+          service_type,
+          invoicing_status,
+          customers (
+            first_name,
+            last_name
+          )
+        `)
+        .order('service_date', { ascending: false })
+        .limit(100);
+
+      setAllServiceRecords(allRecordsData || []);
 
       // Load invoice sync status
       const { data: syncData } = await supabase
@@ -341,6 +363,74 @@ export const QuickBooksIntegration = () => {
     }
   };
 
+  const startMatching = (invoiceId: string) => {
+    setMatchingMode(invoiceId);
+    setSelectedServiceRecords([]);
+  };
+
+  const cancelMatching = () => {
+    setMatchingMode(null);
+    setSelectedServiceRecords([]);
+  };
+
+  const toggleServiceRecord = (recordId: string) => {
+    setSelectedServiceRecords(prev => 
+      prev.includes(recordId) 
+        ? prev.filter(id => id !== recordId)
+        : [...prev, recordId]
+    );
+  };
+
+  const saveMatches = async () => {
+    if (!matchingMode || selectedServiceRecords.length === 0) return;
+
+    try {
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Create sync records for each selected service record
+      const syncPromises = selectedServiceRecords.map(serviceRecordId => 
+        supabase
+          .from('quickbooks_invoice_sync')
+          .upsert({
+            user_id: user.id,
+            service_record_id: serviceRecordId,
+            quickbooks_invoice_id: matchingMode,
+            sync_status: 'manually_matched',
+            last_synced_at: new Date().toISOString(),
+          })
+      );
+
+      // Update service records to mark them as synced
+      const updatePromises = selectedServiceRecords.map(serviceRecordId =>
+        supabase
+          .from('service_records')
+          .update({ invoicing_status: 'synced_to_qb' })
+          .eq('id', serviceRecordId)
+      );
+
+      await Promise.all([...syncPromises, ...updatePromises]);
+
+      toast({
+        title: "Success",
+        description: `Matched ${selectedServiceRecords.length} service records with QuickBooks invoice`,
+      });
+
+      // Reset matching state and reload data
+      setMatchingMode(null);
+      setSelectedServiceRecords([]);
+      loadData();
+    } catch (error) {
+      console.error('Error saving matches:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save matches",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getSyncStatus = (serviceRecordId: string) => {
     return invoiceSyncs.find(sync => sync.service_record_id === serviceRecordId);
   };
@@ -567,21 +657,104 @@ export const QuickBooksIntegration = () => {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        {!matchedSync && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled // TODO: Implement manual matching
-                          >
-                            Match Record
-                          </Button>
-                        )}
-                      </div>
+                       <div className="flex items-center gap-2">
+                         {!matchedSync && (
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => startMatching(invoice.id)}
+                           >
+                             Match Records
+                           </Button>
+                         )}
+                       </div>
                     </div>
                   );
                 })
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Manual Matching Interface */}
+      {matchingMode && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              Match Service Records to Invoice
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={saveMatches}
+                  disabled={selectedServiceRecords.length === 0}
+                  size="sm"
+                >
+                  Save Matches ({selectedServiceRecords.length})
+                </Button>
+                <Button 
+                  onClick={cancelMatching}
+                  variant="outline"
+                  size="sm"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardTitle>
+            <CardDescription>
+              Select the service records that correspond to this QuickBooks invoice
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground mb-4">
+                Matching Invoice: <strong>#{qbInvoices.find(inv => inv.id === matchingMode)?.doc_number}</strong>
+              </div>
+              
+              {allServiceRecords.map((record) => {
+                const isSelected = selectedServiceRecords.includes(record.id);
+                const isAlreadyMatched = getSyncStatus(record.id);
+                
+                return (
+                  <div
+                    key={record.id}
+                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                      isSelected ? 'bg-blue-50 border-blue-200' : 
+                      isAlreadyMatched ? 'bg-gray-50 border-gray-200' : 
+                      'hover:bg-gray-50'
+                    }`}
+                    onClick={() => !isAlreadyMatched && toggleServiceRecord(record.id)}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium">
+                          {record.customers.first_name} {record.customers.last_name}
+                        </h4>
+                        <Badge variant={record.invoicing_status === 'ready_for_qb' ? 'default' : 'secondary'}>
+                          {record.invoicing_status === 'ready_for_qb' ? 'Ready for QB' : 
+                           record.invoicing_status === 'synced_to_qb' ? 'Synced' : 
+                           record.invoicing_status}
+                        </Badge>
+                        {isAlreadyMatched && (
+                          <Badge variant="outline">Already Matched</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {record.service_type} • {toPhoenixTime(parseDateFromDatabase(record.service_date)).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center">
+                      {!isAlreadyMatched && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleServiceRecord(record.id)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
