@@ -679,8 +679,9 @@ serve(async (req) => {
           
           // Fallback: try to get revenue data from recent invoices
           console.log('P&L API failed, trying to get revenue from invoices...');
+          console.log('Current month date filter:', `TxnDate >= '${currentMonthStart}' AND TxnDate <= '${currentMonthEnd}'`);
           const invoicesResponse = await makeQBRequest(
-            `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice WHERE TxnDate >= '${currentMonthStart}' AND TxnDate <= '${currentMonthEnd}' MAXRESULTS 50`,
+            `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice WHERE TxnDate >= '${currentMonthStart}' AND TxnDate <= '${currentMonthEnd}' MAXRESULTS 200`,
             { method: 'GET' }
           );
 
