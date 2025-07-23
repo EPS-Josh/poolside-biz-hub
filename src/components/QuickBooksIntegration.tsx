@@ -76,18 +76,20 @@ export const QuickBooksIntegration = () => {
 
       setConnection(connectionData);
 
-      // Load service records
+      // Load service records ready for QuickBooks sync
       const { data: recordsData } = await supabase
         .from('service_records')
         .select(`
           id,
           service_date,
           service_type,
+          invoicing_status,
           customers (
             first_name,
             last_name
           )
         `)
+        .eq('invoicing_status', 'ready_for_qb')
         .order('service_date', { ascending: false })
         .limit(20);
 
