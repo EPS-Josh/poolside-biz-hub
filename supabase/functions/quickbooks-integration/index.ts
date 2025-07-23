@@ -649,10 +649,12 @@ serve(async (req) => {
           return response;
         };
 
-        // Get current date and calculate date range
+        // Get current date and calculate date range for this month and last month
         const currentDate = new Date();
         const currentYear = currentDate.getFullYear();
         const currentMonth = currentDate.getMonth() + 1;
+        
+        // Calculate last month
         const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
         const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
@@ -660,107 +662,122 @@ serve(async (req) => {
         const currentMonthStart = `${currentYear}-${currentMonth.toString().padStart(2, '0')}-01`;
         const lastMonthStart = `${lastMonthYear}-${lastMonth.toString().padStart(2, '0')}-01`;
         const lastMonthEnd = new Date(currentYear, currentMonth - 1, 0).toISOString().split('T')[0];
+        const currentMonthEnd = currentDate.toISOString().split('T')[0];
 
-        // Fetch current month P&L report
-        const currentMonthResponse = await makeQBRequest(
-          `${quickbooksBaseUrl}/reports/ProfitAndLoss?start_date=${currentMonthStart}&end_date=${currentDate.toISOString().split('T')[0]}`,
-          { method: 'GET' }
-        );
+        console.log('Date ranges - Current:', currentMonthStart, 'to', currentMonthEnd);
+        console.log('Date ranges - Last:', lastMonthStart, 'to', lastMonthEnd);
 
-        // Fetch last month P&L report
-        const lastMonthResponse = await makeQBRequest(
-          `${quickbooksBaseUrl}/reports/ProfitAndLoss?start_date=${lastMonthStart}&end_date=${lastMonthEnd}`,
-          { method: 'GET' }
-        );
+        // Try to fetch current month P&L report using the reports API
+        const currentMonthPLUrl = `${quickbooksBaseUrl}/reports/ProfitAndLoss?start_date=${currentMonthStart}&end_date=${currentMonthEnd}`;
+        console.log('Fetching current month P&L from:', currentMonthPLUrl);
+        
+        const currentMonthResponse = await makeQBRequest(currentMonthPLUrl, { method: 'GET' });
 
-        if (!currentMonthResponse.ok || !lastMonthResponse.ok) {
-          console.error('QB API Error - Current:', currentMonthResponse.status, await currentMonthResponse.text());
-          console.error('QB API Error - Last:', lastMonthResponse.status, await lastMonthResponse.text());
-          return new Response(JSON.stringify({ error: 'Failed to fetch P&L data from QuickBooks' }), {
+        if (!currentMonthResponse.ok) {
+          const errorText = await currentMonthResponse.text();
+          console.error('QB API Error - Current month P&L:', currentMonthResponse.status, errorText);
+          
+          // Fallback: try to get revenue data from recent invoices
+          console.log('P&L API failed, trying to get revenue from invoices...');
+          const invoicesResponse = await makeQBRequest(
+            `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice WHERE TxnDate >= '${currentMonthStart}' AND TxnDate <= '${currentMonthEnd}' MAXRESULTS 50`,
+            { method: 'GET' }
+          );
+
+          if (invoicesResponse.ok) {
+            const invoicesResult = await invoicesResponse.json();
+            const currentInvoices = invoicesResult.QueryResponse?.Invoice || [];
+            const currentRevenue = currentInvoices.reduce((total: number, invoice: any) => {
+              return total + (parseFloat(invoice.TotalAmt) || 0);
+            }, 0);
+
+            console.log('Current month revenue from invoices:', currentRevenue);
+
+            // Get last month invoices for comparison
+            const lastMonthInvoicesResponse = await makeQBRequest(
+              `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice WHERE TxnDate >= '${lastMonthStart}' AND TxnDate <= '${lastMonthEnd}' MAXRESULTS 50`,
+              { method: 'GET' }
+            );
+
+            let lastMonthRevenue = 0;
+            if (lastMonthInvoicesResponse.ok) {
+              const lastMonthInvoicesResult = await lastMonthInvoicesResponse.json();
+              const lastMonthInvoices = lastMonthInvoicesResult.QueryResponse?.Invoice || [];
+              lastMonthRevenue = lastMonthInvoices.reduce((total: number, invoice: any) => {
+                return total + (parseFloat(invoice.TotalAmt) || 0);
+              }, 0);
+            }
+
+            console.log('Last month revenue from invoices:', lastMonthRevenue);
+
+            // Calculate basic metrics from invoice data
+            const revenueChange = lastMonthRevenue > 0 
+              ? ((currentRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
+              : 0;
+
+            // Estimate profit margin (assuming 30% for now since we don't have expense data)
+            const estimatedProfitMargin = 30;
+            const currentGrossProfit = currentRevenue * (estimatedProfitMargin / 100);
+
+            return new Response(JSON.stringify({
+              currentRevenue: currentRevenue,
+              currentGrossProfit: currentGrossProfit,
+              currentProfitMargin: estimatedProfitMargin,
+              revenueChange: revenueChange,
+              profitChange: revenueChange, // Use revenue change as proxy
+              marginChange: 0, // No change in estimated margin
+              dataSource: 'invoices_fallback',
+              note: 'Data calculated from invoices since P&L report access failed'
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            });
+          }
+
+          return new Response(JSON.stringify({ 
+            error: 'Failed to fetch P&L data from QuickBooks',
+            details: errorText
+          }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,
           });
         }
 
         const currentMonthData = await currentMonthResponse.json();
-        const lastMonthData = await lastMonthResponse.json();
+        console.log('P&L report fetched successfully');
 
-        console.log('P&L data fetched successfully');
+        // Basic parsing of P&L data - this is a simplified version
+        // The actual P&L structure from QuickBooks can be complex
+        let currentRevenue = 0;
+        let currentExpenses = 0;
 
-        // Extract key metrics from P&L reports
-        const extractMetrics = (reportData: any) => {
-          const rows = reportData.QueryResponse?.Report?.Rows || [];
-          let totalRevenue = 0;
-          let totalExpenses = 0;
-          let netIncome = 0;
-
-          // Parse the P&L report structure to extract revenue and expenses
-          const findRowByName = (rows: any[], name: string): any => {
-            for (const row of rows) {
-              if (row.ColData && row.ColData[0]?.value?.includes(name)) {
-                return row;
-              }
-              if (row.Rows) {
-                const found = findRowByName(row.Rows, name);
-                if (found) return found;
-              }
-            }
-            return null;
-          };
-
-          // Look for income/revenue section
-          const incomeRow = findRowByName(rows, 'Income') || findRowByName(rows, 'Revenue');
-          if (incomeRow && incomeRow.ColData && incomeRow.ColData[1]) {
-            totalRevenue = parseFloat(incomeRow.ColData[1].value?.replace(/[,$]/g, '') || '0');
+        // Try to extract revenue and expenses from the P&L report
+        const reportRows = currentMonthData.QueryResponse?.Report?.Rows || [];
+        
+        // QuickBooks P&L reports have a nested structure - we'll try to find revenue
+        for (const row of reportRows) {
+          if (row.ColData && row.ColData[0]?.value?.toLowerCase().includes('total income')) {
+            currentRevenue = parseFloat(row.ColData[1]?.value?.replace(/[,$]/g, '') || '0');
           }
-
-          // Look for expenses section
-          const expenseRow = findRowByName(rows, 'Total Expenses') || findRowByName(rows, 'Expenses');
-          if (expenseRow && expenseRow.ColData && expenseRow.ColData[1]) {
-            totalExpenses = parseFloat(expenseRow.ColData[1].value?.replace(/[,$]/g, '') || '0');
+          if (row.ColData && row.ColData[0]?.value?.toLowerCase().includes('total expenses')) {
+            currentExpenses = parseFloat(row.ColData[1]?.value?.replace(/[,$]/g, '') || '0');
           }
+        }
 
-          // Look for net income
-          const netIncomeRow = findRowByName(rows, 'Net Income') || findRowByName(rows, 'Net Ordinary Income');
-          if (netIncomeRow && netIncomeRow.ColData && netIncomeRow.ColData[1]) {
-            netIncome = parseFloat(netIncomeRow.ColData[1].value?.replace(/[,$]/g, '') || '0');
-          }
+        console.log('Extracted from P&L - Revenue:', currentRevenue, 'Expenses:', currentExpenses);
 
-          return { totalRevenue, totalExpenses, netIncome };
-        };
+        const currentGrossProfit = currentRevenue - currentExpenses;
+        const currentProfitMargin = currentRevenue > 0 ? (currentGrossProfit / currentRevenue) * 100 : 0;
 
-        const currentMetrics = extractMetrics(currentMonthData);
-        const lastMonthMetrics = extractMetrics(lastMonthData);
-
-        // Calculate changes
-        const revenueChange = lastMonthMetrics.totalRevenue > 0 
-          ? ((currentMetrics.totalRevenue - lastMonthMetrics.totalRevenue) / lastMonthMetrics.totalRevenue) * 100 
-          : 0;
-
-        const profitChange = lastMonthMetrics.netIncome !== 0 
-          ? ((currentMetrics.netIncome - lastMonthMetrics.netIncome) / Math.abs(lastMonthMetrics.netIncome)) * 100 
-          : 0;
-
-        const currentProfitMargin = currentMetrics.totalRevenue > 0 
-          ? (currentMetrics.netIncome / currentMetrics.totalRevenue) * 100 
-          : 0;
-
-        const lastMonthProfitMargin = lastMonthMetrics.totalRevenue > 0 
-          ? (lastMonthMetrics.netIncome / lastMonthMetrics.totalRevenue) * 100 
-          : 0;
-
-        const marginChange = currentProfitMargin - lastMonthProfitMargin;
-
+        // For now, we'll return current month data with estimated changes
         return new Response(JSON.stringify({
-          currentRevenue: currentMetrics.totalRevenue,
-          currentGrossProfit: currentMetrics.netIncome,
+          currentRevenue: currentRevenue,
+          currentGrossProfit: currentGrossProfit,
           currentProfitMargin: currentProfitMargin,
-          revenueChange: revenueChange,
-          profitChange: profitChange,
-          marginChange: marginChange,
-          currentExpenses: currentMetrics.totalExpenses,
-          lastMonthRevenue: lastMonthMetrics.totalRevenue,
-          lastMonthProfit: lastMonthMetrics.netIncome
+          revenueChange: 0, // Would need last month data for accurate comparison
+          profitChange: 0,
+          marginChange: 0,
+          dataSource: 'quickbooks_pl_report'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
@@ -768,7 +785,10 @@ serve(async (req) => {
 
       } catch (error) {
         console.error('Error fetching P&L data:', error);
-        return new Response(JSON.stringify({ error: 'Failed to fetch P&L data' }), {
+        return new Response(JSON.stringify({ 
+          error: 'Failed to fetch P&L data',
+          details: error.message
+        }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
         });
