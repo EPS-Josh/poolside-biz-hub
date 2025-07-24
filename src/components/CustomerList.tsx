@@ -16,6 +16,7 @@ import { CustomerTable } from '@/components/customers/CustomerTable';
 import { CustomerListHeader } from '@/components/customers/CustomerListHeader';
 import { CustomerSearch } from '@/components/customers/CustomerSearch';
 import { EmptyCustomerState } from '@/components/customers/EmptyCustomerState';
+import { CustomerEmailCampaign } from '@/components/email/CustomerEmailCampaign';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -41,6 +42,7 @@ export const CustomerList = () => {
   const { customers, loading, fetchCustomers } = useCustomers(searchTerm);
   const [showForm, setShowForm] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showEmailCampaign, setShowEmailCampaign] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const handleFormSuccess = () => {
@@ -56,6 +58,10 @@ export const CustomerList = () => {
     setShowBulkUpload(true);
   };
 
+  const handleEmailCampaign = () => {
+    setShowEmailCampaign(true);
+  };
+
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomer(customer);
     setShowForm(true);
@@ -68,6 +74,10 @@ export const CustomerList = () => {
 
   const handleCloseBulkUpload = () => {
     setShowBulkUpload(false);
+  };
+
+  const handleCloseEmailCampaign = () => {
+    setShowEmailCampaign(false);
   };
 
   const handleCustomerClick = (customerId: string) => {
@@ -90,6 +100,7 @@ export const CustomerList = () => {
         isMobile={isMobile}
         onAddCustomer={handleAddCustomer}
         onBulkUpload={handleBulkUpload}
+        onEmailCampaign={handleEmailCampaign}
       />
       
       <CardContent>
@@ -144,6 +155,21 @@ export const CustomerList = () => {
             </DialogDescription>
           </DialogHeader>
           <CustomerBulkUpload onSuccess={handleFormSuccess} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEmailCampaign} onOpenChange={handleCloseEmailCampaign}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Email Campaign</DialogTitle>
+            <DialogDescription>
+              Send emails to your customers about offers and updates
+            </DialogDescription>
+          </DialogHeader>
+          <CustomerEmailCampaign 
+            customers={customers} 
+            onClose={handleCloseEmailCampaign} 
+          />
         </DialogContent>
       </Dialog>
     </Card>
