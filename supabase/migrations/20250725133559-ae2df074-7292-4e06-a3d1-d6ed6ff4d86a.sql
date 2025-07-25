@@ -1,0 +1,1 @@
+UPDATE customers SET email = NULL WHERE email = 'pioneerpools@msn.com' AND NOT (first_name = 'Pioneer' AND last_name = 'Pools');
