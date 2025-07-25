@@ -1,0 +1,1 @@
+UPDATE customers SET email = NULL WHERE email LIKE '%@ppas.com' AND NOT (first_name = 'Premier' AND last_name = 'Pools & Spas');
