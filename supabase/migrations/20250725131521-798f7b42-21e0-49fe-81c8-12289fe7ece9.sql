@@ -1,0 +1,1 @@
+UPDATE customers SET email = NULL WHERE email = 'jj.renard@comcast.net';
