@@ -41,15 +41,26 @@ const CustomerMap: React.FC<CustomerMapProps> = ({ customers }) => {
 
   const checkForMapboxToken = async () => {
     try {
+      console.log('Attempting to retrieve Mapbox token...');
       const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+      console.log('Edge function response:', { data, error });
+      
+      if (error) {
+        console.error('Edge function error:', error);
+        setShowTokenInput(true);
+        return;
+      }
+      
       if (data?.token) {
+        console.log('Token retrieved successfully');
         setMapboxToken(data.token);
         initializeMap(data.token);
       } else {
+        console.log('No token in response, showing input field');
         setShowTokenInput(true);
       }
     } catch (error) {
-      console.log('No Mapbox token found in secrets, showing input field');
+      console.error('Error calling edge function:', error);
       setShowTokenInput(true);
     }
   };
