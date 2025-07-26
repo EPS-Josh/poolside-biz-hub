@@ -1,7 +1,7 @@
 import React from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
-import CustomerMap from '@/components/CustomerMap';
+import OptimizedCustomerMap from '@/components/OptimizedCustomerMap';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -106,7 +106,7 @@ const CustomerMapPage = () => {
                   </div>
                 </div>
               ) : (
-                <CustomerMap customers={customers} />
+                <OptimizedCustomerMap customers={customers} />
               )}
             </CardContent>
           </Card>

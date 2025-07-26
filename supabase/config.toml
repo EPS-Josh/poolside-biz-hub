@@ -22,3 +22,6 @@ verify_jwt = false
 
 [functions.get-mapbox-token]
 verify_jwt = false
+
+[functions.geocode-customer]
+verify_jwt = false

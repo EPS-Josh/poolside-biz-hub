@@ -328,8 +328,11 @@ export type Database = {
           created_at: string
           email: string | null
           first_name: string
+          geocoded_at: string | null
           id: string
           last_name: string
+          latitude: number | null
+          longitude: number | null
           notes: string | null
           phone: string | null
           state: string | null
@@ -344,8 +347,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name: string
+          geocoded_at?: string | null
           id?: string
           last_name: string
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           phone?: string | null
           state?: string | null
@@ -360,8 +366,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string
+          geocoded_at?: string | null
           id?: string
           last_name?: string
+          latitude?: number | null
+          longitude?: number | null
           notes?: string | null
           phone?: string | null
           state?: string | null
