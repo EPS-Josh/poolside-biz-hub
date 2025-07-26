@@ -119,32 +119,61 @@ const OptimizedCustomerMap: React.FC<OptimizedCustomerMapProps> = ({ customers }
 
       const coordinates: [number, number] = [customer.longitude, customer.latitude];
 
-      // Create marker element
+      // Create marker element safely
       const markerElement = document.createElement('div');
       markerElement.className = 'customer-marker';
-      markerElement.innerHTML = `
-        <div class="w-6 h-6 bg-primary rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform">
-          <div class="w-full h-full rounded-full bg-primary opacity-75"></div>
-        </div>
-      `;
+      
+      const outerDiv = document.createElement('div');
+      outerDiv.className = 'w-6 h-6 bg-primary rounded-full border-2 border-white shadow-lg cursor-pointer hover:scale-110 transition-transform';
+      
+      const innerDiv = document.createElement('div');
+      innerDiv.className = 'w-full h-full rounded-full bg-primary opacity-75';
+      
+      outerDiv.appendChild(innerDiv);
+      markerElement.appendChild(outerDiv);
 
-      // Create popup content
+      // Create popup content safely
       const fullAddress = `${customer.address || ''}, ${customer.city || ''}, ${customer.state || ''} ${customer.zip_code || ''}`.trim();
-      const popupContent = `
-        <div class="p-2">
-          <h3 class="font-semibold text-sm">${customer.first_name} ${customer.last_name}</h3>
-          ${customer.company ? `<p class="text-xs text-muted-foreground">${customer.company}</p>` : ''}
-          <p class="text-xs mt-1">${fullAddress}</p>
-          ${customer.email ? `<p class="text-xs text-blue-600">${customer.email}</p>` : ''}
-          ${customer.phone ? `<p class="text-xs text-blue-600">${customer.phone}</p>` : ''}
-        </div>
-      `;
+      
+      const popupContainer = document.createElement('div');
+      popupContainer.className = 'p-2';
+      
+      const nameHeader = document.createElement('h3');
+      nameHeader.className = 'font-semibold text-sm';
+      nameHeader.textContent = `${customer.first_name} ${customer.last_name}`;
+      popupContainer.appendChild(nameHeader);
+      
+      if (customer.company) {
+        const companyP = document.createElement('p');
+        companyP.className = 'text-xs text-muted-foreground';
+        companyP.textContent = customer.company;
+        popupContainer.appendChild(companyP);
+      }
+      
+      const addressP = document.createElement('p');
+      addressP.className = 'text-xs mt-1';
+      addressP.textContent = fullAddress;
+      popupContainer.appendChild(addressP);
+      
+      if (customer.email) {
+        const emailP = document.createElement('p');
+        emailP.className = 'text-xs text-blue-600';
+        emailP.textContent = customer.email;
+        popupContainer.appendChild(emailP);
+      }
+      
+      if (customer.phone) {
+        const phoneP = document.createElement('p');
+        phoneP.className = 'text-xs text-blue-600';
+        phoneP.textContent = customer.phone;
+        popupContainer.appendChild(phoneP);
+      }
 
       const popup = new mapboxgl.Popup({
         offset: 25,
         closeButton: true,
         closeOnClick: false
-      }).setHTML(popupContent);
+      }).setDOMContent(popupContainer);
 
       new mapboxgl.Marker(markerElement)
         .setLngLat(coordinates)
