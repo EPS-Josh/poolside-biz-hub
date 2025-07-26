@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AssessorRecord {
   parcelNumber: string;
@@ -37,23 +38,29 @@ export default function PropertyVerification() {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const searchAssessorRecords = async (address: string): Promise<AssessorRecord | null> => {
-    // Simulate API call to Pima County Assessor
-    // In real implementation, this would call an edge function
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock data for demonstration
-    if (address.toLowerCase().includes('main')) {
-      return {
-        parcelNumber: '123-45-678A',
-        ownerName: 'SMITH, JOHN & JANE',
-        mailingAddress: '123 MAIN ST, TUCSON AZ 85701',
-        propertyAddress: '123 MAIN ST, TUCSON AZ 85701',
-        assessedValue: '$450,000',
-        lastUpdated: '2024-01-15'
-      };
+    try {
+      console.log('Calling Pima Assessor lookup for:', address);
+      
+      const { data, error } = await supabase.functions.invoke('pima-assessor-lookup', {
+        body: { address }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message);
+      }
+
+      if (data?.success && data?.data) {
+        console.log('Assessor data found:', data.data);
+        return data.data;
+      }
+
+      console.log('No assessor data found for address:', address);
+      return null;
+    } catch (error) {
+      console.error('Error calling assessor lookup:', error);
+      throw error;
     }
-    
-    return null;
   };
 
   const compareRecords = (customer: any, assessorRecord: AssessorRecord | null): VerificationResult => {
