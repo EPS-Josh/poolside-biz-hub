@@ -2,7 +2,7 @@ import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { CustomerList } from '@/components/CustomerList';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, Calendar, Package, FileText } from 'lucide-react';
+import { ArrowLeft, Home, Calendar, Package, FileText, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Customers = () => {
@@ -45,6 +45,14 @@ const Customers = () => {
               
               {/* Quick Navigation */}
               <div className="flex flex-wrap gap-3 mb-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/customers/map')}
+                  className="flex items-center space-x-2"
+                >
+                  <MapPin className="h-4 w-4" />
+                  <span>Customer Map</span>
+                </Button>
                 <Button 
                   variant="outline" 
                   onClick={() => navigate('/calendar')}
