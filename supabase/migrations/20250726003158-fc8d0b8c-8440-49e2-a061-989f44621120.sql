@@ -1,0 +1,1 @@
+UPDATE customers SET phone = NULL WHERE phone = '520 887-7946' AND NOT (first_name = 'Premier' AND last_name = 'Pools & Spas');
