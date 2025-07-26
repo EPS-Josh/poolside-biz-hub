@@ -23,6 +23,7 @@ import EULA from "./pages/EULA";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { Employees } from "./pages/Employees";
 import CustomerMapPage from "./pages/CustomerMap";
+import PropertyVerification from "./pages/PropertyVerification";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/bpa" element={<BPA />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/map" element={<CustomerMapPage />} />
+            <Route path="/customers/property-verification" element={<PropertyVerification />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/customer/:id" element={<CustomerDetails />} />
             <Route path="/company-data" element={

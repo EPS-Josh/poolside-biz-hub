@@ -2,7 +2,7 @@ import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { CustomerList } from '@/components/CustomerList';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, Calendar, Package, FileText, MapPin } from 'lucide-react';
+import { ArrowLeft, Home, Calendar, Package, FileText, MapPin, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Customers = () => {
@@ -52,6 +52,14 @@ const Customers = () => {
                 >
                   <MapPin className="h-4 w-4" />
                   <span>Customer Map</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/customers/property-verification')}
+                  className="flex items-center space-x-2"
+                >
+                  <Search className="h-4 w-4" />
+                  <span>Property Verification</span>
                 </Button>
                 <Button 
                   variant="outline" 
