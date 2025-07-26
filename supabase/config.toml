@@ -19,3 +19,6 @@ enable_confirmations = false
 
 [functions.send-service-request-email]
 verify_jwt = false
+
+[functions.get-mapbox-token]
+verify_jwt = false
