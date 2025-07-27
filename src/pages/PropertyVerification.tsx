@@ -97,11 +97,11 @@ export default function PropertyVerification() {
     try {
       console.log('Searching database for address:', address);
       
-      // Search the local Pima County database using Mail1 field for property address
+      // Search the local Pima County database using Mail2 field for property address
       const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .ilike('Mail1', `%${address}%`)
+        .ilike('Mail2', `%${address}%`)
         .limit(1)
         .maybeSingle();
 
@@ -217,8 +217,11 @@ export default function PropertyVerification() {
     const customerName = `${customer.first_name} ${customer.last_name}`.toUpperCase();
     const assessorName = assessorRecord.ownerName.toUpperCase();
 
-    // Check name match
-    if (!assessorName.includes(customer.last_name.toUpperCase())) {
+    // Check name match against Mail1 column (owner name)
+    const customerFirstName = customer.first_name.toUpperCase();
+    const customerLastName = customer.last_name.toUpperCase();
+    
+    if (!assessorName.includes(customerFirstName) && !assessorName.includes(customerLastName)) {
       issues.push(`Name mismatch: Customer "${customerName}" vs Assessor "${assessorName}"`);
     }
 
