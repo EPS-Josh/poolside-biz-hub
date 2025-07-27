@@ -601,82 +601,43 @@ export type Database = {
       }
       pima_assessor_records: {
         Row: {
-          assessed_value: number | null
-          created_at: string
+          created_at: string | null
           id: string
-          last_sale_date: string | null
-          last_sale_price: number | null
-          legal_description: string | null
-          lot_size: number | null
           mail1: string | null
           mail2: string | null
           mail3: string | null
           mail4: string | null
           mail5: string | null
-          mailing_address: string | null
-          owner_name: string | null
           parcel: string | null
-          parcel_number: string
-          property_address: string | null
-          property_type: string | null
-          square_footage: number | null
-          updated_at: string
-          year_built: number | null
+          updated_at: string | null
           zip: string | null
           zip4: string | null
-          zoning: string | null
         }
         Insert: {
-          assessed_value?: number | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          last_sale_date?: string | null
-          last_sale_price?: number | null
-          legal_description?: string | null
-          lot_size?: number | null
           mail1?: string | null
           mail2?: string | null
           mail3?: string | null
           mail4?: string | null
           mail5?: string | null
-          mailing_address?: string | null
-          owner_name?: string | null
           parcel?: string | null
-          parcel_number: string
-          property_address?: string | null
-          property_type?: string | null
-          square_footage?: number | null
-          updated_at?: string
-          year_built?: number | null
+          updated_at?: string | null
           zip?: string | null
           zip4?: string | null
-          zoning?: string | null
         }
         Update: {
-          assessed_value?: number | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          last_sale_date?: string | null
-          last_sale_price?: number | null
-          legal_description?: string | null
-          lot_size?: number | null
           mail1?: string | null
           mail2?: string | null
           mail3?: string | null
           mail4?: string | null
           mail5?: string | null
-          mailing_address?: string | null
-          owner_name?: string | null
           parcel?: string | null
-          parcel_number?: string
-          property_address?: string | null
-          property_type?: string | null
-          square_footage?: number | null
-          updated_at?: string
-          year_built?: number | null
+          updated_at?: string | null
           zip?: string | null
           zip4?: string | null
-          zoning?: string | null
         }
         Relationships: []
       }

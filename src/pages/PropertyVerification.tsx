@@ -97,11 +97,11 @@ export default function PropertyVerification() {
     try {
       console.log('Searching database for address:', address);
       
-      // Search the local Pima County database
+      // Search the local Pima County database using mail1 field for property address
       const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .ilike('property_address', `%${address}%`)
+        .ilike('mail1', `%${address}%`)
         .limit(1)
         .single();
 
@@ -112,12 +112,21 @@ export default function PropertyVerification() {
 
       if (data) {
         console.log('Found assessor record:', data);
+        
+        // Combine mailing address fields
+        const mailingAddress = [data.mail1, data.mail2, data.mail3, data.mail4, data.mail5]
+          .filter(Boolean)
+          .join(' ');
+        
+        // Combine zip fields
+        const zipCode = data.zip4 ? `${data.zip}-${data.zip4}` : data.zip;
+        
         return {
-          parcelNumber: data.parcel_number,
-          ownerName: data.owner_name || 'Unknown',
-          mailingAddress: data.mailing_address || data.property_address || '',
-          propertyAddress: data.property_address || '',
-          assessedValue: data.assessed_value ? `$${data.assessed_value.toLocaleString()}` : 'Unknown',
+          parcelNumber: data.parcel || 'Unknown',
+          ownerName: mailingAddress || 'Unknown',
+          mailingAddress: mailingAddress || '',
+          propertyAddress: data.mail1 || '',
+          assessedValue: 'Unknown',
           lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown'
         };
       }
