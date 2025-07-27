@@ -37,13 +37,59 @@ export default function PropertyVerification() {
   const [verificationResults, setVerificationResults] = useState<VerificationResult[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
 
+  const abbreviateStreetTypes = (address: string): string => {
+    const streetTypeMap: Record<string, string> = {
+      'Street': 'St',
+      'Avenue': 'Ave', 
+      'Boulevard': 'Blvd',
+      'Drive': 'Dr',
+      'Lane': 'Ln',
+      'Road': 'Rd',
+      'Circle': 'Cir',
+      'Court': 'Ct',
+      'Place': 'Pl',
+      'Way': 'Way',
+      'Trail': 'Trl',
+      'Parkway': 'Pkwy'
+    };
+
+    let abbreviated = address;
+    Object.entries(streetTypeMap).forEach(([full, abbrev]) => {
+      const regex = new RegExp(`\\b${full}\\b`, 'gi');
+      abbreviated = abbreviated.replace(regex, abbrev);
+    });
+    
+    return abbreviated;
+  };
+
   const searchAssessorRecords = async (address: string): Promise<AssessorRecord | null> => {
     try {
       console.log('Calling Pima Assessor lookup for:', address);
       
+      // Try original address first
+      let result = await attemptAssessorLookup(address);
+      
+      // If no result, try with abbreviated street types
+      if (!result) {
+        const abbreviatedAddress = abbreviateStreetTypes(address);
+        if (abbreviatedAddress !== address) {
+          console.log('Retrying with abbreviated address:', abbreviatedAddress);
+          result = await attemptAssessorLookup(abbreviatedAddress);
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error calling assessor lookup:', error);
+      throw error;
+    }
+  };
+
+  const attemptAssessorLookup = async (address: string): Promise<AssessorRecord | null> => {
+    try {
       // Note: Real Pima County website uses modern JavaScript and may have bot protection
       // This demonstrates the verification concept with realistic mock data
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
       
       // For demonstration: Create realistic but mock assessor data
       // In production, this would require:
@@ -51,12 +97,12 @@ export default function PropertyVerification() {
       // 2. API access from Pima County (if available)
       // 3. Third-party property data service integration
       
-      if (address.includes('5177 N Via La Doncella')) {
+      if (address.includes('5177 N Via La Doncella') || address.includes('5177 N Via La Doncella Dr')) {
         return {
           parcelNumber: '239-21-045K',
           ownerName: 'RODRIGUEZ, CARLOS & MARIA', // Different from your customer records
-          mailingAddress: '5177 N VIA LA DONCELLA, TUCSON AZ 85750',
-          propertyAddress: '5177 N VIA LA DONCELLA, TUCSON AZ 85750',
+          mailingAddress: '5177 N VIA LA DONCELLA DR, TUCSON AZ 85750',
+          propertyAddress: '5177 N VIA LA DONCELLA DR, TUCSON AZ 85750',
           assessedValue: '$486,300',
           lastUpdated: '2024-12-15'
         };
@@ -65,7 +111,7 @@ export default function PropertyVerification() {
       // Return null for other addresses to simulate "not found"
       return null;
     } catch (error) {
-      console.error('Error calling assessor lookup:', error);
+      console.error('Error in assessor lookup attempt:', error);
       throw error;
     }
   };
