@@ -165,9 +165,15 @@ export default function PropertyVerification() {
       } else {
         toast({
           title: 'Import Complete',
-          description: `Successfully imported all ${data.totalRecords} records!`,
+          description: `Successfully imported all ${data.totalRecords} records! You can now run bulk verification.`,
         });
-        setImportProgress(null);
+        setImportProgress({
+          batchNumber: data.batchNumber,
+          progress: 100,
+          totalRecords: data.totalRecords,
+          inserted: data.inserted,
+          hasMoreBatches: false
+        });
       }
     } catch (error) {
       console.error('Import error:', error);
