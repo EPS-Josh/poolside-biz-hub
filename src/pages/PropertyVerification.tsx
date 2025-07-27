@@ -103,7 +103,7 @@ export default function PropertyVerification() {
         .select('*')
         .ilike('mail1', `%${address}%`)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
         console.error('Database error:', error);
