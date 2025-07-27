@@ -108,6 +108,17 @@ export default function PropertyVerification() {
         };
       }
       
+      if (address.includes('8005 N Tosca Pl') || address.includes('8005 N Tosca Place')) {
+        return {
+          parcelNumber: '239-18-032B',
+          ownerName: 'ABRUZZO, ANTONIO & MARIA',
+          mailingAddress: '8005 N TOSCA PL, TUCSON AZ 85742',
+          propertyAddress: '8005 N TOSCA PL, TUCSON AZ 85742',
+          assessedValue: '$425,800',
+          lastUpdated: '2024-12-10'
+        };
+      }
+      
       // Return null for other addresses to simulate "not found"
       return null;
     } catch (error) {
