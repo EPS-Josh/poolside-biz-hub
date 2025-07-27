@@ -22,41 +22,6 @@ interface AssessorRecord {
   last_sale_price?: number;
 }
 
-// Generate realistic sample data for demo
-function generateSampleData(batchNumber: number, batchSize: number): AssessorRecord[] {
-  const streets = ['E MAIN ST', 'N ORACLE RD', 'W SPEEDWAY BLVD', 'S PARK AVE', 'E BROADWAY BLVD', 'N CAMPBELL AVE', 'W GRANT RD', 'E TANQUE VERDE RD'];
-  const owners = ['SMITH JOHN', 'DOE JANE', 'WILSON FAMILY TRUST', 'GARCIA MARIA', 'JOHNSON ROBERT', 'BROWN SARAH', 'DAVIS MICHAEL', 'ANDERSON LISA'];
-  const zoning = ['R-1', 'R-2', 'C-1', 'C-2', 'I-1'];
-  const propertyTypes = ['RESIDENTIAL', 'COMMERCIAL', 'INDUSTRIAL'];
-
-  const records: AssessorRecord[] = [];
-  const startNum = batchNumber * batchSize;
-
-  for (let i = 0; i < batchSize; i++) {
-    const houseNum = (startNum + i + 100);
-    const streetIndex = (startNum + i) % streets.length;
-    const ownerIndex = (startNum + i) % owners.length;
-    
-    records.push({
-      parcel_number: `${Math.floor((startNum + i) / 1000) + 123}-${Math.floor(((startNum + i) % 1000) / 10) + 45}-${(startNum + i) % 100 + 678}`,
-      owner_name: owners[ownerIndex],
-      property_address: `${houseNum} ${streets[streetIndex]}`,
-      mailing_address: `${houseNum} ${streets[streetIndex]}, TUCSON, AZ 857${String(streetIndex).padStart(2, '0')}`,
-      assessed_value: Math.floor(Math.random() * 400000) + 150000,
-      property_type: propertyTypes[i % propertyTypes.length],
-      legal_description: `LOT ${(i % 20) + 1} BLK ${Math.floor(i / 20) + 1} SUBDIVISION ${batchNumber + 1}`,
-      square_footage: Math.floor(Math.random() * 2000) + 1000,
-      year_built: Math.floor(Math.random() * 50) + 1970,
-      lot_size: Math.round((Math.random() * 0.5 + 0.15) * 100) / 100,
-      zoning: zoning[i % zoning.length],
-      last_sale_date: `20${Math.floor(Math.random() * 20) + 5}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-      last_sale_price: Math.floor(Math.random() * 350000) + 120000,
-    });
-  }
-
-  return records;
-}
-
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -65,8 +30,8 @@ serve(async (req) => {
 
   try {
     // Get batch info from request body
-    const { batchNumber = 0, batchSize = 100 } = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
-    console.log(`Starting batch ${batchNumber} import with batch size ${batchSize}...`);
+    const { batchNumber = 0, batchSize = 1000, action = 'download' } = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
+    console.log(`Processing batch ${batchNumber} with action: ${action}`);
 
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -74,21 +39,98 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Only clear data on first batch
-    if (batchNumber === 0) {
-      console.log('Clearing existing assessor records...');
+    // Step 1: Download and store ZIP file if this is batch 0
+    if (batchNumber === 0 && action === 'download') {
+      console.log('Downloading ZIP file and storing in Supabase Storage...');
+      
+      // Clear existing data
       await supabaseClient
         .from('pima_assessor_records')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      // Download ZIP file
+      const zipResponse = await fetch('https://www.asr.pima.gov/Downloads/Data/reference//Ownership.ZIP');
+      if (!zipResponse.ok) {
+        throw new Error(`Failed to download ZIP file: ${zipResponse.status}`);
+      }
+
+      const zipArrayBuffer = await zipResponse.arrayBuffer();
+      console.log(`Downloaded ZIP file: ${zipArrayBuffer.byteLength} bytes`);
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabaseClient.storage
+        .from('data-imports')
+        .upload('pima-ownership.zip', zipArrayBuffer, {
+          contentType: 'application/zip',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('ZIP file uploaded to storage successfully');
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'ZIP file downloaded and stored. Ready to process batches.',
+          action: 'file_stored',
+          nextAction: 'process_batch'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      );
     }
 
-    // Simulate total records (for demo purposes, we'll simulate 5000 total records)
-    const totalRecords = 5000;
-    const maxBatches = Math.ceil(totalRecords / batchSize);
-    const hasMoreBatches = batchNumber < maxBatches - 1;
+    // Step 2: Process batches from stored ZIP file
+    console.log(`Processing batch ${batchNumber} from stored ZIP file...`);
 
-    if (batchNumber >= maxBatches) {
+    // Download ZIP from storage
+    const { data: zipFile, error: downloadError } = await supabaseClient.storage
+      .from('data-imports')
+      .download('pima-ownership.zip');
+
+    if (downloadError) {
+      console.error('Download from storage error:', downloadError);
+      throw downloadError;
+    }
+
+    // Extract and parse CSV
+    const JSZip = (await import('https://esm.sh/jszip@3.10.1')).default;
+    const zip = new JSZip();
+    const zipArrayBuffer = await zipFile.arrayBuffer();
+    const zipContents = await zip.loadAsync(zipArrayBuffer);
+
+    // Find CSV file
+    const csvFiles = Object.keys(zipContents.files).filter(filename => 
+      filename.toLowerCase().endsWith('.csv') || filename.toLowerCase().endsWith('.txt')
+    );
+
+    if (csvFiles.length === 0) {
+      throw new Error('No CSV files found in ZIP archive');
+    }
+
+    const csvFileName = csvFiles[0];
+    const csvFile = zipContents.files[csvFileName];
+    
+    // Get only the portion we need for this batch
+    console.log('Extracting CSV content...');
+    const csvContent = await csvFile.async('text');
+    const lines = csvContent.split('\n');
+    
+    const totalRecords = lines.length - 1; // Exclude header
+    const startIndex = (batchNumber * batchSize) + 1; // +1 to skip header
+    const endIndex = Math.min(startIndex + batchSize, lines.length);
+    const hasMoreBatches = endIndex < lines.length;
+
+    console.log(`Processing lines ${startIndex} to ${endIndex - 1} of ${totalRecords} total records`);
+
+    if (startIndex >= lines.length) {
       return new Response(
         JSON.stringify({
           success: true,
@@ -107,23 +149,70 @@ serve(async (req) => {
       );
     }
 
-    // Generate sample data for this batch
-    console.log(`Generating sample data for batch ${batchNumber}...`);
-    const records = generateSampleData(batchNumber, batchSize);
+    // Process this batch
+    const batchLines = lines.slice(startIndex, endIndex);
+    const records: AssessorRecord[] = [];
 
-    // Insert records
+    for (const line of batchLines) {
+      if (!line.trim()) continue;
+
+      // Parse CSV with proper quote handling
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
+      // Map to database schema - adjust indices based on actual CSV structure
+      const record: AssessorRecord = {
+        parcel_number: values[0] || '',
+        owner_name: values[1] || null,
+        property_address: values[2] || null,
+        mailing_address: values[3] || null,
+        assessed_value: values[4] && !isNaN(parseFloat(values[4])) ? parseFloat(values[4]) : null,
+        property_type: values[5] || null,
+        legal_description: values[6] || null,
+        square_footage: values[7] && !isNaN(parseInt(values[7])) ? parseInt(values[7]) : null,
+        year_built: values[8] && !isNaN(parseInt(values[8])) ? parseInt(values[8]) : null,
+        lot_size: values[9] && !isNaN(parseFloat(values[9])) ? parseFloat(values[9]) : null,
+        zoning: values[10] || null,
+        last_sale_date: values[11] || null,
+        last_sale_price: values[12] && !isNaN(parseFloat(values[12])) ? parseFloat(values[12]) : null,
+      };
+
+      if (record.parcel_number) {
+        records.push(record);
+      }
+    }
+
+    // Insert records in smaller sub-batches
     let inserted = 0;
-    if (records.length > 0) {
+    const subBatchSize = 100; // Insert 100 at a time to avoid large insert issues
+    
+    for (let i = 0; i < records.length; i += subBatchSize) {
+      const subBatch = records.slice(i, i + subBatchSize);
+      
       const { error } = await supabaseClient
         .from('pima_assessor_records')
-        .insert(records);
+        .insert(subBatch);
 
       if (error) {
-        console.error('Error inserting batch:', error);
+        console.error('Error inserting sub-batch:', error);
         throw error;
       }
       
-      inserted = records.length;
+      inserted += subBatch.length;
     }
 
     const progress = Math.round(((batchNumber + 1) * batchSize / totalRecords) * 100);
@@ -135,7 +224,7 @@ serve(async (req) => {
         success: true,
         message: `Batch ${batchNumber} completed`,
         batchNumber,
-        processed: records.length,
+        processed: batchLines.length,
         inserted,
         totalRecords,
         hasMoreBatches,
@@ -149,7 +238,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error importing assessor data:', error);
+    console.error('Error processing assessor data:', error);
     
     return new Response(
       JSON.stringify({
