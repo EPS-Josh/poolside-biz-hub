@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,6 +37,13 @@ export default function PropertyVerification() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [verificationResults, setVerificationResults] = useState<VerificationResult[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [importProgress, setImportProgress] = useState<{
+    batchNumber: number;
+    progress: number;
+    totalRecords: number;
+    inserted: number;
+    hasMoreBatches: boolean;
+  } | null>(null);
 
   const abbreviateStreetTypes = (address: string): string => {
     const streetTypeMap: Record<string, string> = {
@@ -122,24 +130,45 @@ export default function PropertyVerification() {
     }
   };
 
-  const handleImportAssessorData = async () => {
+  const handleImportAssessorData = async (batchNumber = 0) => {
     setIsVerifying(true);
     try {
-      toast({
-        title: 'Starting Import',
-        description: 'Downloading and importing Pima County data...',
-      });
+      if (batchNumber === 0) {
+        setImportProgress(null);
+        toast({
+          title: 'Starting Import',
+          description: 'Downloading and processing Pima County data...',
+        });
+      }
 
-      const { data, error } = await supabase.functions.invoke('import-pima-assessor-data');
+      const { data, error } = await supabase.functions.invoke('import-pima-assessor-data', {
+        body: { batchNumber, batchSize: 1000 }
+      });
 
       if (error) {
         throw error;
       }
 
-      toast({
-        title: 'Import Complete',
-        description: `Successfully imported ${data.inserted || 0} records`,
+      setImportProgress({
+        batchNumber: data.batchNumber,
+        progress: data.progress,
+        totalRecords: data.totalRecords,
+        inserted: data.inserted,
+        hasMoreBatches: data.hasMoreBatches
       });
+
+      if (data.hasMoreBatches) {
+        toast({
+          title: `Batch ${data.batchNumber + 1} Complete`,
+          description: `Imported ${data.inserted} records (${data.progress}% complete)`,
+        });
+      } else {
+        toast({
+          title: 'Import Complete',
+          description: `Successfully imported all ${data.totalRecords} records!`,
+        });
+        setImportProgress(null);
+      }
     } catch (error) {
       console.error('Import error:', error);
       toast({
@@ -147,8 +176,15 @@ export default function PropertyVerification() {
         description: 'Failed to import assessor data',
         variant: 'destructive'
       });
+      setImportProgress(null);
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleContinueImport = () => {
+    if (importProgress?.hasMoreBatches) {
+      handleImportAssessorData(importProgress.batchNumber + 1);
     }
   };
 
@@ -338,13 +374,24 @@ export default function PropertyVerification() {
                   </Button>
                   <Button
                     variant="secondary"
-                    onClick={handleImportAssessorData}
+                    onClick={() => handleImportAssessorData()}
                     disabled={isVerifying}
                     className="flex items-center gap-2"
                   >
                     <Download className="h-4 w-4" />
-                    Import Pima County Data
+                    {importProgress ? 'Importing...' : 'Start Import'}
                   </Button>
+                  {importProgress?.hasMoreBatches && (
+                    <Button
+                      variant="default"
+                      onClick={handleContinueImport}
+                      disabled={isVerifying}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Continue Import
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => window.open('https://www.asr.pima.gov/search/', '_blank')}
@@ -353,8 +400,23 @@ export default function PropertyVerification() {
                     <ExternalLink className="h-4 w-4" />
                     Open Assessor Website
                   </Button>
-                </div>
-               </CardContent>
+                 </div>
+                 
+                 {/* Progress Bar */}
+                 {importProgress && (
+                   <div className="space-y-2">
+                     <div className="flex justify-between text-sm">
+                       <span>Import Progress</span>
+                       <span>{importProgress.progress}%</span>
+                     </div>
+                     <Progress value={importProgress.progress} className="w-full" />
+                     <div className="text-xs text-muted-foreground">
+                       Batch {importProgress.batchNumber + 1} • {importProgress.inserted} records imported
+                       {importProgress.hasMoreBatches && ' • More batches remaining'}
+                     </div>
+                   </div>
+                 )}
+                </CardContent>
             </Card>
           </div>
 
