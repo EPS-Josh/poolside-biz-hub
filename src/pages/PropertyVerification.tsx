@@ -97,11 +97,11 @@ export default function PropertyVerification() {
     try {
       console.log('Searching database for address:', address);
       
-      // Search the local Pima County database using mail1 field for property address
+      // Search the local Pima County database using Mail1 field for property address
       const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .ilike('mail1', `%${address}%`)
+        .ilike('Mail1', `%${address}%`)
         .limit(1)
         .maybeSingle();
 
@@ -113,8 +113,8 @@ export default function PropertyVerification() {
       if (data) {
         console.log('Found assessor record:', data);
         
-        // Combine mailing address fields
-        const mailingAddress = [data.mail1, data.mail2, data.mail3, data.mail4, data.mail5]
+        // Combine mailing address fields (using uppercase column names from actual DB)
+        const mailingAddress = [(data as any).Mail1, (data as any).Mail2, (data as any).Mail3, (data as any).Mail4, (data as any).Mail5]
           .filter(Boolean)
           .join(' ');
         
