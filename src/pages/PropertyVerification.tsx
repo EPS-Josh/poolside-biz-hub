@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
@@ -87,43 +87,68 @@ export default function PropertyVerification() {
 
   const attemptAssessorLookup = async (address: string): Promise<AssessorRecord | null> => {
     try {
-      // Note: Real Pima County website uses modern JavaScript and may have bot protection
-      // This demonstrates the verification concept with realistic mock data
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+      console.log('Searching database for address:', address);
       
-      // For demonstration: Create realistic but mock assessor data
-      // In production, this would require:
-      // 1. Browser automation (Puppeteer/Playwright)
-      // 2. API access from Pima County (if available)
-      // 3. Third-party property data service integration
-      
-      if (address.includes('5177 N Via La Doncella') || address.includes('5177 N Via La Doncella Dr')) {
+      // Search the local Pima County database
+      const { data, error } = await supabase
+        .from('pima_assessor_records')
+        .select('*')
+        .ilike('property_address', `%${address}%`)
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      if (data) {
+        console.log('Found assessor record:', data);
         return {
-          parcelNumber: '239-21-045K',
-          ownerName: 'RODRIGUEZ, CARLOS & MARIA', // Different from your customer records
-          mailingAddress: '5177 N VIA LA DONCELLA DR, TUCSON AZ 85750',
-          propertyAddress: '5177 N VIA LA DONCELLA DR, TUCSON AZ 85750',
-          assessedValue: '$486,300',
-          lastUpdated: '2024-12-15'
+          parcelNumber: data.parcel_number,
+          ownerName: data.owner_name || 'Unknown',
+          mailingAddress: data.mailing_address || data.property_address || '',
+          propertyAddress: data.property_address || '',
+          assessedValue: data.assessed_value ? `$${data.assessed_value.toLocaleString()}` : 'Unknown',
+          lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown'
         };
       }
-      
-      if (address.includes('8005 N Tosca Pl') || address.includes('8005 N Tosca Place')) {
-        return {
-          parcelNumber: '239-18-032B',
-          ownerName: 'ABRUZZO, ANTONIO & MARIA',
-          mailingAddress: '8005 N TOSCA PL, TUCSON AZ 85742',
-          propertyAddress: '8005 N TOSCA PL, TUCSON AZ 85742',
-          assessedValue: '$425,800',
-          lastUpdated: '2024-12-10'
-        };
-      }
-      
-      // Return null for other addresses to simulate "not found"
+
+      console.log('No assessor record found for address:', address);
       return null;
     } catch (error) {
       console.error('Error in assessor lookup attempt:', error);
       throw error;
+    }
+  };
+
+  const handleImportAssessorData = async () => {
+    setIsVerifying(true);
+    try {
+      toast({
+        title: 'Starting Import',
+        description: 'Downloading and importing Pima County data...',
+      });
+
+      const { data, error } = await supabase.functions.invoke('import-pima-assessor-data');
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Import Complete',
+        description: `Successfully imported ${data.inserted || 0} records`,
+      });
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: 'Import Failed',
+        description: 'Failed to import assessor data',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -301,8 +326,8 @@ export default function PropertyVerification() {
                   Check individual customers or run bulk verification against Pima County Assessor records
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-4">
+               <CardContent className="space-y-4">
+                <div className="flex gap-4 flex-wrap">
                   <Button 
                     onClick={handleBulkVerify}
                     disabled={isVerifying}
@@ -310,6 +335,15 @@ export default function PropertyVerification() {
                   >
                     <MapPin className="h-4 w-4" />
                     {isVerifying ? 'Verifying...' : 'Bulk Verify All Customers'}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={handleImportAssessorData}
+                    disabled={isVerifying}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Import Pima County Data
                   </Button>
                   <Button
                     variant="outline"
@@ -320,7 +354,7 @@ export default function PropertyVerification() {
                     Open Assessor Website
                   </Button>
                 </div>
-              </CardContent>
+               </CardContent>
             </Card>
           </div>
 

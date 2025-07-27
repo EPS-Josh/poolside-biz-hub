@@ -599,6 +599,63 @@ export type Database = {
         }
         Relationships: []
       }
+      pima_assessor_records: {
+        Row: {
+          assessed_value: number | null
+          created_at: string
+          id: string
+          last_sale_date: string | null
+          last_sale_price: number | null
+          legal_description: string | null
+          lot_size: number | null
+          mailing_address: string | null
+          owner_name: string | null
+          parcel_number: string
+          property_address: string | null
+          property_type: string | null
+          square_footage: number | null
+          updated_at: string
+          year_built: number | null
+          zoning: string | null
+        }
+        Insert: {
+          assessed_value?: number | null
+          created_at?: string
+          id?: string
+          last_sale_date?: string | null
+          last_sale_price?: number | null
+          legal_description?: string | null
+          lot_size?: number | null
+          mailing_address?: string | null
+          owner_name?: string | null
+          parcel_number: string
+          property_address?: string | null
+          property_type?: string | null
+          square_footage?: number | null
+          updated_at?: string
+          year_built?: number | null
+          zoning?: string | null
+        }
+        Update: {
+          assessed_value?: number | null
+          created_at?: string
+          id?: string
+          last_sale_date?: string | null
+          last_sale_price?: number | null
+          legal_description?: string | null
+          lot_size?: number | null
+          mailing_address?: string | null
+          owner_name?: string | null
+          parcel_number?: string
+          property_address?: string | null
+          property_type?: string | null
+          square_footage?: number | null
+          updated_at?: string
+          year_built?: number | null
+          zoning?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
