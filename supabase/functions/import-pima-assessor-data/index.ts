@@ -89,36 +89,54 @@ serve(async (req) => {
       .delete()
       .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
 
-    // Process data in batches
-    const batchSize = 1000;
+    // Process first 1000 lines only to avoid timeout
+    const maxLines = Math.min(lines.length, 1001); // 1000 data lines + header
+    const batchSize = 100; // Smaller batches for faster processing
     let processed = 0;
     let inserted = 0;
 
-    for (let i = 1; i < lines.length; i += batchSize) {
-      const batch = lines.slice(i, i + batchSize);
+    console.log(`Processing ${maxLines - 1} records in batches of ${batchSize}...`);
+
+    for (let i = 1; i < maxLines; i += batchSize) {
+      const batch = lines.slice(i, Math.min(i + batchSize, maxLines));
       const records: AssessorRecord[] = [];
 
       for (const line of batch) {
         if (!line.trim()) continue;
 
-        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+        // Handle CSV parsing more carefully
+        const values = [];
+        let current = '';
+        let inQuotes = false;
         
-        // Map CSV columns to our database schema
-        // This mapping will need to be adjusted based on the actual CSV structure
+        for (let j = 0; j < line.length; j++) {
+          const char = line[j];
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            values.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim()); // Add the last value
+        
+        // Map CSV columns to our database schema (adjust based on actual structure)
         const record: AssessorRecord = {
           parcel_number: values[0] || '',
           owner_name: values[1] || null,
           property_address: values[2] || null,
           mailing_address: values[3] || null,
-          assessed_value: values[4] ? parseFloat(values[4]) : null,
+          assessed_value: values[4] && !isNaN(parseFloat(values[4])) ? parseFloat(values[4]) : null,
           property_type: values[5] || null,
           legal_description: values[6] || null,
-          square_footage: values[7] ? parseInt(values[7]) : null,
-          year_built: values[8] ? parseInt(values[8]) : null,
-          lot_size: values[9] ? parseFloat(values[9]) : null,
+          square_footage: values[7] && !isNaN(parseInt(values[7])) ? parseInt(values[7]) : null,
+          year_built: values[8] && !isNaN(parseInt(values[8])) ? parseInt(values[8]) : null,
+          lot_size: values[9] && !isNaN(parseFloat(values[9])) ? parseFloat(values[9]) : null,
           zoning: values[10] || null,
           last_sale_date: values[11] || null,
-          last_sale_price: values[12] ? parseFloat(values[12]) : null,
+          last_sale_price: values[12] && !isNaN(parseFloat(values[12])) ? parseFloat(values[12]) : null,
         };
 
         if (record.parcel_number) {
@@ -127,7 +145,7 @@ serve(async (req) => {
       }
 
       if (records.length > 0) {
-        console.log(`Inserting batch of ${records.length} records...`);
+        console.log(`Inserting batch ${Math.floor(i/batchSize) + 1} with ${records.length} records...`);
         
         const { error } = await supabaseClient
           .from('pima_assessor_records')
@@ -142,10 +160,6 @@ serve(async (req) => {
       }
 
       processed += batch.length;
-      
-      if (processed % 10000 === 0) {
-        console.log(`Processed ${processed} lines, inserted ${inserted} records`);
-      }
     }
 
     console.log(`Import completed! Processed ${processed} lines, inserted ${inserted} records`);
