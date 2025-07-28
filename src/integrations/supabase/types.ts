@@ -603,41 +603,53 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          mail1: string | null
-          mail2: string | null
-          mail3: string | null
-          mail4: string | null
-          mail5: string | null
-          parcel: string | null
+          is_owner_updated: boolean | null
+          Mail1: string | null
+          Mail2: string | null
+          Mail3: string | null
+          Mail4: string | null
+          Mail5: string | null
+          owner_updated_at: string | null
+          owner_updated_by: string | null
+          Parcel: string | null
           updated_at: string | null
-          zip: string | null
-          zip4: string | null
+          updated_owner_name: string | null
+          Zip: string | null
+          Zip4: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
-          mail1?: string | null
-          mail2?: string | null
-          mail3?: string | null
-          mail4?: string | null
-          mail5?: string | null
-          parcel?: string | null
+          is_owner_updated?: boolean | null
+          Mail1?: string | null
+          Mail2?: string | null
+          Mail3?: string | null
+          Mail4?: string | null
+          Mail5?: string | null
+          owner_updated_at?: string | null
+          owner_updated_by?: string | null
+          Parcel?: string | null
           updated_at?: string | null
-          zip?: string | null
-          zip4?: string | null
+          updated_owner_name?: string | null
+          Zip?: string | null
+          Zip4?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
-          mail1?: string | null
-          mail2?: string | null
-          mail3?: string | null
-          mail4?: string | null
-          mail5?: string | null
-          parcel?: string | null
+          is_owner_updated?: boolean | null
+          Mail1?: string | null
+          Mail2?: string | null
+          Mail3?: string | null
+          Mail4?: string | null
+          Mail5?: string | null
+          owner_updated_at?: string | null
+          owner_updated_by?: string | null
+          Parcel?: string | null
           updated_at?: string | null
-          zip?: string | null
-          zip4?: string | null
+          updated_owner_name?: string | null
+          Zip?: string | null
+          Zip4?: string | null
         }
         Relationships: []
       }

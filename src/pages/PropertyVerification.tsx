@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
@@ -11,15 +11,20 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AssessorRecord {
+  id?: string;
   parcelNumber: string;
   ownerName: string;
   mailingAddress: string;
   propertyAddress: string;
   assessedValue: string;
   lastUpdated: string;
+  updatedOwnerName?: string;
+  isOwnerUpdated?: boolean;
+  ownerUpdatedAt?: string;
 }
 
 interface VerificationResult {
@@ -33,10 +38,13 @@ export default function PropertyVerification() {
   const navigate = useNavigate();
   const { customers } = useCustomers();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [searchAddress, setSearchAddress] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [verificationResults, setVerificationResults] = useState<VerificationResult[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [editingOwner, setEditingOwner] = useState<string | null>(null);
+  const [editOwnerName, setEditOwnerName] = useState('');
   const [importProgress, setImportProgress] = useState<{
     batchNumber: number;
     progress: number;
@@ -118,16 +126,20 @@ export default function PropertyVerification() {
           .filter(Boolean)
           .join(' ');
         
-        // Combine zip fields
-        const zipCode = data.zip4 ? `${data.zip}-${data.zip4}` : data.zip;
+        // Combine zip fields (using uppercase column names)
+        const zipCode = data.Zip4 ? `${data.Zip}-${data.Zip4}` : data.Zip;
         
         return {
-          parcelNumber: data.parcel || 'Unknown',
+          id: data.id,
+          parcelNumber: data.Parcel || 'Unknown',
           ownerName: mailingAddress || 'Unknown',
           mailingAddress: mailingAddress || '',
-          propertyAddress: data.mail1 || '',
+          propertyAddress: data.Mail1 || '',
           assessedValue: 'Unknown',
-          lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown'
+          lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown',
+          updatedOwnerName: data.updated_owner_name,
+          isOwnerUpdated: data.is_owner_updated,
+          ownerUpdatedAt: data.owner_updated_at ? new Date(data.owner_updated_at).toLocaleDateString() : undefined
         };
       }
 
@@ -343,6 +355,68 @@ export default function PropertyVerification() {
     }
   };
 
+  const handleEditOwner = (assessorRecord: AssessorRecord) => {
+    if (!assessorRecord.id) return;
+    setEditingOwner(assessorRecord.id);
+    setEditOwnerName(assessorRecord.updatedOwnerName || assessorRecord.ownerName);
+  };
+
+  const handleSaveOwnerName = async (assessorRecordId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('pima_assessor_records')
+        .update({
+          updated_owner_name: editOwnerName,
+          is_owner_updated: true,
+          owner_updated_at: new Date().toISOString(),
+          owner_updated_by: user.id
+        })
+        .eq('id', assessorRecordId);
+
+      if (error) throw error;
+
+      // Update the verification results to reflect the change
+      setVerificationResults(prev => 
+        prev.map(result => {
+          if (result.assessorRecord?.id === assessorRecordId) {
+            return {
+              ...result,
+              assessorRecord: {
+                ...result.assessorRecord,
+                updatedOwnerName: editOwnerName,
+                isOwnerUpdated: true,
+                ownerUpdatedAt: new Date().toLocaleDateString()
+              }
+            };
+          }
+          return result;
+        })
+      );
+
+      setEditingOwner(null);
+      setEditOwnerName('');
+
+      toast({
+        title: 'Owner Updated',
+        description: 'Property owner name has been updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating owner:', error);
+      toast({
+        title: 'Update Failed',
+        description: 'Failed to update owner name',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingOwner(null);
+    setEditOwnerName('');
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
@@ -520,12 +594,73 @@ export default function PropertyVerification() {
                               </div>
                             </div>
                             <div>
-                              <h4 className="font-medium mb-2">Assessor Records</h4>
+                              <h4 className="font-medium mb-2 flex items-center gap-2">
+                                Assessor Records
+                                {result.assessorRecord.id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditOwner(result.assessorRecord!)}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </h4>
                               <div className="text-sm space-y-1">
-                                <p><strong>Owner:</strong> {result.assessorRecord.ownerName}</p>
+                                <div className="flex items-center gap-2">
+                                  <strong>Owner:</strong>
+                                  {editingOwner === result.assessorRecord.id ? (
+                                    <div className="flex items-center gap-2 flex-1">
+                                      <Input
+                                        value={editOwnerName}
+                                        onChange={(e) => setEditOwnerName(e.target.value)}
+                                        className="h-7 flex-1"
+                                        placeholder="Enter owner name"
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleSaveOwnerName(result.assessorRecord!.id!)}
+                                        className="h-7 w-7 p-0"
+                                      >
+                                        <Save className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleCancelEdit}
+                                        className="h-7 w-7 p-0"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className={result.assessorRecord.isOwnerUpdated ? 'line-through text-muted-foreground' : ''}>
+                                        {result.assessorRecord.ownerName}
+                                      </span>
+                                      {result.assessorRecord.isOwnerUpdated && (
+                                        <>
+                                          <span className="text-blue-600 font-medium">
+                                            {result.assessorRecord.updatedOwnerName}
+                                          </span>
+                                          <Badge variant="secondary" className="text-xs">
+                                            Not Original Owner
+                                          </Badge>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                                 <p><strong>Property:</strong> {result.assessorRecord.propertyAddress}</p>
                                 <p><strong>Parcel #:</strong> {result.assessorRecord.parcelNumber}</p>
                                 <p><strong>Value:</strong> {result.assessorRecord.assessedValue}</p>
+                                {result.assessorRecord.isOwnerUpdated && result.assessorRecord.ownerUpdatedAt && (
+                                  <p className="text-xs text-muted-foreground">
+                                    <strong>Owner updated on:</strong> {result.assessorRecord.ownerUpdatedAt}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </div>
