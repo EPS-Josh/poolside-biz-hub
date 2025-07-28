@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, User, Building, Mail, Phone, MapPin } from 'lucide-react';
+import { ArrowLeft, User, Building, Mail, Phone, MapPin, Clock, UserX } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface Customer {
   id: string;
@@ -26,6 +27,10 @@ interface Customer {
   zip_code?: string;
   notes?: string;
   created_at: string;
+  previous_first_name?: string;
+  previous_last_name?: string;
+  owner_changed_date?: string;
+  owner_changed_by?: string;
 }
 
 const CustomerDetails = () => {
@@ -128,10 +133,18 @@ const CustomerDetails = () => {
                 <div className="bg-blue-100 p-3 rounded-full">
                   <User className="h-8 w-8 text-blue-600" />
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {customer.first_name} {customer.last_name}
-                  </h1>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {customer.first_name} {customer.last_name}
+                    </h1>
+                    {customer.owner_changed_date && (
+                      <Badge variant="secondary" className="text-xs">
+                        <UserX className="h-3 w-3 mr-1" />
+                        Not Original Owner
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-gray-600">Customer Details & Service Information</p>
                 </div>
               </div>
@@ -206,6 +219,46 @@ const CustomerDetails = () => {
 
             {/* Photos Section */}
             <CustomerPhotos customerId={customer.id} />
+
+            {/* Previous Owner Information */}
+            {customer.owner_changed_date && customer.previous_first_name && customer.previous_last_name && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Previous Owner Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Previous Owner</p>
+                        <p className="font-medium text-lg">
+                          {customer.previous_first_name} {customer.previous_last_name}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-1">Ownership Changed</p>
+                        <p className="font-medium">
+                          {new Date(customer.owner_changed_date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-muted">
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Note:</strong> This property was previously owned by {customer.previous_first_name} {customer.previous_last_name}. 
+                        All service history and records from the previous ownership are preserved and accessible.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </main>
       </div>
