@@ -57,6 +57,55 @@ export default function PropertyVerification() {
     hasMoreBatches: boolean;
   } | null>(null);
 
+  const normalizeText = (text: string): string => {
+    return text
+      .toUpperCase()
+      .replace(/[^\w\s]/g, '') // Remove punctuation
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim();
+  };
+
+  const normalizeAddress = (address: string): string => {
+    const streetTypeMap: Record<string, string[]> = {
+      'ST': ['STREET', 'ST'],
+      'AVE': ['AVENUE', 'AVE'],
+      'BLVD': ['BOULEVARD', 'BLVD'],
+      'DR': ['DRIVE', 'DR'],
+      'LN': ['LANE', 'LN'],
+      'RD': ['ROAD', 'RD'],
+      'CIR': ['CIRCLE', 'CIR'],
+      'CT': ['COURT', 'CT'],
+      'PL': ['PLACE', 'PL'],
+      'WAY': ['WAY'],
+      'TRL': ['TRAIL', 'TRL'],
+      'PKWY': ['PARKWAY', 'PKWY'],
+      'LOOP': ['LOOP'],
+      'PASS': ['PASS'],
+      'RIDGE': ['RIDGE'],
+      'TERRACE': ['TERRACE', 'TER'],
+      'PLAZA': ['PLAZA', 'PLZ']
+    };
+
+    let normalized = normalizeText(address);
+    
+    // Standardize street types
+    Object.entries(streetTypeMap).forEach(([standard, variants]) => {
+      variants.forEach(variant => {
+        const regex = new RegExp(`\\b${variant}\\b`, 'g');
+        normalized = normalized.replace(regex, standard);
+      });
+    });
+    
+    return normalized;
+  };
+
+  const normalizeName = (name: string): string => {
+    return normalizeText(name)
+      .replace(/\b(JR|SR|III|II|IV)\b/g, '') // Remove suffixes
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   const abbreviateStreetTypes = (address: string): string => {
     const streetTypeMap: Record<string, string> = {
       'Street': 'St',
@@ -230,23 +279,51 @@ export default function PropertyVerification() {
     }
 
     const issues: string[] = [];
-    const customerName = `${customer.first_name} ${customer.last_name}`.toUpperCase();
-    const assessorName = assessorRecord.ownerName.toUpperCase();
-
-    // Check name match against Mail1 column (owner name)
-    const customerFirstName = customer.first_name.toUpperCase();
-    const customerLastName = customer.last_name.toUpperCase();
     
-    if (!assessorName.includes(customerFirstName) && !assessorName.includes(customerLastName)) {
-      issues.push(`Name mismatch: Customer "${customerName}" vs Assessor "${assessorName}"`);
+    // Normalize names for comparison
+    const customerFirstName = normalizeName(customer.first_name || '');
+    const customerLastName = normalizeName(customer.last_name || '');
+    const customerFullName = `${customerFirstName} ${customerLastName}`.trim();
+    const assessorName = normalizeName(assessorRecord.ownerName || '');
+
+    // Check name match - look for individual name parts in assessor record
+    const hasFirstName = customerFirstName && assessorName.includes(customerFirstName);
+    const hasLastName = customerLastName && assessorName.includes(customerLastName);
+    
+    if (!hasFirstName && !hasLastName && customerFullName && assessorName) {
+      // Also try splitting assessor name and checking for partial matches
+      const assessorNameParts = assessorName.split(' ');
+      const customerNameParts = customerFullName.split(' ');
+      
+      const hasAnyMatch = customerNameParts.some(customerPart => 
+        assessorNameParts.some(assessorPart => 
+          customerPart.length > 2 && assessorPart.includes(customerPart)
+        )
+      );
+      
+      if (!hasAnyMatch) {
+        issues.push(`Name mismatch: Customer "${customer.first_name} ${customer.last_name}" vs Assessor "${assessorRecord.ownerName}"`);
+      }
     }
 
-    // Check address match (simplified)
-    const customerAddress = customer.address?.toUpperCase() || '';
-    const assessorAddress = assessorRecord.propertyAddress.toUpperCase();
-    
-    if (customerAddress && !assessorAddress.includes(customerAddress.split(' ')[0])) {
-      issues.push(`Address mismatch: Customer "${customer.address}" vs Assessor "${assessorRecord.propertyAddress}"`);
+    // Check address match with normalization
+    if (customer.address && assessorRecord.propertyAddress) {
+      const customerAddress = normalizeAddress(customer.address);
+      const assessorAddress = normalizeAddress(assessorRecord.propertyAddress);
+      
+      // Extract house number from customer address
+      const customerHouseNumber = customerAddress.split(' ')[0];
+      const assessorHouseNumber = assessorAddress.split(' ')[0];
+      
+      // Check if house numbers match and if any significant part of the street name matches
+      const houseNumberMatch = customerHouseNumber === assessorHouseNumber;
+      const streetMatch = customerAddress.split(' ').slice(1).some(part => 
+        part.length > 2 && assessorAddress.includes(part)
+      );
+      
+      if (!houseNumberMatch || !streetMatch) {
+        issues.push(`Address mismatch: Customer "${customer.address}" vs Assessor "${assessorRecord.propertyAddress}"`);
+      }
     }
 
     return {
