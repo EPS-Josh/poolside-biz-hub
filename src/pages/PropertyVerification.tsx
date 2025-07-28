@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X, Users } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -45,6 +46,9 @@ export default function PropertyVerification() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [editingOwner, setEditingOwner] = useState<string | null>(null);
   const [editOwnerName, setEditOwnerName] = useState('');
+  const [showUpdateCustomerDialog, setShowUpdateCustomerDialog] = useState(false);
+  const [currentAssessorRecord, setCurrentAssessorRecord] = useState<AssessorRecord | null>(null);
+  const [matchingCustomer, setMatchingCustomer] = useState<any>(null);
   const [importProgress, setImportProgress] = useState<{
     batchNumber: number;
     progress: number;
@@ -417,6 +421,74 @@ export default function PropertyVerification() {
     setEditOwnerName('');
   };
 
+  const handleUpdateCustomer = (assessorRecord: AssessorRecord, customer: any) => {
+    setCurrentAssessorRecord(assessorRecord);
+    setMatchingCustomer(customer);
+    setShowUpdateCustomerDialog(true);
+  };
+
+  const handleConfirmCustomerUpdate = async () => {
+    if (!currentAssessorRecord || !matchingCustomer || !user?.id) return;
+
+    const newOwnerName = currentAssessorRecord.updatedOwnerName || currentAssessorRecord.ownerName;
+    const names = newOwnerName.split(' ');
+    const firstName = names[0] || '';
+    const lastName = names.slice(1).join(' ') || '';
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          previous_first_name: matchingCustomer.first_name,
+          previous_last_name: matchingCustomer.last_name,
+          first_name: firstName,
+          last_name: lastName,
+          owner_changed_date: new Date().toISOString(),
+          owner_changed_by: user.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', matchingCustomer.id);
+
+      if (error) throw error;
+
+      // Update the verification results to reflect the customer change
+      setVerificationResults(prev => 
+        prev.map(result => {
+          if (result.customer.id === matchingCustomer.id) {
+            return {
+              ...result,
+              customer: {
+                ...result.customer,
+                previous_first_name: matchingCustomer.first_name,
+                previous_last_name: matchingCustomer.last_name,
+                first_name: firstName,
+                last_name: lastName,
+                owner_changed_date: new Date().toISOString()
+              }
+            };
+          }
+          return result;
+        })
+      );
+
+      setShowUpdateCustomerDialog(false);
+      setCurrentAssessorRecord(null);
+      setMatchingCustomer(null);
+
+      toast({
+        title: 'Customer Updated',
+        description: `Customer record updated to ${firstName} ${lastName}. Previous owner information has been preserved.`,
+      });
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      toast({
+        title: 'Update Failed',
+        description: 'Failed to update customer record',
+        variant: 'destructive'
+      });
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
@@ -593,20 +665,32 @@ export default function PropertyVerification() {
                                 <p><strong>City/State:</strong> {result.customer.city}, {result.customer.state}</p>
                               </div>
                             </div>
-                            <div>
-                              <h4 className="font-medium mb-2 flex items-center gap-2">
-                                Assessor Records
-                                {result.assessorRecord.id && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditOwner(result.assessorRecord!)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <Edit2 className="h-3 w-3" />
-                                  </Button>
-                                )}
-                              </h4>
+                             <div>
+                               <h4 className="font-medium mb-2 flex items-center gap-2">
+                                 Assessor Records
+                                 {result.assessorRecord.id && (
+                                   <>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={() => handleEditOwner(result.assessorRecord!)}
+                                       className="h-6 w-6 p-0"
+                                       title="Edit assessor owner name"
+                                     >
+                                       <Edit2 className="h-3 w-3" />
+                                     </Button>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       onClick={() => handleUpdateCustomer(result.assessorRecord!, result.customer)}
+                                       className="h-6 w-6 p-0"
+                                       title="Update customer with new owner"
+                                     >
+                                       <Users className="h-3 w-3" />
+                                     </Button>
+                                   </>
+                                 )}
+                               </h4>
                               <div className="text-sm space-y-1">
                                 <div className="flex items-center gap-2">
                                   <strong>Owner:</strong>
@@ -686,6 +770,56 @@ export default function PropertyVerification() {
               </CardContent>
             </Card>
           )}
+
+          {/* Update Customer Dialog */}
+          <Dialog open={showUpdateCustomerDialog} onOpenChange={setShowUpdateCustomerDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Update Customer Record</DialogTitle>
+                <DialogDescription>
+                  This will update your customer record with the new owner information from the assessor data.
+                  The previous owner information will be preserved for your records.
+                </DialogDescription>
+              </DialogHeader>
+              
+              {currentAssessorRecord && matchingCustomer && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="font-medium text-sm text-muted-foreground mb-2">Current Customer</h5>
+                      <p className="font-medium">{matchingCustomer.first_name} {matchingCustomer.last_name}</p>
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-sm text-muted-foreground mb-2">New Owner (from Assessor)</h5>
+                      <p className="font-medium">{currentAssessorRecord.updatedOwnerName || currentAssessorRecord.ownerName}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <h5 className="font-medium text-sm mb-2">What will happen:</h5>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Customer name will be updated to the new owner</li>
+                      <li>• Previous owner information will be saved in history fields</li>
+                      <li>• Owner change date and user will be recorded</li>
+                      <li>• All service history will remain linked to this property</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+              
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUpdateCustomerDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleConfirmCustomerUpdate}>
+                  Update Customer
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </ProtectedRoute>

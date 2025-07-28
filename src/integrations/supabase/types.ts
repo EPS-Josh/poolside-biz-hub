@@ -334,7 +334,11 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           notes: string | null
+          owner_changed_by: string | null
+          owner_changed_date: string | null
           phone: string | null
+          previous_first_name: string | null
+          previous_last_name: string | null
           state: string | null
           updated_at: string
           user_id: string
@@ -353,7 +357,11 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          owner_changed_by?: string | null
+          owner_changed_date?: string | null
           phone?: string | null
+          previous_first_name?: string | null
+          previous_last_name?: string | null
           state?: string | null
           updated_at?: string
           user_id: string
@@ -372,7 +380,11 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
+          owner_changed_by?: string | null
+          owner_changed_date?: string | null
           phone?: string | null
+          previous_first_name?: string | null
+          previous_last_name?: string | null
           state?: string | null
           updated_at?: string
           user_id?: string
