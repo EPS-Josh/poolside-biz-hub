@@ -132,9 +132,9 @@ export default function PropertyVerification() {
         return {
           id: data.id,
           parcelNumber: data.Parcel || 'Unknown',
-          ownerName: mailingAddress || 'Unknown',
+          ownerName: data.Mail1 || 'Unknown',
           mailingAddress: mailingAddress || '',
-          propertyAddress: data.Mail1 || '',
+          propertyAddress: data.Mail2 || '',
           assessedValue: 'Unknown',
           lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown',
           updatedOwnerName: data.updated_owner_name,
