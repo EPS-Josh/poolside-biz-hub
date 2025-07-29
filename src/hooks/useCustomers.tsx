@@ -17,6 +17,8 @@ interface Customer {
   zip_code?: string;
   notes?: string;
   created_at: string;
+  owner_verified_at?: string;
+  owner_verified_by?: string;
 }
 
 export const useCustomers = (searchTerm: string = '') => {

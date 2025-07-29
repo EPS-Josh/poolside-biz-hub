@@ -525,6 +525,9 @@ export default function PropertyVerification() {
 
       if (error) throw error;
 
+      // Remove this customer from verification results
+      setVerificationResults(prev => prev.filter(result => result.customer.id !== customer.id));
+
       toast({
         title: 'Owner Verified',
         description: `${customer.first_name} ${customer.last_name} has been marked as owner verified`,
@@ -707,7 +710,7 @@ export default function PropertyVerification() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {customers.filter(c => c.address).map((customer) => (
+                  {customers.filter(c => c.address && !c.owner_verified_at).map((customer) => (
                     <div
                       key={customer.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
