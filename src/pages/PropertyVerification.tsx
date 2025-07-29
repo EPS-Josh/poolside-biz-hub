@@ -707,7 +707,7 @@ export default function PropertyVerification() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {customers.slice(0, 10).map((customer) => (
+                  {customers.filter(c => c.address).map((customer) => (
                     <div
                       key={customer.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
