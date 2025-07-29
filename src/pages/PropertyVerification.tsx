@@ -158,27 +158,13 @@ export default function PropertyVerification() {
     try {
       console.log('Searching database for address:', address);
       
-      // Search the local Pima County database using Mail2 field for property address
-      // If no results, also try Mail3 in case Mail2 contains "ATTN:"
-      let { data, error } = await supabase
+      // Search both Mail2 and Mail3 fields using OR condition
+      const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .ilike('Mail2', `%${address}%`)
+        .or(`Mail2.ilike.%${address}%,Mail3.ilike.%${address}%`)
         .limit(1)
         .maybeSingle();
-
-      // If no results in Mail2, try Mail3
-      if (!data && !error) {
-        const result = await supabase
-          .from('pima_assessor_records')
-          .select('*')
-          .ilike('Mail3', `%${address}%`)
-          .limit(1)
-          .maybeSingle();
-        
-        data = result.data;
-        error = result.error;
-      }
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
         console.error('Database error:', error);
