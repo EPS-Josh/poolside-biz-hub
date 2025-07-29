@@ -143,6 +143,42 @@ export const Employees = () => {
 
   const updateUserRole = async (userId: string, newRole: AppRole, action: 'add' | 'remove') => {
     try {
+      // Security check: Validate role assignment authorization
+      const { data: canAssign, error: validationError } = await supabase
+        .rpc('validate_role_assignment', {
+          target_user_id: userId,
+          role_to_assign: newRole
+        });
+
+      if (validationError) {
+        console.error('Role validation error:', validationError);
+        toast({
+          title: "Error",
+          description: "Failed to validate role assignment",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!canAssign) {
+        toast({
+          title: "Unauthorized",
+          description: `You don't have permission to ${action} the ${newRole} role`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Prevent self-modification of admin role
+      if (user?.id === userId && newRole === 'admin' && action === 'remove') {
+        toast({
+          title: "Error", 
+          description: "You cannot remove your own admin role",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (action === 'add') {
         const { error } = await supabase
           .from('user_roles')
@@ -185,7 +221,54 @@ export const Employees = () => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUserEmail)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate password strength
+    if (newUserPassword.length < 8) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 8 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
+      // Security check: Validate role assignment authorization
+      const { data: canAssign, error: validationError } = await supabase
+        .rpc('validate_role_assignment', {
+          target_user_id: '00000000-0000-0000-0000-000000000000', // Placeholder for new user
+          role_to_assign: newUserRole
+        });
+
+      if (validationError) {
+        console.error('Role validation error:', validationError);
+        toast({
+          title: "Error",
+          description: "Failed to validate role assignment",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!canAssign) {
+        toast({
+          title: "Unauthorized",
+          description: `You don't have permission to create users with the ${newUserRole} role`,
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Create user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUserEmail,

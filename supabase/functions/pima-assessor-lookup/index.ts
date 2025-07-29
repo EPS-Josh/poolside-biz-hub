@@ -273,11 +273,13 @@ serve(async (req) => {
   }
 
   try {
-    const { address } = await req.json();
+    const body = await req.json();
+    const { address } = body;
 
-    if (!address) {
+    // Input validation
+    if (!address || typeof address !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Address is required' }),
+        JSON.stringify({ error: 'Valid address string is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -285,15 +287,39 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Processing lookup request for address: ${address}`);
+    // Sanitize address input
+    const sanitizedAddress = address.trim().replace(/[<>]/g, '');
+    
+    if (sanitizedAddress.length < 3 || sanitizedAddress.length > 200) {
+      return new Response(
+        JSON.stringify({ error: 'Address must be between 3 and 200 characters' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
-    const assessorRecord = await searchPimaAssessor(address);
+    // Basic address format validation
+    if (!/\d/.test(sanitizedAddress)) {
+      return new Response(
+        JSON.stringify({ error: 'Address must contain at least one number' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log(`Processing lookup request for address: ${sanitizedAddress}`);
+
+    const assessorRecord = await searchPimaAssessor(sanitizedAddress);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         data: assessorRecord,
-        searchAddress: address 
+        searchAddress: sanitizedAddress 
       }),
       { 
         status: 200, 
