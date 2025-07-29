@@ -566,25 +566,8 @@ export default function PropertyVerification() {
 
       if (error) throw error;
 
-      // Update the verification results to reflect the customer change
-      setVerificationResults(prev => 
-        prev.map(result => {
-          if (result.customer.id === matchingCustomer.id) {
-            return {
-              ...result,
-              customer: {
-                ...result.customer,
-                previous_first_name: matchingCustomer.first_name,
-                previous_last_name: matchingCustomer.last_name,
-                first_name: firstName,
-                last_name: lastName,
-                owner_changed_date: new Date().toISOString()
-              }
-            };
-          }
-          return result;
-        })
-      );
+      // Remove this customer from verification results as update is complete
+      setVerificationResults(prev => prev.filter(result => result.customer.id !== matchingCustomer.id));
 
       setShowUpdateCustomerDialog(false);
       setCurrentAssessorRecord(null);
