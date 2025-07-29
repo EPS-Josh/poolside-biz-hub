@@ -159,12 +159,26 @@ export default function PropertyVerification() {
       console.log('Searching database for address:', address);
       
       // Search the local Pima County database using Mail2 field for property address
-      const { data, error } = await supabase
+      // If no results, also try Mail3 in case Mail2 contains "ATTN:"
+      let { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
         .ilike('Mail2', `%${address}%`)
         .limit(1)
         .maybeSingle();
+
+      // If no results in Mail2, try Mail3
+      if (!data && !error) {
+        const result = await supabase
+          .from('pima_assessor_records')
+          .select('*')
+          .ilike('Mail3', `%${address}%`)
+          .limit(1)
+          .maybeSingle();
+        
+        data = result.data;
+        error = result.error;
+      }
 
       if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
         console.error('Database error:', error);
@@ -182,12 +196,18 @@ export default function PropertyVerification() {
         // Combine zip fields (using uppercase column names)
         const zipCode = data.Zip4 ? `${data.Zip}-${data.Zip4}` : data.Zip;
         
+        // Determine property address - use Mail3 if Mail2 contains "ATTN:"
+        let propertyAddress = (data as any).Mail2 || '';
+        if (propertyAddress.toUpperCase().includes('ATTN:')) {
+          propertyAddress = (data as any).Mail3 || '';
+        }
+        
         return {
           id: data.id,
           parcelNumber: data.Parcel || 'Unknown',
           ownerName: data.Mail1 || 'Unknown',
           mailingAddress: mailingAddress || '',
-          propertyAddress: data.Mail2 || '',
+          propertyAddress: propertyAddress,
           assessedValue: 'Unknown',
           lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown',
           updatedOwnerName: data.updated_owner_name,
