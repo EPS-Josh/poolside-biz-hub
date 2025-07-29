@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X, Users } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X, Users, ShieldCheck } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
@@ -510,6 +510,35 @@ export default function PropertyVerification() {
     setShowUpdateCustomerDialog(true);
   };
 
+  const handleMarkAsVerified = async (customer: any) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          owner_verified_at: new Date().toISOString(),
+          owner_verified_by: user.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Owner Verified',
+        description: `${customer.first_name} ${customer.last_name} has been marked as owner verified`,
+      });
+    } catch (error) {
+      console.error('Error marking customer as verified:', error);
+      toast({
+        title: 'Verification Failed',
+        description: 'Failed to mark customer as owner verified',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const handleConfirmCustomerUpdate = async () => {
     if (!currentAssessorRecord || !matchingCustomer || !user?.id) return;
 
@@ -749,31 +778,44 @@ export default function PropertyVerification() {
                               </div>
                             </div>
                              <div>
-                               <h4 className="font-medium mb-2 flex items-center gap-2">
-                                 Assessor Records
-                                 {result.assessorRecord.id && (
-                                   <>
-                                     <Button
-                                       variant="ghost"
-                                       size="sm"
-                                       onClick={() => handleEditOwner(result.assessorRecord!)}
-                                       className="h-6 w-6 p-0"
-                                       title="Edit assessor owner name"
-                                     >
-                                       <Edit2 className="h-3 w-3" />
-                                     </Button>
-                                     <Button
-                                       variant="ghost"
-                                       size="sm"
-                                       onClick={() => handleUpdateCustomer(result.assessorRecord!, result.customer)}
-                                       className="h-6 w-6 p-0"
-                                       title="Update customer with new owner"
-                                     >
-                                       <Users className="h-3 w-3" />
-                                     </Button>
-                                   </>
-                                 )}
-                               </h4>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-medium flex items-center gap-2">
+                                    Assessor Records
+                                    {result.assessorRecord.id && (
+                                      <>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleEditOwner(result.assessorRecord!)}
+                                          className="h-6 w-6 p-0"
+                                          title="Edit assessor owner name"
+                                        >
+                                          <Edit2 className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => handleUpdateCustomer(result.assessorRecord!, result.customer)}
+                                          className="h-6 w-6 p-0"
+                                          title="Update customer with new owner"
+                                        >
+                                          <Users className="h-3 w-3" />
+                                        </Button>
+                                      </>
+                                    )}
+                                  </h4>
+                                  {result.status === 'match' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleMarkAsVerified(result.customer)}
+                                      className="text-green-700 border-green-300 hover:bg-green-50"
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Mark as Owner Verified
+                                    </Button>
+                                  )}
+                                </div>
                               <div className="text-sm space-y-1">
                                 <div className="flex items-center gap-2">
                                   <strong>Owner:</strong>

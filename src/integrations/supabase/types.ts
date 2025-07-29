@@ -336,6 +336,8 @@ export type Database = {
           notes: string | null
           owner_changed_by: string | null
           owner_changed_date: string | null
+          owner_verified_at: string | null
+          owner_verified_by: string | null
           phone: string | null
           previous_first_name: string | null
           previous_last_name: string | null
@@ -359,6 +361,8 @@ export type Database = {
           notes?: string | null
           owner_changed_by?: string | null
           owner_changed_date?: string | null
+          owner_verified_at?: string | null
+          owner_verified_by?: string | null
           phone?: string | null
           previous_first_name?: string | null
           previous_last_name?: string | null
@@ -382,6 +386,8 @@ export type Database = {
           notes?: string | null
           owner_changed_by?: string | null
           owner_changed_date?: string | null
+          owner_verified_at?: string | null
+          owner_verified_by?: string | null
           phone?: string | null
           previous_first_name?: string | null
           previous_last_name?: string | null

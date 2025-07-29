@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, User, Building, Mail, Phone, MapPin, Clock, UserX } from 'lucide-react';
+import { ArrowLeft, User, Building, Mail, Phone, MapPin, Clock, UserX, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Customer {
@@ -31,6 +31,8 @@ interface Customer {
   previous_last_name?: string;
   owner_changed_date?: string;
   owner_changed_by?: string;
+  owner_verified_at?: string;
+  owner_verified_by?: string;
 }
 
 const CustomerDetails = () => {
@@ -138,6 +140,12 @@ const CustomerDetails = () => {
                     <h1 className="text-3xl font-bold text-gray-900">
                       {customer.first_name} {customer.last_name}
                     </h1>
+                    {customer.owner_verified_at && (
+                      <Badge variant="default" className="text-xs bg-green-100 text-green-800 border-green-300">
+                        <ShieldCheck className="h-3 w-3 mr-1" />
+                        Owner Verified
+                      </Badge>
+                    )}
                     {customer.owner_changed_date && (
                       <Badge variant="secondary" className="text-xs">
                         <UserX className="h-3 w-3 mr-1" />
@@ -199,12 +207,28 @@ const CustomerDetails = () => {
                     </div>
                   )}
                   
-                  {customer.notes && (
-                    <div className="md:col-span-2 lg:col-span-3">
-                      <p className="text-sm text-gray-500 mb-1">Notes</p>
-                      <p className="text-gray-900">{customer.notes}</p>
-                    </div>
-                  )}
+                   {customer.owner_verified_at && (
+                     <div className="flex items-center space-x-3">
+                       <ShieldCheck className="h-5 w-5 text-green-600" />
+                       <div>
+                         <p className="text-sm text-gray-500">Owner Verified</p>
+                         <p className="font-medium text-green-700">
+                           {new Date(customer.owner_verified_at).toLocaleDateString('en-US', {
+                             year: 'numeric',
+                             month: 'long',
+                             day: 'numeric'
+                           })}
+                         </p>
+                       </div>
+                     </div>
+                   )}
+                   
+                   {customer.notes && (
+                     <div className="md:col-span-2 lg:col-span-3">
+                       <p className="text-sm text-gray-500 mb-1">Notes</p>
+                       <p className="text-gray-900">{customer.notes}</p>
+                     </div>
+                   )}
                 </div>
               </CardContent>
             </Card>
