@@ -242,7 +242,6 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
               onChange={handleFileUpload}
               disabled={uploading}
               className="flex-1 cursor-pointer"
-              capture="environment"
             />
             <Button disabled={uploading} className="w-full sm:w-auto">
               <Upload className="h-4 w-4 mr-2" />
