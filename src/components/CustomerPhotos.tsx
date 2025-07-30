@@ -62,23 +62,48 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
     if (!files || files.length === 0) return;
 
     setUploading(true);
+    console.log('Starting photo upload for', files.length, 'files');
 
     try {
       for (const file of files) {
+        console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
+        
+        // Check file size (limit to 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`File ${file.name} is not a valid image.`);
+        }
+
         const fileExt = file.name.split('.').pop();
-        const fileName = `${customerId}/${Date.now()}.${fileExt}`;
+        const fileName = `${customerId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        
+        console.log('Uploading to storage:', fileName);
 
         // Upload file to storage
-        const { error: uploadError } = await supabase.storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
           .from('customer-photos')
-          .upload(fileName, file);
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+
+        console.log('Upload successful:', uploadData);
 
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('customer-photos')
           .getPublicUrl(fileName);
+
+        console.log('Public URL:', publicUrl);
 
         // Save photo record to database
         const { error: dbError } = await supabase
@@ -91,7 +116,12 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
             file_type: file.type,
           });
 
-        if (dbError) throw dbError;
+        if (dbError) {
+          console.error('Database insert error:', dbError);
+          throw new Error(`Database save failed: ${dbError.message}`);
+        }
+
+        console.log('Photo record saved to database');
       }
 
       toast({
@@ -101,11 +131,12 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
 
       // Refresh photos
       fetchPhotos();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading photos:', error);
+      const errorMessage = error?.message || 'Failed to upload photos';
       toast({
-        title: 'Error',
-        description: 'Failed to upload photos',
+        title: 'Upload Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -200,23 +231,27 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
         {/* Upload Section */}
         <div className="mb-6">
           <Label htmlFor="photo-upload" className="block mb-2">
-            Upload Photos
+            Upload Photos (Max 10MB each)
           </Label>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <Input
               id="photo-upload"
               type="file"
-              accept="image/*"
+              accept="image/*,.jpg,.jpeg,.png,.gif,.webp"
               multiple
               onChange={handleFileUpload}
               disabled={uploading}
-              className="flex-1"
+              className="flex-1 cursor-pointer"
+              capture="environment"
             />
-            <Button disabled={uploading}>
+            <Button disabled={uploading} className="w-full sm:w-auto">
               <Upload className="h-4 w-4 mr-2" />
               {uploading ? 'Uploading...' : 'Upload'}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Supports JPG, PNG, GIF, WebP formats. Tap to select from gallery or take photo.
+          </p>
         </div>
 
         {/* Photos Grid */}
