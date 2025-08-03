@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
-import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter } from 'lucide-react';
+import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
@@ -135,6 +135,11 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
     toast.success('Service record created successfully!');
   };
 
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    toast.success('Appointments refreshed');
+  };
+
   if (isLoading) {
     return <div className="text-center py-4">Loading appointments...</div>;
   }
@@ -157,7 +162,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
 
   return (
     <>
-      {/* Filter Buttons */}
+      {/* Filter and Refresh Buttons */}
       <div className="flex flex-wrap gap-2 mb-4 p-3 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <Filter className="h-4 w-4" />
@@ -174,6 +179,18 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
             {label} ({count})
           </Button>
         ))}
+        <div className="ml-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="flex items-center gap-1 text-xs"
+          >
+            <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </Button>
+        </div>
       </div>
 
       {filteredAppointments.length === 0 ? (
