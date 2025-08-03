@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,12 +9,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
-import { Clock, User, Calendar, Edit, Trash2, FileText, Plus } from 'lucide-react';
+import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
 import { useAppointmentServiceRecords } from '@/hooks/useAppointmentServiceRecords';
 import { CheckCircle } from 'lucide-react';
+
+type FilterType = 'all' | 'not-complete' | 'no-service-record' | 'in-progress' | 'confirmed';
 
 interface AppointmentListProps {
   limit?: number;
@@ -26,6 +28,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
   const queryClient = useQueryClient();
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
   const [creatingServiceRecord, setCreatingServiceRecord] = useState<any>(null);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['appointments', dateFilter?.toISOString()],
@@ -70,6 +73,27 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
   });
 
   const { data: serviceRecordMap = {} } = useAppointmentServiceRecords(appointments);
+
+  const filteredAppointments = useMemo(() => {
+    if (activeFilter === 'all') return appointments;
+    
+    return appointments.filter(appointment => {
+      const hasServiceRecord = !!serviceRecordMap[appointment.id];
+      
+      switch (activeFilter) {
+        case 'not-complete':
+          return appointment.status !== 'completed';
+        case 'no-service-record':
+          return !hasServiceRecord;
+        case 'in-progress':
+          return appointment.status === 'in-progress';
+        case 'confirmed':
+          return appointment.status === 'confirmed';
+        default:
+          return true;
+      }
+    });
+  }, [appointments, serviceRecordMap, activeFilter]);
 
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (appointmentId: string) => {
@@ -123,10 +147,42 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
     );
   }
 
+  const filterButtons = [
+    { key: 'all' as FilterType, label: 'All', count: appointments.length },
+    { key: 'not-complete' as FilterType, label: 'Not Complete', count: appointments.filter(a => a.status !== 'completed').length },
+    { key: 'no-service-record' as FilterType, label: 'No Service Record', count: appointments.filter(a => !serviceRecordMap[a.id]).length },
+    { key: 'in-progress' as FilterType, label: 'In Progress', count: appointments.filter(a => a.status === 'in-progress').length },
+    { key: 'confirmed' as FilterType, label: 'Confirmed', count: appointments.filter(a => a.status === 'confirmed').length },
+  ];
+
   return (
     <>
-      <div className="space-y-3">
-        {appointments.map((appointment) => (
+      {/* Filter Buttons */}
+      <div className="flex flex-wrap gap-2 mb-4 p-3 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          <span>Filter:</span>
+        </div>
+        {filterButtons.map(({ key, label, count }) => (
+          <Button
+            key={key}
+            variant={activeFilter === key ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setActiveFilter(key)}
+            className="text-xs"
+          >
+            {label} ({count})
+          </Button>
+        ))}
+      </div>
+
+      {filteredAppointments.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          No appointments match the selected filter
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredAppointments.map((appointment) => (
           <Card key={appointment.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex justify-between items-start mb-3">
@@ -213,8 +269,9 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {editingAppointment && (
         <EditAppointmentDialog
