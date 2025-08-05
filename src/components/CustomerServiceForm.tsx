@@ -34,6 +34,7 @@ interface CustomerServiceDetails {
 interface PoolEquipment {
   pump?: string;
   pump_specific?: string;
+  pump_horsepower?: string;
   filter?: string;
   filter_specific?: string;
   heater?: string;
@@ -275,8 +276,10 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                     label="Pump"
                     pumpType={poolEquipment.pump || ''}
                     specificPump={poolEquipment.pump_specific || ''}
+                    pumpHorsepower={poolEquipment.pump_horsepower || ''}
                     onPumpTypeChange={(value) => updatePoolEquipment('pump', value)}
                     onSpecificPumpChange={(value) => updatePoolEquipment('pump_specific', value)}
+                    onPumpHorsepowerChange={(value) => updatePoolEquipment('pump_horsepower', value)}
                     pumpData={equipmentData.pumps}
                   />
 

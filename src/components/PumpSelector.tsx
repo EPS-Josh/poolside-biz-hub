@@ -6,8 +6,10 @@ interface PumpSelectorProps {
   label: string;
   pumpType: string;
   specificPump: string;
+  pumpHorsepower: string;
   onPumpTypeChange: (value: string) => void;
   onSpecificPumpChange: (value: string) => void;
+  onPumpHorsepowerChange: (value: string) => void;
   pumpData: { [type: string]: string[] };
 }
 
@@ -15,8 +17,10 @@ export const PumpSelector = ({
   label, 
   pumpType, 
   specificPump, 
+  pumpHorsepower,
   onPumpTypeChange, 
   onSpecificPumpChange,
+  onPumpHorsepowerChange,
   pumpData 
 }: PumpSelectorProps) => {
   const pumpTypeOptions = [
@@ -28,8 +32,15 @@ export const PumpSelector = ({
 
   const handlePumpTypeChange = (value: string) => {
     onPumpTypeChange(value);
-    // Reset specific pump when type changes
+    // Reset specific pump and horsepower when type changes
     onSpecificPumpChange('');
+    onPumpHorsepowerChange('');
+  };
+
+  const handleSpecificPumpChange = (value: string) => {
+    onSpecificPumpChange(value);
+    // Reset horsepower when pump model changes
+    onPumpHorsepowerChange('');
   };
 
   const getSpecificPumpOptions = () => {
@@ -85,6 +96,34 @@ export const PumpSelector = ({
     }
   };
 
+  const getHorsepowerOptions = () => {
+    // Check if both pump type and specific pump are selected
+    if (!pumpType || !specificPump) {
+      return [];
+    }
+
+    // Convert pump type from value format back to display format
+    const displayPumpType = pumpTypeOptions.find(
+      opt => opt.toLowerCase().replace(/\s+/g, '-') === pumpType
+    );
+
+    if (!displayPumpType) {
+      return [];
+    }
+
+    // HP options based on pump type
+    switch (displayPumpType) {
+      case 'Variable Speed':
+        return ['0.75 HP', '1 HP', '1.5 HP', '2 HP', '2.7 HP', '3 HP'];
+      case 'Single Speed':
+        return ['0.5 HP', '0.75 HP', '1 HP', '1.5 HP', '2 HP', '3 HP'];
+      case 'Dual Speed':
+        return ['0.75 HP', '1 HP', '1.5 HP', '2 HP'];
+      default:
+        return [];
+    }
+  };
+
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -92,7 +131,7 @@ export const PumpSelector = ({
         <SelectTrigger>
           <SelectValue placeholder="Select pump type" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-background border shadow-md z-50">
           {pumpTypeOptions.map((option) => (
             <SelectItem key={option} value={option.toLowerCase().replace(/\s+/g, '-')}>
               {option}
@@ -102,14 +141,29 @@ export const PumpSelector = ({
       </Select>
       
       {pumpType && pumpType !== 'none' && (
-        <Select value={specificPump} onValueChange={onSpecificPumpChange}>
+        <Select value={specificPump} onValueChange={handleSpecificPumpChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select specific pump model" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background border shadow-md z-50">
             {getSpecificPumpOptions().map((pump) => (
               <SelectItem key={pump} value={pump.toLowerCase().replace(/\s+/g, '-')}>
                 {pump}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {pumpType && pumpType !== 'none' && specificPump && (
+        <Select value={pumpHorsepower} onValueChange={onPumpHorsepowerChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select horsepower (HP)" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border shadow-md z-50">
+            {getHorsepowerOptions().map((hp) => (
+              <SelectItem key={hp} value={hp.toLowerCase().replace(/\s+/g, '-')}>
+                {hp}
               </SelectItem>
             ))}
           </SelectContent>
