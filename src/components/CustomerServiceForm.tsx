@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ValveSelector } from '@/components/ValveSelector';
+import { PumpSelector } from '@/components/PumpSelector';
+import { FilterSelector } from '@/components/FilterSelector';
+import { HeaterSelector } from '@/components/HeaterSelector';
+import { EquipmentDataScraper } from '@/components/EquipmentDataScraper';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Waves, Droplets, Settings, Shield, ChevronDown, ChevronRight, Beaker, FileText } from 'lucide-react';
@@ -29,8 +33,11 @@ interface CustomerServiceDetails {
 
 interface PoolEquipment {
   pump?: string;
+  pump_specific?: string;
   filter?: string;
+  filter_specific?: string;
   heater?: string;
+  heater_specific?: string;
   valve_1_manufacturer?: string;
   valve_1_specific?: string;
   valve_2_manufacturer?: string;
@@ -81,6 +88,13 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
   const [valveData, setValveData] = useState<{ [manufacturer: string]: string[] }>({
     'Jandy': []
   });
+
+  // Add state for equipment data
+  const [equipmentData, setEquipmentData] = useState<{
+    pumps: { [type: string]: string[] };
+    filters: { [type: string]: string[] };
+    heaters: { [type: string]: string[] };
+  }>({ pumps: {}, filters: {}, heaters: {} });
 
   // Collapsible section states
   const [poolOpen, setPoolOpen] = useState(true);
@@ -189,6 +203,14 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
     setValveData(prev => ({ ...prev, ...newValveData }));
   };
 
+  const handleEquipmentDataFetched = (equipment: {
+    pumps: { [type: string]: string[] };
+    filters: { [type: string]: string[] };
+    heaters: { [type: string]: string[] };
+  }) => {
+    setEquipmentData(equipment);
+  };
+
   if (loading) {
     return (
       <Card className="mb-6">
@@ -242,53 +264,39 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
               <div className="space-y-4">
                 <h4 className="text-md font-medium">Pool Equipment</h4>
                 
-                {/* Dropdowns */}
+                {/* Equipment Data Loader */}
+                <div className="mb-4">
+                  <EquipmentDataScraper onEquipmentDataFetched={handleEquipmentDataFetched} />
+                </div>
+
+                {/* Enhanced Equipment Selectors */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="pump">Pump</Label>
-                    <Select value={poolEquipment.pump || ''} onValueChange={(value) => updatePoolEquipment('pump', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select pump type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="single-speed">Single Speed</SelectItem>
-                        <SelectItem value="dual-speed">Dual Speed</SelectItem>
-                        <SelectItem value="variable-speed">Variable Speed</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <PumpSelector
+                    label="Pump"
+                    pumpType={poolEquipment.pump || ''}
+                    specificPump={poolEquipment.pump_specific || ''}
+                    onPumpTypeChange={(value) => updatePoolEquipment('pump', value)}
+                    onSpecificPumpChange={(value) => updatePoolEquipment('pump_specific', value)}
+                    pumpData={equipmentData.pumps}
+                  />
 
-                  <div>
-                    <Label htmlFor="filter">Filter</Label>
-                    <Select value={poolEquipment.filter || ''} onValueChange={(value) => updatePoolEquipment('filter', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select filter type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sand">Sand Filter</SelectItem>
-                        <SelectItem value="cartridge">Cartridge Filter</SelectItem>
-                        <SelectItem value="de">DE Filter</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <FilterSelector
+                    label="Filter"
+                    filterType={poolEquipment.filter || ''}
+                    specificFilter={poolEquipment.filter_specific || ''}
+                    onFilterTypeChange={(value) => updatePoolEquipment('filter', value)}
+                    onSpecificFilterChange={(value) => updatePoolEquipment('filter_specific', value)}
+                    filterData={equipmentData.filters}
+                  />
 
-                  <div>
-                    <Label htmlFor="heater">Heater</Label>
-                    <Select value={poolEquipment.heater || ''} onValueChange={(value) => updatePoolEquipment('heater', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select heater type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gas">Gas Heater</SelectItem>
-                        <SelectItem value="electric">Electric Heater</SelectItem>
-                        <SelectItem value="heat-pump">Heat Pump</SelectItem>
-                        <SelectItem value="solar">Solar Heater</SelectItem>
-                        <SelectItem value="none">None</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <HeaterSelector
+                    label="Heater"
+                    heaterType={poolEquipment.heater || ''}
+                    specificHeater={poolEquipment.heater_specific || ''}
+                    onHeaterTypeChange={(value) => updatePoolEquipment('heater', value)}
+                    onSpecificHeaterChange={(value) => updatePoolEquipment('heater_specific', value)}
+                    heaterData={equipmentData.heaters}
+                  />
                 </div>
 
                 {/* Valve Selectors */}
