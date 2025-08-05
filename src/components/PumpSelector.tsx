@@ -114,11 +114,11 @@ export const PumpSelector = ({
     // HP options based on pump type
     switch (displayPumpType) {
       case 'Variable Speed':
-        return ['0.75 HP', '1 HP', '1.5 HP', '2 HP', '2.7 HP', '3 HP'];
+        return ['0.75 HP', '1 HP', '1.5 HP', '1.65 HP', '1.85 HP', '2 HP', '2.7 HP', '3 HP'];
       case 'Single Speed':
-        return ['0.5 HP', '0.75 HP', '1 HP', '1.5 HP', '2 HP', '3 HP'];
+        return ['0.5 HP', '0.75 HP', '1 HP', '1.5 HP', '1.65 HP', '1.85 HP', '2 HP', '3 HP'];
       case 'Dual Speed':
-        return ['0.75 HP', '1 HP', '1.5 HP', '2 HP'];
+        return ['0.75 HP', '1 HP', '1.5 HP', '1.65 HP', '1.85 HP', '2 HP'];
       default:
         return [];
     }
