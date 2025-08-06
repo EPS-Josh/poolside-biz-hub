@@ -89,70 +89,61 @@ const WaterTestAnalyzer = () => {
 
   const startCamera = async () => {
     try {
-      console.log('Attempting to start camera...');
+      console.log('=== Starting Camera ===');
       
-      // First check if mediaDevices is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera not supported on this device');
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Camera not supported');
       }
 
-      // Simplified constraints for better mobile compatibility
-      const constraints = {
-        video: true, // Start with basic constraints
-        audio: false
-      };
-
-      console.log('Requesting camera with constraints:', constraints);
+      const constraints = { video: true };
+      console.log('Requesting camera access...');
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log('Camera stream obtained:', mediaStream);
-      console.log('Stream tracks:', mediaStream.getTracks());
+      console.log('✓ Camera stream obtained');
+      console.log('Stream details:', {
+        id: mediaStream.id,
+        active: mediaStream.active,
+        videoTracks: mediaStream.getVideoTracks().length
+      });
       
       setStream(mediaStream);
       
+      // Wait for next frame to ensure video element is rendered
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      
       if (videoRef.current) {
+        console.log('✓ Video element found');
         videoRef.current.srcObject = mediaStream;
-        console.log('Stream assigned to video element');
         
-        // Force the video to play
+        // Try to play the video
         try {
           await videoRef.current.play();
-          console.log('Video playing successfully');
+          console.log('✓ Video playing');
         } catch (playError) {
-          console.error('Error playing video:', playError);
-          // Try to play again after a short delay
-          setTimeout(async () => {
-            try {
-              await videoRef.current?.play();
-              console.log('Video playing after retry');
-            } catch (retryError) {
-              console.error('Video play retry failed:', retryError);
-            }
-          }, 100);
+          console.warn('Play failed, will retry:', playError);
         }
+      } else {
+        console.error('✗ Video element not found');
       }
       
       setIsAnalyzing(true);
-      console.log('Camera started successfully');
+      console.log('=== Camera setup complete ===');
       
     } catch (error) {
-      console.error('Camera error details:', error);
-      let errorMessage = 'Unable to access camera.';
+      console.error('=== Camera Error ===', error);
       
+      let message = 'Cannot access camera';
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          errorMessage = 'Camera permission denied. Please allow camera access and try again.';
+          message = 'Camera permission denied';
         } else if (error.name === 'NotFoundError') {
-          errorMessage = 'No camera found on this device.';
-        } else if (error.name === 'NotSupportedError') {
-          errorMessage = 'Camera not supported on this device.';
-        } else if (error.name === 'NotReadableError') {
-          errorMessage = 'Camera is being used by another application.';
+          message = 'No camera found';
         }
       }
       
       toast({
         title: "Camera Error",
-        description: errorMessage,
+        description: message,
         variant: "destructive",
       });
     }
@@ -479,40 +470,69 @@ const WaterTestAnalyzer = () => {
 
         {/* Camera Feed */}
         {isAnalyzing && (
-          <div className="relative">
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              controls={false}
-              className="w-full max-w-2xl mx-auto rounded-lg border bg-black min-h-[300px] object-cover"
-              onLoadedMetadata={() => {
-                console.log('Video metadata loaded, dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
-              }}
-              onCanPlay={() => {
-                console.log('Video can play');
-                videoRef.current?.play();
-              }}
-              onPlaying={() => console.log('Video is playing')}
-              onError={(e) => console.error('Video error:', e)}
-            />
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Camera Status: {stream ? 'Connected' : 'Not Connected'}
+              </p>
+              {stream && (
+                <p className="text-sm text-muted-foreground">
+                  Video Tracks: {stream.getVideoTracks().length}
+                </p>
+              )}
+            </div>
+            
+            <div className="relative bg-black rounded-lg overflow-hidden mx-auto max-w-2xl">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-auto block"
+                style={{ 
+                  maxHeight: '400px',
+                  backgroundColor: '#000000'
+                }}
+                onLoadedMetadata={(e) => {
+                  const video = e.currentTarget;
+                  console.log('Video loaded - dimensions:', video.videoWidth, 'x', video.videoHeight);
+                  console.log('Video element dimensions:', video.clientWidth, 'x', video.clientHeight);
+                }}
+                onCanPlay={() => {
+                  console.log('Video can play');
+                }}
+                onPlaying={() => {
+                  console.log('Video is now playing');
+                }}
+                onError={(e) => {
+                  console.error('Video error:', e);
+                }}
+                onLoadStart={() => console.log('Video load started')}
+                onLoadedData={() => console.log('Video data loaded')}
+              />
+              
+              {/* Debug overlay */}
+              <div className="absolute top-2 left-2 bg-black/75 text-white p-2 rounded text-xs">
+                <div>Stream: {stream ? '✓' : '✗'}</div>
+                <div>Video: {videoRef.current ? '✓' : '✗'}</div>
+                <div>Tracks: {stream?.getVideoTracks().length || 0}</div>
+              </div>
+            </div>
+            
             <canvas ref={canvasRef} className="hidden" />
             
             {/* Test strip guide overlay */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="relative w-full h-full">
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                              border-2 border-primary border-dashed rounded-lg p-4 bg-background/80">
-                  <p className="text-sm text-center">Position test strip here</p>
-                  <div className="flex justify-between mt-2 gap-2">
-                    <div className="w-8 h-8 border border-primary rounded bg-primary/20"></div>
-                    <div className="w-8 h-8 border border-primary rounded bg-primary/20"></div>
-                    <div className="w-8 h-8 border border-primary rounded bg-primary/20"></div>
-                    <div className="w-8 h-8 border border-primary rounded bg-primary/20"></div>
-                  </div>
-                </div>
+            <div className="text-center space-y-2">
+              <p className="text-sm font-medium">Position test strip in camera view</p>
+              <div className="flex justify-center gap-2">
+                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
+                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
+                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
+                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Chlorine - pH - Alkalinity - Cyanuric Acid
+              </p>
             </div>
           </div>
         )}
