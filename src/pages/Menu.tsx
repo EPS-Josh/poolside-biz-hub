@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import WaterTestAnalyzer from '@/components/WaterTestAnalyzer';
 import { 
   Users, 
   DollarSign, 
@@ -154,6 +155,11 @@ const Menu = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Water Test Analyzer Section */}
+            <div className="mt-12">
+              <WaterTestAnalyzer />
             </div>
 
             {/* Quick Actions Section */}
