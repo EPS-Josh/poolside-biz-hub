@@ -96,18 +96,16 @@ const WaterTestAnalyzer = () => {
         throw new Error('Camera not supported on this device');
       }
 
+      // Simplified constraints for better mobile compatibility
       const constraints = {
-        video: { 
-          facingMode: { ideal: 'environment' }, // Use ideal instead of exact
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 }
-        },
+        video: true, // Start with basic constraints
         audio: false
       };
 
       console.log('Requesting camera with constraints:', constraints);
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log('Camera stream obtained:', mediaStream);
+      console.log('Stream tracks:', mediaStream.getTracks());
       
       setStream(mediaStream);
       
@@ -115,13 +113,22 @@ const WaterTestAnalyzer = () => {
         videoRef.current.srcObject = mediaStream;
         console.log('Stream assigned to video element');
         
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded, playing...');
-          videoRef.current?.play().catch(err => {
-            console.error('Error playing video:', err);
-          });
-        };
+        // Force the video to play
+        try {
+          await videoRef.current.play();
+          console.log('Video playing successfully');
+        } catch (playError) {
+          console.error('Error playing video:', playError);
+          // Try to play again after a short delay
+          setTimeout(async () => {
+            try {
+              await videoRef.current?.play();
+              console.log('Video playing after retry');
+            } catch (retryError) {
+              console.error('Video play retry failed:', retryError);
+            }
+          }, 100);
+        }
       }
       
       setIsAnalyzing(true);
@@ -479,10 +486,15 @@ const WaterTestAnalyzer = () => {
               playsInline
               muted
               controls={false}
-              style={{ transform: 'scaleX(-1)' }}
-              className="w-full max-w-2xl mx-auto rounded-lg border bg-black min-h-[300px]"
-              onLoadedMetadata={() => console.log('Video metadata loaded')}
-              onCanPlay={() => console.log('Video can play')}
+              className="w-full max-w-2xl mx-auto rounded-lg border bg-black min-h-[300px] object-cover"
+              onLoadedMetadata={() => {
+                console.log('Video metadata loaded, dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+              }}
+              onCanPlay={() => {
+                console.log('Video can play');
+                videoRef.current?.play();
+              }}
+              onPlaying={() => console.log('Video is playing')}
               onError={(e) => console.error('Video error:', e)}
             />
             <canvas ref={canvasRef} className="hidden" />
