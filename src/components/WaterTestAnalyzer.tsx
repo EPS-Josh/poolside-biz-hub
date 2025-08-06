@@ -184,18 +184,21 @@ const WaterTestAnalyzer = () => {
   };
 
   const captureAndAnalyze = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || isCapturing) return;
+    if (!videoRef.current || !canvasRef.current || isCapturing) {
+      console.log('Skipping analysis - missing elements or already capturing');
+      return;
+    }
 
     const video = videoRef.current;
     
     // Check if video is ready and has dimensions
     if (video.videoWidth === 0 || video.videoHeight === 0) {
-      console.log('Video not ready yet, skipping analysis');
+      console.log('Video not ready yet, dimensions:', video.videoWidth, 'x', video.videoHeight);
       return;
     }
 
+    console.log('🔍 Starting capture and analysis...');
     setIsCapturing(true);
-    console.log('Starting capture and analysis...');
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -210,38 +213,48 @@ const WaterTestAnalyzer = () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
-      console.log('Image captured to canvas:', canvas.width, 'x', canvas.height);
+      console.log('✅ Image captured to canvas:', canvas.width, 'x', canvas.height);
 
       // Analyze the image for test strip colors
       analyzeTestStrip(ctx, canvas.width, canvas.height);
+      
+      // Show a visual feedback that analysis happened
+      toast({
+        title: "Analysis Complete",
+        description: "Test strip analyzed - check results below",
+        duration: 2000,
+      });
+      
     } catch (error) {
-      console.error('Error during capture and analysis:', error);
+      console.error('❌ Error during capture and analysis:', error);
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing]);
+  }, [isCapturing, toast]);
 
   const analyzeTestStrip = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    console.log('Analyzing test strip with canvas dimensions:', width, 'x', height);
+    console.log('🧪 Analyzing test strip with canvas dimensions:', width, 'x', height);
     
     if (width <= 0 || height <= 0) {
-      console.error('Invalid canvas dimensions');
+      console.error('❌ Invalid canvas dimensions');
       return;
     }
 
     const results: TestResult[] = [];
     
     // Define regions where test pads typically appear (more conservative sizing)
-    const padWidth = Math.floor(width * 0.1);
-    const padHeight = Math.floor(height * 0.15);
+    const padWidth = Math.max(50, Math.floor(width * 0.08));
+    const padHeight = Math.max(50, Math.floor(height * 0.12));
     const centerY = Math.floor(height * 0.5 - padHeight / 2);
     
     const testPadRegions = [
-      { x: Math.floor(width * 0.2), y: centerY, width: padWidth, height: padHeight }, // Free Chlorine
-      { x: Math.floor(width * 0.4), y: centerY, width: padWidth, height: padHeight }, // pH
-      { x: Math.floor(width * 0.6), y: centerY, width: padWidth, height: padHeight }, // Total Alkalinity
-      { x: Math.floor(width * 0.8 - padWidth), y: centerY, width: padWidth, height: padHeight }, // Cyanuric Acid
+      { x: Math.floor(width * 0.15), y: centerY, width: padWidth, height: padHeight }, // Free Chlorine
+      { x: Math.floor(width * 0.35), y: centerY, width: padWidth, height: padHeight }, // pH
+      { x: Math.floor(width * 0.55), y: centerY, width: padWidth, height: padHeight }, // Total Alkalinity
+      { x: Math.floor(width * 0.75 - padWidth), y: centerY, width: padWidth, height: padHeight }, // Cyanuric Acid
     ];
+
+    console.log('📍 Test pad regions:', testPadRegions);
 
     testPadRegions.forEach((region, index) => {
       if (index >= testStripParameters.length) return;
@@ -251,17 +264,23 @@ const WaterTestAnalyzer = () => {
           region.x + region.width > width || 
           region.y + region.height > height ||
           region.width <= 0 || region.height <= 0) {
-        console.warn(`Skipping region ${index} - out of bounds:`, region);
+        console.warn(`⚠️ Skipping region ${index} - out of bounds:`, region);
         return;
       }
 
       try {
-        console.log(`Analyzing region ${index}:`, region);
+        console.log(`🔬 Analyzing region ${index} (${testStripParameters[index].name}):`, region);
         const imageData = ctx.getImageData(region.x, region.y, region.width, region.height);
         const avgColor = getAverageColor(imageData);
         const parameter = testStripParameters[index];
         const value = matchColorToValue(avgColor, parameter);
         const status = getParameterStatus(value, parameter.idealRange);
+
+        console.log(`📊 Result for ${parameter.name}:`, {
+          color: avgColor,
+          value: value,
+          status: status
+        });
 
         results.push({
           parameter: parameter.name,
@@ -271,14 +290,17 @@ const WaterTestAnalyzer = () => {
           color: `rgb(${avgColor.r}, ${avgColor.g}, ${avgColor.b})`
         });
       } catch (error) {
-        console.error(`Error analyzing region ${index}:`, error);
+        console.error(`❌ Error analyzing region ${index}:`, error);
       }
     });
 
-    console.log('Analysis results:', results);
+    console.log('📋 Final analysis results:', results);
     setTestResults(results);
     if (results.length > 0) {
       generateRecommendations(results);
+      console.log('✅ Recommendations generated');
+    } else {
+      console.log('⚠️ No results to generate recommendations from');
     }
   };
 
@@ -443,17 +465,24 @@ const WaterTestAnalyzer = () => {
     }
   };
 
-  // Auto-analyze every 3 seconds when camera is active and video is ready
+  // Auto-analyze every 5 seconds when camera is active and video is ready
   useEffect(() => {
     if (!isAnalyzing) return;
 
+    console.log('🔄 Setting up auto-analysis timer');
     const interval = setInterval(() => {
       if (videoRef.current && videoRef.current.videoWidth > 0) {
+        console.log('⏰ Auto-analysis triggered');
         captureAndAnalyze();
+      } else {
+        console.log('⏸️ Skipping auto-analysis - video not ready');
       }
-    }, 3000); // Increased to 3 seconds to give more time
+    }, 5000); // Increased to 5 seconds for easier testing
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('🛑 Clearing auto-analysis timer');
+      clearInterval(interval);
+    };
   }, [isAnalyzing, captureAndAnalyze]);
 
   return (
