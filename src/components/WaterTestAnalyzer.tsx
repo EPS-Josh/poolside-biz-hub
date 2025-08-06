@@ -89,22 +89,63 @@ const WaterTestAnalyzer = () => {
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      console.log('Attempting to start camera...');
+      
+      // First check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported on this device');
+      }
+
+      const constraints = {
         video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
+          facingMode: { ideal: 'environment' }, // Use ideal instead of exact
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 }
+        },
+        audio: false
+      };
+
+      console.log('Requesting camera with constraints:', constraints);
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Camera stream obtained:', mediaStream);
+      
       setStream(mediaStream);
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        console.log('Stream assigned to video element');
+        
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded, playing...');
+          videoRef.current?.play().catch(err => {
+            console.error('Error playing video:', err);
+          });
+        };
       }
+      
       setIsAnalyzing(true);
+      console.log('Camera started successfully');
+      
     } catch (error) {
+      console.error('Camera error details:', error);
+      let errorMessage = 'Unable to access camera.';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Camera permission denied. Please allow camera access and try again.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'No camera found on this device.';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage = 'Camera not supported on this device.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Camera is being used by another application.';
+        }
+      }
+      
       toast({
         title: "Camera Error",
-        description: "Unable to access camera. Please check permissions.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -388,7 +429,9 @@ const WaterTestAnalyzer = () => {
               autoPlay
               playsInline
               muted
-              className="w-full max-w-2xl mx-auto rounded-lg border"
+              controls={false}
+              style={{ transform: 'scaleX(-1)' }}
+              className="w-full max-w-2xl mx-auto rounded-lg border bg-black"
             />
             <canvas ref={canvasRef} className="hidden" />
             
