@@ -95,8 +95,11 @@ const WaterTestAnalyzer = () => {
         throw new Error('Camera not supported');
       }
 
-      const constraints = { video: true };
-      console.log('Requesting camera access...');
+      const constraints = { 
+        video: { 
+          facingMode: "environment" // Use rear camera
+        } 
+      };
       
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       console.log('✓ Camera stream obtained');
