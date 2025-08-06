@@ -107,12 +107,13 @@ const WaterTestAnalyzer = () => {
       });
       
       setStream(mediaStream);
+      setIsAnalyzing(true); // Set this first to render the video element
       
-      // Wait for next frame to ensure video element is rendered
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      // Wait for React to render the video element
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       if (videoRef.current) {
-        console.log('✓ Video element found');
+        console.log('✓ Video element found after render');
         videoRef.current.srcObject = mediaStream;
         
         // Try to play the video
@@ -121,12 +122,32 @@ const WaterTestAnalyzer = () => {
           console.log('✓ Video playing');
         } catch (playError) {
           console.warn('Play failed, will retry:', playError);
+          // Retry after a short delay
+          setTimeout(async () => {
+            try {
+              if (videoRef.current) {
+                await videoRef.current.play();
+                console.log('✓ Video playing after retry');
+              }
+            } catch (retryError) {
+              console.error('✗ Retry failed:', retryError);
+            }
+          }, 500);
         }
       } else {
-        console.error('✗ Video element not found');
+        console.error('✗ Video element still not found after render');
+        // Try again with longer delay
+        setTimeout(() => {
+          if (videoRef.current) {
+            console.log('✓ Video element found on delayed retry');
+            videoRef.current.srcObject = mediaStream;
+            videoRef.current.play().catch(err => console.log('Delayed play error:', err));
+          } else {
+            console.error('✗ Video element never appeared');
+          }
+        }, 1000);
       }
       
-      setIsAnalyzing(true);
       console.log('=== Camera setup complete ===');
       
     } catch (error) {
