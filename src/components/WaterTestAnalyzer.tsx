@@ -442,14 +442,14 @@ const WaterTestAnalyzer = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Camera Controls */}
-        <div className="flex gap-4 justify-center">
+        <div className="flex gap-4 justify-center flex-wrap">
           {!isAnalyzing ? (
             <Button onClick={startCamera} className="flex items-center gap-2">
               <Camera className="h-4 w-4" />
               Start Camera Analysis
             </Button>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button onClick={captureAndAnalyze} variant="secondary" disabled={isCapturing}>
                 <RotateCcw className="h-4 w-4" />
                 {isCapturing ? 'Analyzing...' : 'Analyze Now'}
@@ -464,74 +464,75 @@ const WaterTestAnalyzer = () => {
                   Save Results
                 </Button>
               )}
+              <Button onClick={() => {
+                if (videoRef.current) {
+                  console.log('Manual play attempt');
+                  videoRef.current.play().then(() => {
+                    console.log('Manual play successful');
+                  }).catch(err => {
+                    console.error('Manual play failed:', err);
+                  });
+                }
+              }} variant="outline">
+                🎬 Force Play
+              </Button>
             </div>
           )}
         </div>
 
         {/* Camera Feed */}
         {isAnalyzing && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Camera Status: {stream ? 'Connected' : 'Not Connected'}
-              </p>
-              {stream && (
-                <p className="text-sm text-muted-foreground">
-                  Video Tracks: {stream.getVideoTracks().length}
-                </p>
-              )}
+          <div className="space-y-4 border-2 border-dashed border-primary/50 p-4 rounded-lg">
+            <div className="text-center space-y-2">
+              <p className="text-sm font-medium">Camera Status</p>
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>Stream: {stream ? '✅ Active' : '❌ None'}</div>
+                <div>Video Element: {videoRef.current ? '✅ Ready' : '❌ Missing'}</div>
+                <div>Video Tracks: {stream?.getVideoTracks().length || 0}</div>
+                <div>Stream Active: {stream?.active ? '✅ Yes' : '❌ No'}</div>
+              </div>
             </div>
             
-            <div className="relative bg-black rounded-lg overflow-hidden mx-auto max-w-2xl">
+            {/* Simplified Video Element */}
+            <div className="w-full max-w-md mx-auto bg-gray-900 rounded-lg overflow-hidden border-4 border-yellow-400">
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-auto block"
-                style={{ 
-                  maxHeight: '400px',
-                  backgroundColor: '#000000'
-                }}
+                controls
+                className="w-full h-64 bg-black"
                 onLoadedMetadata={(e) => {
                   const video = e.currentTarget;
-                  console.log('Video loaded - dimensions:', video.videoWidth, 'x', video.videoHeight);
-                  console.log('Video element dimensions:', video.clientWidth, 'x', video.clientHeight);
+                  console.log('📹 Video metadata loaded:', {
+                    videoWidth: video.videoWidth,
+                    videoHeight: video.videoHeight,
+                    clientWidth: video.clientWidth,
+                    clientHeight: video.clientHeight,
+                    readyState: video.readyState
+                  });
                 }}
-                onCanPlay={() => {
-                  console.log('Video can play');
+                onCanPlay={() => console.log('📹 Video can play')}
+                onPlay={() => console.log('📹 Video started playing')}
+                onPlaying={() => console.log('📹 Video is playing')}
+                onPause={() => console.log('📹 Video paused')}
+                onError={(e) => console.error('📹 Video error:', e)}
+                onLoadStart={() => console.log('📹 Video load started')}
+                onLoadedData={() => console.log('📹 Video data loaded')}
+                onTimeUpdate={() => {
+                  // Only log first few time updates to avoid spam
+                  if (videoRef.current && videoRef.current.currentTime < 1) {
+                    console.log('📹 Video time update:', videoRef.current.currentTime);
+                  }
                 }}
-                onPlaying={() => {
-                  console.log('Video is now playing');
-                }}
-                onError={(e) => {
-                  console.error('Video error:', e);
-                }}
-                onLoadStart={() => console.log('Video load started')}
-                onLoadedData={() => console.log('Video data loaded')}
               />
-              
-              {/* Debug overlay */}
-              <div className="absolute top-2 left-2 bg-black/75 text-white p-2 rounded text-xs">
-                <div>Stream: {stream ? '✓' : '✗'}</div>
-                <div>Video: {videoRef.current ? '✓' : '✗'}</div>
-                <div>Tracks: {stream?.getVideoTracks().length || 0}</div>
-              </div>
             </div>
             
-            <canvas ref={canvasRef} className="hidden" />
-            
-            {/* Test strip guide overlay */}
-            <div className="text-center space-y-2">
-              <p className="text-sm font-medium">Position test strip in camera view</p>
-              <div className="flex justify-center gap-2">
-                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
-                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
-                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
-                <div className="w-6 h-6 border-2 border-primary rounded bg-primary/20"></div>
-              </div>
+            <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                Chlorine - pH - Alkalinity - Cyanuric Acid
+                If you see a black rectangle above, the camera is connected but not displaying.
+                <br />
+                Check console for detailed video logs (F12 → Console).
               </p>
             </div>
           </div>
