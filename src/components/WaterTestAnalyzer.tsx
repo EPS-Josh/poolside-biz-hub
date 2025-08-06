@@ -184,8 +184,23 @@ const WaterTestAnalyzer = () => {
   };
 
   const captureAndAnalyze = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || isCapturing) {
-      console.log('Skipping analysis - missing elements or already capturing');
+    console.log('🔍 Analysis attempt - checking elements...');
+    console.log('  - videoRef.current:', !!videoRef.current);
+    console.log('  - canvasRef.current:', !!canvasRef.current);
+    console.log('  - isCapturing:', isCapturing);
+    
+    if (!videoRef.current) {
+      console.log('❌ No video element');
+      return;
+    }
+    
+    if (!canvasRef.current) {
+      console.log('❌ No canvas element');
+      return;
+    }
+    
+    if (isCapturing) {
+      console.log('❌ Already capturing');
       return;
     }
 
@@ -193,11 +208,11 @@ const WaterTestAnalyzer = () => {
     
     // Check if video is ready and has dimensions
     if (video.videoWidth === 0 || video.videoHeight === 0) {
-      console.log('Video not ready yet, dimensions:', video.videoWidth, 'x', video.videoHeight);
+      console.log('❌ Video not ready yet, dimensions:', video.videoWidth, 'x', video.videoHeight);
       return;
     }
 
-    console.log('🔍 Starting capture and analysis...');
+    console.log('✅ All checks passed - starting analysis');
     setIsCapturing(true);
     
     const canvas = canvasRef.current;
@@ -547,7 +562,7 @@ const WaterTestAnalyzer = () => {
             </div>
             
             {/* Simplified Video Element */}
-            <div className="w-full max-w-md mx-auto bg-gray-900 rounded-lg overflow-hidden border-4 border-yellow-400">
+            <div className="w-full max-w-md mx-auto bg-gray-900 rounded-lg overflow-hidden border-4 border-yellow-400 relative">
               <video
                 ref={videoRef}
                 autoPlay
@@ -579,13 +594,40 @@ const WaterTestAnalyzer = () => {
                   }
                 }}
               />
+              
+              {/* Visual indicators for test strip regions */}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="relative w-full h-full">
+                  <div className="absolute top-1/2 left-[15%] transform -translate-y-1/2 w-[8%] h-[30%] border-2 border-red-500 bg-red-500/20 rounded flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">Cl</span>
+                  </div>
+                  <div className="absolute top-1/2 left-[35%] transform -translate-y-1/2 w-[8%] h-[30%] border-2 border-blue-500 bg-blue-500/20 rounded flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">pH</span>
+                  </div>
+                  <div className="absolute top-1/2 left-[55%] transform -translate-y-1/2 w-[8%] h-[30%] border-2 border-green-500 bg-green-500/20 rounded flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">TA</span>
+                  </div>
+                  <div className="absolute top-1/2 left-[67%] transform -translate-y-1/2 w-[8%] h-[30%] border-2 border-purple-500 bg-purple-500/20 rounded flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">CYA</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Analysis status indicator */}
+              <div className="absolute bottom-2 left-2 bg-black/75 text-white p-1 rounded text-xs">
+                {isCapturing ? '🔍 Analyzing...' : '⏸️ Ready'}
+              </div>
             </div>
+            
+            <canvas ref={canvasRef} style={{ display: 'block', border: '1px solid red', width: '100px', height: '100px' }} />
             
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                If you see a black rectangle above, the camera is connected but not displaying.
+                Canvas element: {canvasRef.current ? '✅ Present' : '❌ Missing'}
                 <br />
-                Check console for detailed video logs (F12 → Console).
+                Position test strip so the colored pads align with the colored rectangles above.
+                <br />
+                Check console for detailed analysis logs (F12 → Console).
               </p>
             </div>
           </div>
