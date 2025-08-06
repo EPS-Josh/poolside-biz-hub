@@ -164,53 +164,100 @@ const WaterTestAnalyzer = () => {
   const captureAndAnalyze = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || isCapturing) return;
 
-    setIsCapturing(true);
     const video = videoRef.current;
+    
+    // Check if video is ready and has dimensions
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.log('Video not ready yet, skipping analysis');
+      return;
+    }
+
+    setIsCapturing(true);
+    console.log('Starting capture and analysis...');
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    if (!ctx) return;
+    if (!ctx) {
+      console.error('Cannot get canvas context');
+      setIsCapturing(false);
+      return;
+    }
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
+    try {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      console.log('Image captured to canvas:', canvas.width, 'x', canvas.height);
 
-    // Analyze the image for test strip colors
-    analyzeTestStrip(ctx, canvas.width, canvas.height);
-    setIsCapturing(false);
+      // Analyze the image for test strip colors
+      analyzeTestStrip(ctx, canvas.width, canvas.height);
+    } catch (error) {
+      console.error('Error during capture and analysis:', error);
+    } finally {
+      setIsCapturing(false);
+    }
   }, [isCapturing]);
 
   const analyzeTestStrip = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    console.log('Analyzing test strip with canvas dimensions:', width, 'x', height);
+    
+    if (width <= 0 || height <= 0) {
+      console.error('Invalid canvas dimensions');
+      return;
+    }
+
     const results: TestResult[] = [];
     
-    // Define regions where test pads typically appear (simplified)
+    // Define regions where test pads typically appear (more conservative sizing)
+    const padWidth = Math.floor(width * 0.1);
+    const padHeight = Math.floor(height * 0.15);
+    const centerY = Math.floor(height * 0.5 - padHeight / 2);
+    
     const testPadRegions = [
-      { x: width * 0.2, y: height * 0.4, width: width * 0.15, height: height * 0.2 }, // Free Chlorine
-      { x: width * 0.4, y: height * 0.4, width: width * 0.15, height: height * 0.2 }, // pH
-      { x: width * 0.6, y: height * 0.4, width: width * 0.15, height: height * 0.2 }, // Total Alkalinity
-      { x: width * 0.8, y: height * 0.4, width: width * 0.15, height: height * 0.2 }, // Cyanuric Acid
+      { x: Math.floor(width * 0.2), y: centerY, width: padWidth, height: padHeight }, // Free Chlorine
+      { x: Math.floor(width * 0.4), y: centerY, width: padWidth, height: padHeight }, // pH
+      { x: Math.floor(width * 0.6), y: centerY, width: padWidth, height: padHeight }, // Total Alkalinity
+      { x: Math.floor(width * 0.8 - padWidth), y: centerY, width: padWidth, height: padHeight }, // Cyanuric Acid
     ];
 
     testPadRegions.forEach((region, index) => {
       if (index >= testStripParameters.length) return;
 
-      const imageData = ctx.getImageData(region.x, region.y, region.width, region.height);
-      const avgColor = getAverageColor(imageData);
-      const parameter = testStripParameters[index];
-      const value = matchColorToValue(avgColor, parameter);
-      const status = getParameterStatus(value, parameter.idealRange);
+      // Validate region bounds
+      if (region.x < 0 || region.y < 0 || 
+          region.x + region.width > width || 
+          region.y + region.height > height ||
+          region.width <= 0 || region.height <= 0) {
+        console.warn(`Skipping region ${index} - out of bounds:`, region);
+        return;
+      }
 
-      results.push({
-        parameter: parameter.name,
-        value,
-        unit: parameter.unit,
-        status,
-        color: `rgb(${avgColor.r}, ${avgColor.g}, ${avgColor.b})`
-      });
+      try {
+        console.log(`Analyzing region ${index}:`, region);
+        const imageData = ctx.getImageData(region.x, region.y, region.width, region.height);
+        const avgColor = getAverageColor(imageData);
+        const parameter = testStripParameters[index];
+        const value = matchColorToValue(avgColor, parameter);
+        const status = getParameterStatus(value, parameter.idealRange);
+
+        results.push({
+          parameter: parameter.name,
+          value,
+          unit: parameter.unit,
+          status,
+          color: `rgb(${avgColor.r}, ${avgColor.g}, ${avgColor.b})`
+        });
+      } catch (error) {
+        console.error(`Error analyzing region ${index}:`, error);
+      }
     });
 
+    console.log('Analysis results:', results);
     setTestResults(results);
-    generateRecommendations(results);
+    if (results.length > 0) {
+      generateRecommendations(results);
+    }
   };
 
   const getAverageColor = (imageData: ImageData) => {
@@ -374,13 +421,15 @@ const WaterTestAnalyzer = () => {
     }
   };
 
-  // Auto-analyze every 2 seconds when camera is active
+  // Auto-analyze every 3 seconds when camera is active and video is ready
   useEffect(() => {
     if (!isAnalyzing) return;
 
     const interval = setInterval(() => {
-      captureAndAnalyze();
-    }, 2000);
+      if (videoRef.current && videoRef.current.videoWidth > 0) {
+        captureAndAnalyze();
+      }
+    }, 3000); // Increased to 3 seconds to give more time
 
     return () => clearInterval(interval);
   }, [isAnalyzing, captureAndAnalyze]);
@@ -431,7 +480,10 @@ const WaterTestAnalyzer = () => {
               muted
               controls={false}
               style={{ transform: 'scaleX(-1)' }}
-              className="w-full max-w-2xl mx-auto rounded-lg border bg-black"
+              className="w-full max-w-2xl mx-auto rounded-lg border bg-black min-h-[300px]"
+              onLoadedMetadata={() => console.log('Video metadata loaded')}
+              onCanPlay={() => console.log('Video can play')}
+              onError={(e) => console.error('Video error:', e)}
             />
             <canvas ref={canvasRef} className="hidden" />
             
