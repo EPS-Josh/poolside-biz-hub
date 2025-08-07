@@ -179,8 +179,6 @@ const WaterTestAnalyzer = () => {
       setStream(null);
     }
     setIsAnalyzing(false);
-    setTestResults([]);
-    setRecommendations([]);
   };
 
   const captureAndAnalyze = useCallback(() => {
@@ -239,6 +237,9 @@ const WaterTestAnalyzer = () => {
         description: "Test strip analyzed - check results below",
         duration: 2000,
       });
+
+      // Stop camera after analysis
+      stopCamera();
       
     } catch (error) {
       console.error('❌ Error during capture and analysis:', error);
@@ -480,23 +481,23 @@ const WaterTestAnalyzer = () => {
     }
   };
 
-  // Auto-analyze every 5 seconds when camera is active and video is ready
+  // Auto-analyze after 3 seconds when camera starts (one-time analysis)
   useEffect(() => {
     if (!isAnalyzing) return;
 
-    console.log('🔄 Setting up auto-analysis timer');
-    const interval = setInterval(() => {
+    console.log('🔄 Setting up one-time auto-analysis');
+    const timeout = setTimeout(() => {
       if (videoRef.current && videoRef.current.videoWidth > 0) {
-        console.log('⏰ Auto-analysis triggered');
+        console.log('⏰ One-time auto-analysis triggered');
         captureAndAnalyze();
       } else {
         console.log('⏸️ Skipping auto-analysis - video not ready');
       }
-    }, 5000); // Increased to 5 seconds for easier testing
+    }, 3000); // Run once after 3 seconds
 
     return () => {
-      console.log('🛑 Clearing auto-analysis timer');
-      clearInterval(interval);
+      console.log('🛑 Clearing auto-analysis timeout');
+      clearTimeout(timeout);
     };
   }, [isAnalyzing, captureAndAnalyze]);
 
@@ -511,11 +512,26 @@ const WaterTestAnalyzer = () => {
       <CardContent className="space-y-6">
         {/* Camera Controls */}
         <div className="flex gap-4 justify-center flex-wrap">
-          {!isAnalyzing ? (
+          {!isAnalyzing && testResults.length === 0 ? (
             <Button onClick={startCamera} className="flex items-center gap-2">
               <Camera className="h-4 w-4" />
               Start Camera Analysis
             </Button>
+          ) : testResults.length > 0 ? (
+            <div className="flex gap-2 flex-wrap">
+              <Button onClick={() => {
+                setTestResults([]);
+                setRecommendations([]);
+                startCamera();
+              }} className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Run Analysis Again
+              </Button>
+              <Button onClick={saveResults} variant="outline">
+                <Save className="h-4 w-4" />
+                Save Results
+              </Button>
+            </div>
           ) : (
             <div className="flex gap-2 flex-wrap">
               <Button onClick={captureAndAnalyze} variant="secondary" disabled={isCapturing}>
@@ -525,24 +541,6 @@ const WaterTestAnalyzer = () => {
               <Button onClick={stopCamera} variant="outline">
                 <CameraOff className="h-4 w-4" />
                 Stop Camera
-              </Button>
-              {testResults.length > 0 && (
-                <Button onClick={saveResults} variant="outline">
-                  <Save className="h-4 w-4" />
-                  Save Results
-                </Button>
-              )}
-              <Button onClick={() => {
-                if (videoRef.current) {
-                  console.log('Manual play attempt');
-                  videoRef.current.play().then(() => {
-                    console.log('Manual play successful');
-                  }).catch(err => {
-                    console.error('Manual play failed:', err);
-                  });
-                }
-              }} variant="outline">
-                🎬 Force Play
               </Button>
             </div>
           )}
@@ -690,7 +688,7 @@ const WaterTestAnalyzer = () => {
             <li>• Remove and shake off excess water</li>
             <li>• Wait 15 seconds for colors to develop</li>
             <li>• Position strip in the camera viewfinder</li>
-            <li>• Analysis will occur automatically every 2 seconds</li>
+            <li>• Analysis will run automatically after 3 seconds, then camera stops</li>
           </ul>
         </Card>
       </CardContent>
