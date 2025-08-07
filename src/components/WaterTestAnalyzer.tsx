@@ -248,6 +248,47 @@ const WaterTestAnalyzer = () => {
     }
   }, [isCapturing, toast]);
 
+  const detectTestStrip = (ctx: CanvasRenderingContext2D, width: number, height: number): boolean => {
+    console.log('🔍 Detecting test strip presence...');
+    
+    // Look for the characteristic white/light plastic strip background
+    // Test strips typically have a light colored plastic backing
+    const stripDetectionRegions = [
+      // Check left side of strip area
+      { x: Math.floor(width * 0.1), y: Math.floor(height * 0.4), width: 30, height: Math.floor(height * 0.2) },
+      // Check right side of strip area  
+      { x: Math.floor(width * 0.8), y: Math.floor(height * 0.4), width: 30, height: Math.floor(height * 0.2) },
+      // Check above test pads
+      { x: Math.floor(width * 0.3), y: Math.floor(height * 0.3), width: Math.floor(width * 0.4), height: 20 },
+      // Check below test pads
+      { x: Math.floor(width * 0.3), y: Math.floor(height * 0.7), width: Math.floor(width * 0.4), height: 20 }
+    ];
+
+    let lightRegionsFound = 0;
+    
+    for (const region of stripDetectionRegions) {
+      try {
+        const imageData = ctx.getImageData(region.x, region.y, region.width, region.height);
+        const avgColor = getAverageColor(imageData);
+        
+        // Test strips typically have light colored plastic (high brightness)
+        const brightness = (avgColor.r + avgColor.g + avgColor.b) / 3;
+        console.log(`🔍 Region brightness: ${brightness.toFixed(1)}`);
+        
+        if (brightness > 180) { // Light colored region detected
+          lightRegionsFound++;
+        }
+      } catch (error) {
+        console.warn('Error checking detection region:', error);
+      }
+    }
+    
+    const stripDetected = lightRegionsFound >= 2; // Need at least 2 light regions
+    console.log(`🎯 Test strip detection result: ${stripDetected} (${lightRegionsFound}/4 light regions found)`);
+    
+    return stripDetected;
+  };
+
   const analyzeTestStrip = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     console.log('🧪 Analyzing test strip with canvas dimensions:', width, 'x', height);
     
@@ -255,6 +296,20 @@ const WaterTestAnalyzer = () => {
       console.error('❌ Invalid canvas dimensions');
       return;
     }
+
+    // First, detect if a test strip is actually present
+    if (!detectTestStrip(ctx, width, height)) {
+      console.log('❌ No test strip detected in image');
+      toast({
+        title: "No Test Strip Detected",
+        description: "Please position a test strip clearly in front of the camera",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    console.log('✅ Test strip detected, proceeding with analysis');
 
     const results: TestResult[] = [];
     
