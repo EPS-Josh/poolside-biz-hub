@@ -634,15 +634,6 @@ export default function PropertyVerification() {
                     <MapPin className="h-4 w-4" />
                     {isVerifying ? 'Verifying...' : 'Bulk Verify All Customers'}
                   </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleImportAssessorData()}
-                    disabled={isVerifying}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    {importProgress ? 'Importing...' : 'Start Import'}
-                  </Button>
                   {importProgress?.hasMoreBatches && (
                     <Button
                       variant="default"
