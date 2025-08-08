@@ -59,6 +59,9 @@ export default function PropertyVerification() {
     inserted: number;
     hasMoreBatches: boolean;
   } | null>(null);
+  const [showSelectAssessorDialog, setShowSelectAssessorDialog] = useState(false);
+  const [assessorOptions, setAssessorOptions] = useState<AssessorRecord[]>([]);
+  const [pendingCustomer, setPendingCustomer] = useState<any>(null);
 
   const normalizeText = (text: string): string => {
     return text
@@ -213,6 +216,84 @@ export default function PropertyVerification() {
     }
   };
 
+  // Helper: extract numeric house number from a string
+  const extractHouseNumber = (text?: string | null): string | null => {
+    if (!text) return null;
+    const match = String(text).match(/\b(\d{1,6})[A-Z]?\b/);
+    return match ? match[1] : null;
+  };
+
+  // Helper: map DB row to AssessorRecord shape used in UI
+  const mapDbRowToAssessorRecord = (data: any): AssessorRecord => {
+    const mailingAddress = [data.Mail1, data.Mail2, data.Mail3, data.Mail4, data.Mail5]
+      .filter(Boolean)
+      .join(' ');
+    let propertyAddress = data.Mail2 || '';
+    if (String(propertyAddress).toUpperCase().includes('ATTN:')) {
+      propertyAddress = data.Mail3 || '';
+    }
+    return {
+      id: data.id,
+      parcelNumber: data.Parcel || 'Unknown',
+      ownerName: data.Mail1 || 'Unknown',
+      mailingAddress: mailingAddress || '',
+      propertyAddress,
+      assessedValue: 'Unknown',
+      lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown',
+      updatedOwnerName: data.updated_owner_name,
+      isOwnerUpdated: data.is_owner_updated,
+      ownerUpdatedAt: data.owner_updated_at ? new Date(data.owner_updated_at).toLocaleDateString() : undefined,
+    };
+  };
+
+  // Step 1: find candidates where Mail1 or Mail2 contains the last name
+  const findAssessorCandidatesByLastName = async (lastName: string) => {
+    const { data, error } = await supabase
+      .from('pima_assessor_records')
+      .select('*')
+      .or(`Mail1.ilike.%${lastName}%,Mail2.ilike.%${lastName}%`)
+      .limit(25);
+    if (error) throw error;
+    return (data || []) as any[];
+  };
+
+  // Finalize selection from the suggestion dialog
+  const finalizeAssessorSelection = (record: AssessorRecord) => {
+    if (!pendingCustomer) return;
+    const result = compareRecords(pendingCustomer, record);
+    setVerificationResults(prev => {
+      const filtered = prev.filter(r => r.customer.id !== pendingCustomer.id);
+      return [...filtered, result];
+    });
+    setShowSelectAssessorDialog(false);
+    setAssessorOptions([]);
+    setPendingCustomer(null);
+    toast({ title: 'Verification Complete', description: `Selected record for ${pendingCustomer.first_name} ${pendingCustomer.last_name}` });
+  };
+
+  const handleNoAssessorSelection = () => {
+    if (!pendingCustomer) return;
+    const result: VerificationResult = {
+      customer: pendingCustomer,
+      assessorRecord: null,
+      status: 'not_found',
+      issues: ['No suitable assessor record selected'],
+    };
+    setVerificationResults(prev => {
+      const filtered = prev.filter(r => r.customer.id !== pendingCustomer.id);
+      return [...filtered, result];
+    });
+    setShowSelectAssessorDialog(false);
+    setAssessorOptions([]);
+    setPendingCustomer(null);
+  };
+
+  const cancelAssessorSelection = () => {
+    setShowSelectAssessorDialog(false);
+    setAssessorOptions([]);
+    setPendingCustomer(null);
+  };
+
   const handleImportAssessorData = async (batchNumber = 0) => {
     setIsVerifying(true);
     try {
@@ -355,25 +436,81 @@ export default function PropertyVerification() {
 
     setIsVerifying(true);
     try {
-      const assessorRecord = await searchAssessorRecords(customer.address);
-      const result = compareRecords(customer, assessorRecord);
-      
-      setVerificationResults(prev => {
-        const filtered = prev.filter(r => r.customer.id !== customer.id);
-        return [...filtered, result];
+      const lastName = normalizeName(customer.last_name || '');
+      if (!lastName) {
+        // Fallback to previous address lookup if no last name available
+        const fallback = await searchAssessorRecords(customer.address);
+        const result = compareRecords(customer, fallback);
+        setVerificationResults(prev => {
+          const filtered = prev.filter(r => r.customer.id !== customer.id);
+          return [...filtered, result];
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Step 1: last name candidates (Mail1 or Mail2)
+      const initialRows = await findAssessorCandidatesByLastName(lastName);
+      if (initialRows.length === 0) {
+        const result: VerificationResult = {
+          customer,
+          assessorRecord: null,
+          status: 'not_found',
+          issues: ['No assessor records matched the last name']
+        };
+        setVerificationResults(prev => {
+          const filtered = prev.filter(r => r.customer.id !== customer.id);
+          return [...filtered, result];
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      if (initialRows.length === 1) {
+        const assessorRecord = mapDbRowToAssessorRecord(initialRows[0]);
+        const result = compareRecords(customer, assessorRecord);
+        setVerificationResults(prev => {
+          const filtered = prev.filter(r => r.customer.id !== customer.id);
+          return [...filtered, result];
+        });
+        toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Step 2: disambiguate by house number from Mail2/3/4
+      const customerHouse = extractHouseNumber(customer.address);
+      const filteredRows = initialRows.filter(r => {
+        const h2 = extractHouseNumber(r.Mail2);
+        const h3 = extractHouseNumber(r.Mail3);
+        const h4 = extractHouseNumber(r.Mail4);
+        return customerHouse && (customerHouse === h2 || customerHouse === h3 || customerHouse === h4);
       });
 
-      toast({
-        title: 'Verification Complete',
-        description: `Checked ${customer.first_name} ${customer.last_name}`,
-      });
+      if (filteredRows.length === 1) {
+        const assessorRecord = mapDbRowToAssessorRecord(filteredRows[0]);
+        const result = compareRecords(customer, assessorRecord);
+        setVerificationResults(prev => {
+          const filtered = prev.filter(r => r.customer.id !== customer.id);
+          return [...filtered, result];
+        });
+        toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Step 3: Show suggestions to the user (prefer filtered list if any, otherwise all initial)
+      const options = (filteredRows.length > 0 ? filteredRows : initialRows).map(mapDbRowToAssessorRecord);
+      setAssessorOptions(options);
+      setPendingCustomer(customer);
+      setShowSelectAssessorDialog(true);
+      setIsVerifying(false);
     } catch (error) {
       toast({
         title: 'Verification Error',
         description: 'Failed to verify property records',
         variant: 'destructive'
       });
-    } finally {
       setIsVerifying(false);
     }
   };
@@ -395,9 +532,47 @@ export default function PropertyVerification() {
 
     for (const customer of customersWithAddresses.slice(0, 5)) { // Limit for demo
       try {
-        const assessorRecord = await searchAssessorRecords(customer.address);
-        const result = compareRecords(customer, assessorRecord);
-        results.push(result);
+        const lastName = normalizeName(customer.last_name || '');
+        if (!lastName) {
+          const fallback = await searchAssessorRecords(customer.address);
+          results.push(compareRecords(customer, fallback));
+          continue;
+        }
+
+        const initialRows = await findAssessorCandidatesByLastName(lastName);
+        if (initialRows.length === 0) {
+          results.push({
+            customer,
+            assessorRecord: null,
+            status: 'not_found',
+            issues: ['No assessor records matched the last name']
+          });
+          continue;
+        }
+
+        if (initialRows.length === 1) {
+          results.push(compareRecords(customer, mapDbRowToAssessorRecord(initialRows[0])));
+          continue;
+        }
+
+        const customerHouse = extractHouseNumber(customer.address);
+        const filteredRows = initialRows.filter(r => {
+          const h2 = extractHouseNumber(r.Mail2);
+          const h3 = extractHouseNumber(r.Mail3);
+          const h4 = extractHouseNumber(r.Mail4);
+          return customerHouse && (customerHouse === h2 || customerHouse === h3 || customerHouse === h4);
+        });
+
+        if (filteredRows.length === 1) {
+          results.push(compareRecords(customer, mapDbRowToAssessorRecord(filteredRows[0])));
+        } else {
+          results.push({
+            customer,
+            assessorRecord: null,
+            status: 'mismatch',
+            issues: ['Multiple possible matches found; manual selection required']
+          });
+        }
       } catch (error) {
         results.push({
           customer,
@@ -954,6 +1129,42 @@ export default function PropertyVerification() {
                 <Button onClick={handleConfirmCustomerUpdate}>
                   Update Customer
                 </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Select Assessor Record Dialog */}
+          <Dialog open={showSelectAssessorDialog} onOpenChange={setShowSelectAssessorDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Select Assessor Record</DialogTitle>
+                <DialogDescription>
+                  Multiple possible matches were found. Select the correct record for the customer.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {assessorOptions.map((option) => (
+                  <div key={option.id} className="border rounded-lg p-3 flex items-start justify-between gap-4">
+                    <div className="text-sm">
+                      <div className="font-medium">{option.ownerName}</div>
+                      <div className="text-muted-foreground">{option.propertyAddress}</div>
+                      <div className="text-muted-foreground">Parcel: {option.parcelNumber}</div>
+                    </div>
+                    <Button size="sm" onClick={() => finalizeAssessorSelection(option)}>
+                      Use this record
+                    </Button>
+                  </div>
+                ))}
+
+                {assessorOptions.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No options available.</p>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={cancelAssessorSelection}>Cancel</Button>
+                <Button variant="secondary" onClick={handleNoAssessorSelection}>No suitable match</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
