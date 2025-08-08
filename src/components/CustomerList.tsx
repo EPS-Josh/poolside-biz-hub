@@ -107,7 +107,7 @@ export const CustomerList = () => {
         <CustomerSearch
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          placeholder="Search by name, email, company, or location..."
+          placeholder="Search by name, email, pool builder, or location..."
         />
 
         {customers.length === 0 && !searchTerm ? (

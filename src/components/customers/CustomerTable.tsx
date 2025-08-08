@@ -40,7 +40,7 @@ export const CustomerTable = ({ customers, onCustomerClick, onEditCustomer }: Cu
           <TableHead>First Name</TableHead>
           <TableHead>Last Name</TableHead>
           <TableHead>Contact</TableHead>
-          <TableHead>Company</TableHead>
+          <TableHead>Pool Builder</TableHead>
           <TableHead>Location</TableHead>
           <TableHead>Added</TableHead>
           <TableHead>Actions</TableHead>
