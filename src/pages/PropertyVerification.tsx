@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,8 @@ export default function PropertyVerification() {
   const [showUpdateCustomerDialog, setShowUpdateCustomerDialog] = useState(false);
   const [currentAssessorRecord, setCurrentAssessorRecord] = useState<AssessorRecord | null>(null);
   const [matchingCustomer, setMatchingCustomer] = useState<any>(null);
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
   const [importProgress, setImportProgress] = useState<{
     batchNumber: number;
     progress: number;
@@ -507,6 +510,10 @@ export default function PropertyVerification() {
   const handleUpdateCustomer = (assessorRecord: AssessorRecord, customer: any) => {
     setCurrentAssessorRecord(assessorRecord);
     setMatchingCustomer(customer);
+    const newOwnerName = assessorRecord.updatedOwnerName || assessorRecord.ownerName || '';
+    const parts = newOwnerName.trim().split(/\s+/);
+    setNewFirstName(parts[0] || '');
+    setNewLastName(parts.slice(1).join(' ') || '');
     setShowUpdateCustomerDialog(true);
   };
 
@@ -545,10 +552,17 @@ export default function PropertyVerification() {
   const handleConfirmCustomerUpdate = async () => {
     if (!currentAssessorRecord || !matchingCustomer || !user?.id) return;
 
-    const newOwnerName = currentAssessorRecord.updatedOwnerName || currentAssessorRecord.ownerName;
-    const names = newOwnerName.split(' ');
-    const firstName = names[0] || '';
-    const lastName = names.slice(1).join(' ') || '';
+    const firstName = (newFirstName || '').trim();
+    const lastName = (newLastName || '').trim();
+
+    if (!firstName || !lastName) {
+      toast({
+        title: 'Missing name',
+        description: 'Please provide both first and last name before updating.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -896,11 +910,32 @@ export default function PropertyVerification() {
                       <p className="font-medium">{currentAssessorRecord.updatedOwnerName || currentAssessorRecord.ownerName}</p>
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-first-name">First Name</Label>
+                      <Input
+                        id="new-first-name"
+                        value={newFirstName}
+                        onChange={(e) => setNewFirstName(e.target.value)}
+                        placeholder="Enter first name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-last-name">Last Name</Label>
+                      <Input
+                        id="new-last-name"
+                        value={newLastName}
+                        onChange={(e) => setNewLastName(e.target.value)}
+                        placeholder="Enter last name"
+                      />
+                    </div>
+                  </div>
                   
                   <div className="bg-muted/50 p-3 rounded-lg">
                     <h5 className="font-medium text-sm mb-2">What will happen:</h5>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Customer name will be updated to the new owner</li>
+                      <li>• Customer name will be updated to the values above</li>
                       <li>• Previous owner information will be saved in history fields</li>
                       <li>• Owner change date and user will be recorded</li>
                       <li>• All service history will remain linked to this property</li>
