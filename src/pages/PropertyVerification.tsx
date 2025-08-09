@@ -1036,7 +1036,7 @@ export default function PropertyVerification() {
                               <h4 className="font-medium mb-2">Your Records</h4>
                               <div className="text-sm space-y-1">
                                 <p><strong>Name:</strong> {result.customer.first_name} {result.customer.last_name}</p>
-                                <p><strong>Address:</strong> {result.customer.address}</p>
+                                <p><strong>Property Address:</strong> {result.customer.address}</p>
                                 <p><strong>City/State:</strong> {result.customer.city}, {result.customer.state}</p>
                               </div>
                             </div>

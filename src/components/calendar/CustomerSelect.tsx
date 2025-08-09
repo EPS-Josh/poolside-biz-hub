@@ -127,7 +127,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
       {/* Show selected customer address in a separate box */}
       {selectedCustomer && selectedCustomer.address && selectedCustomer.city && (
         <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded border">
-          <strong>Address:</strong> {selectedCustomer.address}, {selectedCustomer.city}
+          <strong>Property Address:</strong> {selectedCustomer.address}, {selectedCustomer.city}
           {selectedCustomer.state && `, ${selectedCustomer.state}`}
         </div>
       )}
