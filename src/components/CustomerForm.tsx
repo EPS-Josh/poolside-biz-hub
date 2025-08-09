@@ -34,6 +34,10 @@ const customerSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   zip_code: z.string().optional(),
+  mailing_address: z.string().optional(),
+  mailing_city: z.string().optional(),
+  mailing_state: z.string().optional(),
+  mailing_zip_code: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -50,6 +54,10 @@ interface Customer {
   city?: string | null;
   state?: string | null;
   zip_code?: string | null;
+  mailing_address?: string | null;
+  mailing_city?: string | null;
+  mailing_state?: string | null;
+  mailing_zip_code?: string | null;
   notes?: string | null;
 }
 
@@ -77,6 +85,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
       city: '',
       state: '',
       zip_code: '',
+      mailing_address: '',
+      mailing_city: '',
+      mailing_state: '',
+      mailing_zip_code: '',
       notes: '',
     },
   });
@@ -95,6 +107,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: customer.city || '',
           state: customer.state || '',
           zip_code: customer.zip_code || '',
+          mailing_address: customer.mailing_address || '',
+          mailing_city: customer.mailing_city || '',
+          mailing_state: customer.mailing_state || '',
+          mailing_zip_code: customer.mailing_zip_code || '',
           notes: customer.notes || '',
         });
       } else {
@@ -108,6 +124,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: '',
           state: '',
           zip_code: '',
+          mailing_address: '',
+          mailing_city: '',
+          mailing_state: '',
+          mailing_zip_code: '',
           notes: '',
         });
       }
@@ -137,6 +157,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: data.city || null,
           state: data.state || null,
           zip_code: data.zip_code || null,
+          mailing_address: data.mailing_address || null,
+          mailing_city: data.mailing_city || null,
+          mailing_state: data.mailing_state || null,
+          mailing_zip_code: data.mailing_zip_code || null,
           notes: data.notes || null,
         };
 
@@ -165,6 +189,10 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
           city: data.city || null,
           state: data.state || null,
           zip_code: data.zip_code || null,
+          mailing_address: data.mailing_address || null,
+          mailing_city: data.mailing_city || null,
+          mailing_state: data.mailing_state || null,
+          mailing_zip_code: data.mailing_zip_code || null,
           notes: data.notes || null,
           user_id: user.id,
         };
@@ -293,7 +321,7 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address</FormLabel>
+                    <FormLabel>Property Address</FormLabel>
                     <FormControl>
                       <Input placeholder="123 Main St" {...field} />
                     </FormControl>
@@ -344,6 +372,68 @@ export const CustomerForm = ({ open, onOpenChange, onSuccess, customer }: Custom
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Mailing Address */}
+              <div className="pt-2 space-y-4">
+                <h4 className="text-base font-medium">Mailing Address</h4>
+                <FormField
+                  control={form.control}
+                  name="mailing_address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mailing Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="PO Box 123 or 456 Elm St" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="mailing_city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Tucson" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="mailing_state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl>
+                          <Input placeholder="AZ" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="mailing_zip_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Zip Code</FormLabel>
+                        <FormControl>
+                          <Input placeholder="85701" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </div>
 

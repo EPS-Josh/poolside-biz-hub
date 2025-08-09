@@ -372,6 +372,10 @@ export type Database = {
           last_name: string
           latitude: number | null
           longitude: number | null
+          mailing_address: string | null
+          mailing_city: string | null
+          mailing_state: string | null
+          mailing_zip_code: string | null
           notes: string | null
           owner_changed_by: string | null
           owner_changed_date: string | null
@@ -397,6 +401,10 @@ export type Database = {
           last_name: string
           latitude?: number | null
           longitude?: number | null
+          mailing_address?: string | null
+          mailing_city?: string | null
+          mailing_state?: string | null
+          mailing_zip_code?: string | null
           notes?: string | null
           owner_changed_by?: string | null
           owner_changed_date?: string | null
@@ -422,6 +430,10 @@ export type Database = {
           last_name?: string
           latitude?: number | null
           longitude?: number | null
+          mailing_address?: string | null
+          mailing_city?: string | null
+          mailing_state?: string | null
+          mailing_zip_code?: string | null
           notes?: string | null
           owner_changed_by?: string | null
           owner_changed_date?: string | null

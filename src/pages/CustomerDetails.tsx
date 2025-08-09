@@ -25,6 +25,10 @@ interface Customer {
   city?: string;
   state?: string;
   zip_code?: string;
+  mailing_address?: string;
+  mailing_city?: string;
+  mailing_state?: string;
+  mailing_zip_code?: string;
   notes?: string;
   created_at: string;
   previous_first_name?: string;
@@ -197,11 +201,25 @@ const CustomerDetails = () => {
                     <div className="flex items-center space-x-3 md:col-span-2 lg:col-span-3">
                       <MapPin className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="text-sm text-gray-500">Address</p>
+                        <p className="text-sm text-gray-500">Property Address</p>
                         <p className="font-medium">
                           {customer.address && `${customer.address}, `}
                           {customer.city && `${customer.city}, `}
                           {customer.state} {customer.zip_code}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {(customer.mailing_address || customer.mailing_city || customer.mailing_state || customer.mailing_zip_code) && (
+                    <div className="flex items-center space-x-3 md:col-span-2 lg:col-span-3">
+                      <MapPin className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Mailing Address</p>
+                        <p className="font-medium">
+                          {customer.mailing_address && `${customer.mailing_address}, `}
+                          {customer.mailing_city && `${customer.mailing_city}, `}
+                          {customer.mailing_state} {customer.mailing_zip_code}
                         </p>
                       </div>
                     </div>
