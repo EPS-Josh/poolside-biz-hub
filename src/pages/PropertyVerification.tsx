@@ -62,6 +62,7 @@ export default function PropertyVerification() {
   const [showSelectAssessorDialog, setShowSelectAssessorDialog] = useState(false);
   const [assessorOptions, setAssessorOptions] = useState<AssessorRecord[]>([]);
   const [pendingCustomer, setPendingCustomer] = useState<any>(null);
+  const [updatingMailingFor, setUpdatingMailingFor] = useState<string | null>(null);
 
   const normalizeText = (text: string): string => {
     return text
@@ -682,6 +683,102 @@ export default function PropertyVerification() {
     setEditOwnerName('');
   };
 
+  const toTitleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+
+  const extractCityStateZipFromLines = (lines: (string | null | undefined)[], zipRaw?: string | null, zip4Raw?: string | null) => {
+    let city = '';
+    let state = '';
+    let zip = '';
+    if (zipRaw) {
+      zip = zip4Raw ? `${zipRaw}-${zip4Raw}` : zipRaw;
+    }
+    for (const ln of lines) {
+      const line = (ln || '').toUpperCase().trim();
+      if (!line) continue;
+      let m = line.match(/^(.+?)\s+([A-Z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+      if (m) {
+        return { city: toTitleCase(m[1]), state: m[2], zip: m[3] };
+      }
+      m = line.match(/^(.+?)\s+([A-Z]{2})$/);
+      if (m && zip) {
+        return { city: toTitleCase(m[1]), state: m[2], zip };
+      }
+    }
+    return { city: '', state: '', zip };
+  };
+
+  const chooseAddressLine = (mail2?: string | null, mail3?: string | null) => {
+    const m2 = (mail2 || '').trim();
+    const m3 = (mail3 || '').trim();
+    if (m2.toUpperCase().includes('ATTN')) return m3 || m2;
+    // Prefer the one that looks like a street address (has a number)
+    if (/\d/.test(m2)) return m2 || m3;
+    if (/\d/.test(m3)) return m3 || m2;
+    return m2 || m3 || '';
+  };
+
+  const handleUseAssessorMailingAddress = async (assessor: AssessorRecord, customer: any) => {
+    try {
+      setUpdatingMailingFor(customer.id);
+      let address = '';
+      let city = '';
+      let state = '';
+      let zip = '';
+      if (assessor.id) {
+        const { data, error } = await supabase
+          .from('pima_assessor_records')
+          .select('Mail1,Mail2,Mail3,Mail4,Mail5,Zip,Zip4')
+          .eq('id', assessor.id)
+          .maybeSingle();
+        if (error && error.code !== 'PGRST116') throw error;
+        if (data) {
+          address = chooseAddressLine((data as any).Mail2, (data as any).Mail3);
+          const parts = extractCityStateZipFromLines([(data as any).Mail4, (data as any).Mail3, (data as any).Mail5], (data as any).Zip, (data as any).Zip4);
+          city = parts.city;
+          state = parts.state;
+          zip = parts.zip || ((data as any).Zip4 ? `${(data as any).Zip}-${(data as any).Zip4}` : (data as any).Zip) || '';
+        }
+      }
+      // Fallback from concatenated mailingAddress if needed
+      if (!address && assessor.mailingAddress) {
+        const tokens = assessor.mailingAddress.split(/\s{2,}|,/);
+        address = tokens[1] || tokens[0];
+        const m = assessor.mailingAddress.toUpperCase().match(/([A-Z][A-Z])\s+(\d{5}(?:-\d{4})?)\s*$/);
+        if (m) {
+          state = m[1];
+          zip = m[2];
+          const before = assessor.mailingAddress.substring(0, assessor.mailingAddress.toUpperCase().lastIndexOf(m[0])).trim();
+          const cityGuess = before.split(/\s+/).slice(-1)[0] || '';
+          city = city || toTitleCase(cityGuess);
+        }
+      }
+      const { error: updateError } = await supabase
+        .from('customers')
+        .update({
+          mailing_address: address || null,
+          mailing_city: city || null,
+          mailing_state: state || null,
+          mailing_zip_code: zip || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id);
+      if (updateError) throw updateError;
+      toast({
+        title: 'Mailing Address Updated',
+        description: 'Customer mailing address set from assessor record. Property address unchanged.'
+      });
+    } catch (e) {
+      console.error('Error setting mailing address:', e);
+      toast({
+        title: 'Update Failed',
+        description: 'Could not set mailing address from assessor record',
+        variant: 'destructive'
+      });
+    } finally {
+      setUpdatingMailingFor(null);
+    }
+  };
+
   const handleUpdateCustomer = (assessorRecord: AssessorRecord, customer: any) => {
     setCurrentAssessorRecord(assessorRecord);
     setMatchingCustomer(customer);
@@ -1052,6 +1149,18 @@ export default function PropertyVerification() {
                                 <li key={index} className="text-red-600">• {issue}</li>
                               ))}
                             </ul>
+                            {result.status === 'mismatch' && result.assessorRecord && (
+                              <div className="mt-3">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUseAssessorMailingAddress(result.assessorRecord!, result.customer)}
+                                  disabled={updatingMailingFor === result.customer.id}
+                                >
+                                  Use Assessor Mailing Address
+                                </Button>
+                              </div>
+                            )}
+
                           </div>
                         </>
                       )}
