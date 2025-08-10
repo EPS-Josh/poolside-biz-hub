@@ -436,11 +436,28 @@ export default function PropertyVerification() {
 
     setIsVerifying(true);
     try {
+      // Step 1: try address match first
+      const byAddress = await searchAssessorRecords(customer.address);
+      if (byAddress) {
+        const result = compareRecords(customer, byAddress);
+        setVerificationResults(prev => {
+          const filtered = prev.filter(r => r.customer.id !== customer.id);
+          return [...filtered, result];
+        });
+        toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Step 2: fallback to last name match if address not found
       const lastName = normalizeName(customer.last_name || '');
       if (!lastName) {
-        // Fallback to previous address lookup if no last name available
-        const fallback = await searchAssessorRecords(customer.address);
-        const result = compareRecords(customer, fallback);
+        const result: VerificationResult = {
+          customer,
+          assessorRecord: null,
+          status: 'not_found',
+          issues: ['No assessor records matched the address']
+        };
         setVerificationResults(prev => {
           const filtered = prev.filter(r => r.customer.id !== customer.id);
           return [...filtered, result];
@@ -449,7 +466,7 @@ export default function PropertyVerification() {
         return;
       }
 
-      // Step 1: last name candidates (Mail1 or Mail2)
+      // Step 3: last name candidates (Mail1 or updated_owner_name)
       const initialRows = await findAssessorCandidatesByLastName(lastName);
       if (initialRows.length === 0) {
         const result: VerificationResult = {
@@ -547,13 +564,21 @@ export default function PropertyVerification() {
 
     for (const customer of customersWithAddresses.slice(0, 5)) { // Limit for demo
       try {
-        const lastName = normalizeName(customer.last_name || '');
-        if (!lastName) {
-          const fallback = await searchAssessorRecords(customer.address);
-          results.push(compareRecords(customer, fallback));
+        // Step 1: try address match first
+        const byAddress = await searchAssessorRecords(customer.address);
+        if (byAddress) {
+          results.push(compareRecords(customer, byAddress));
           continue;
         }
 
+        // Step 2: fallback to last name
+        const lastName = normalizeName(customer.last_name || '');
+        if (!lastName) {
+          results.push(compareRecords(customer, null));
+          continue;
+        }
+
+        // Step 3: last name candidates
         const initialRows = await findAssessorCandidatesByLastName(lastName);
         if (initialRows.length === 0) {
           results.push({
