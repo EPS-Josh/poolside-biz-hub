@@ -253,7 +253,7 @@ export default function PropertyVerification() {
       .from('pima_assessor_records')
       .select('*')
       .or(`Mail1.ilike.%${lastName}%,updated_owner_name.ilike.%${lastName}%`)
-      .limit(50);
+      
     if (error) throw error;
     return (data || []) as any[];
   };
@@ -516,9 +516,8 @@ export default function PropertyVerification() {
         return;
       }
 
-      // Step 3: Show suggestions to the user (prefer filtered list if any, otherwise all initial)
-      const baseRows = filteredRows.length > 0 ? filteredRows : initialRows;
-      const options = baseRows
+      // Step 3: Show suggestions to the user (show ALL possible matches)
+      const options = initialRows
         .map(mapDbRowToAssessorRecord)
         .sort((a, b) => {
           const ln = normalizeName(customer.last_name || '');
