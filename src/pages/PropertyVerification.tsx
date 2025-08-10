@@ -247,17 +247,16 @@ export default function PropertyVerification() {
     };
   };
 
-  // Step 1: find candidates where Mail1 or Mail2 contains the last name
+  // Step 1: find candidates where owner name contains the last name (avoid street-line false matches)
   const findAssessorCandidatesByLastName = async (lastName: string) => {
     const { data, error } = await supabase
       .from('pima_assessor_records')
       .select('*')
-      .or(`Mail1.ilike.%${lastName}%,Mail2.ilike.%${lastName}%`)
-      .limit(25);
+      .or(`Mail1.ilike.%${lastName}%,updated_owner_name.ilike.%${lastName}%`)
+      .limit(50);
     if (error) throw error;
     return (data || []) as any[];
   };
-
   // Finalize selection from the suggestion dialog
   const finalizeAssessorSelection = (record: AssessorRecord) => {
     if (!pendingCustomer) return;
@@ -501,7 +500,22 @@ export default function PropertyVerification() {
       }
 
       // Step 3: Show suggestions to the user (prefer filtered list if any, otherwise all initial)
-      const options = (filteredRows.length > 0 ? filteredRows : initialRows).map(mapDbRowToAssessorRecord);
+      const baseRows = filteredRows.length > 0 ? filteredRows : initialRows;
+      const options = baseRows
+        .map(mapDbRowToAssessorRecord)
+        .sort((a, b) => {
+          const ln = normalizeName(customer.last_name || '');
+          const aName = normalizeName(a.updatedOwnerName || a.ownerName || '');
+          const bName = normalizeName(b.updatedOwnerName || b.ownerName || '');
+          const score = (name: string) => {
+            if (!ln) return 0;
+            const parts = name.split(' ');
+            const exact = parts.includes(ln) ? 2 : 0;
+            const partial = exact ? 0 : (name.includes(ln) ? 1 : 0);
+            return exact + partial;
+          };
+          return score(bName) - score(aName);
+        });
       setAssessorOptions(options);
       setPendingCustomer(customer);
       setShowSelectAssessorDialog(true);
