@@ -38,7 +38,7 @@ interface VerificationResult {
 
 export default function PropertyVerification() {
   const navigate = useNavigate();
-  const { customers } = useCustomers();
+  const { customers, fetchCustomers } = useCustomers();
   const { toast } = useToast();
   const { user } = useAuth();
   const [searchAddress, setSearchAddress] = useState('');
@@ -763,9 +763,25 @@ export default function PropertyVerification() {
         })
         .eq('id', customer.id);
       if (updateError) throw updateError;
+
+      // Mark as owner verified and remove from results/list
+      const { error: verifyError } = await supabase
+        .from('customers')
+        .update({
+          owner_verified_at: new Date().toISOString(),
+          owner_verified_by: user!.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id);
+      if (verifyError) throw verifyError;
+
+      // Remove this entry from the verification results and refresh the customer list
+      setVerificationResults(prev => prev.filter(r => r.customer.id !== customer.id));
+      fetchCustomers?.();
+
       toast({
-        title: 'Mailing Address Updated',
-        description: 'Customer mailing address set from assessor record. Property address unchanged.'
+        title: 'Verified and Updated',
+        description: 'Mailing address set from assessor record and customer marked as verified.'
       });
     } catch (e) {
       console.error('Error setting mailing address:', e);
