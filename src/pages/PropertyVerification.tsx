@@ -861,6 +861,9 @@ export default function PropertyVerification() {
 
       // Remove this customer from verification results
       setVerificationResults(prev => prev.filter(result => result.customer.id !== customer.id));
+      
+      // Refresh customer list to hide verified entries
+      fetchCustomers?.();
 
       toast({
         title: 'Owner Verified',
@@ -1204,17 +1207,27 @@ export default function PropertyVerification() {
                                 <li key={index} className="text-red-600">• {issue}</li>
                               ))}
                             </ul>
-                            {result.status === 'mismatch' && result.assessorRecord && (
-                              <div className="mt-3">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleUseAssessorMailingAddress(result.assessorRecord!, result.customer)}
-                                  disabled={updatingMailingFor === result.customer.id}
-                                >
-                                  Use Assessor Mailing Address
-                                </Button>
-                              </div>
-                            )}
+                              {(result.status === 'mismatch' || result.status === 'not_found') && (
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                  {result.status === 'mismatch' && result.assessorRecord && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleUseAssessorMailingAddress(result.assessorRecord!, result.customer)}
+                                      disabled={updatingMailingFor === result.customer.id}
+                                    >
+                                      Use Assessor Mailing Address
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleMarkAsVerified(result.customer)}
+                                    className="gap-2"
+                                  >
+                                    <ShieldCheck className="h-4 w-4" /> Verify Owner Anyway
+                                  </Button>
+                                </div>
+                              )}
 
                           </div>
                         </>
