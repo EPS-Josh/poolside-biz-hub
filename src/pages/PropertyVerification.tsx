@@ -63,6 +63,8 @@ export default function PropertyVerification() {
   const [assessorOptions, setAssessorOptions] = useState<AssessorRecord[]>([]);
   const [pendingCustomer, setPendingCustomer] = useState<any>(null);
   const [updatingMailingFor, setUpdatingMailingFor] = useState<string | null>(null);
+
+  // Local filtering within suggested options
   const [assessorSearch, setAssessorSearch] = useState('');
   const filteredAssessorOptions = assessorOptions.filter((o) => {
     const q = assessorSearch.trim().toLowerCase();
@@ -73,6 +75,14 @@ export default function PropertyVerification() {
       .toLowerCase();
     return hay.includes(q);
   });
+
+  // Global search across entire assessor database
+  const [showGlobalAssessorSearch, setShowGlobalAssessorSearch] = useState(false);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [globalSearchResults, setGlobalSearchResults] = useState<AssessorRecord[]>([]);
+  const [globalSearchLoading, setGlobalSearchLoading] = useState(false);
+  const [globalSearchPage, setGlobalSearchPage] = useState(0);
+  const GLOBAL_PAGE_SIZE = 50;
   const normalizeText = (text: string): string => {
     return text
       .toUpperCase()
@@ -266,6 +276,45 @@ export default function PropertyVerification() {
     if (error) throw error;
     return (data || []) as any[];
   };
+
+  // Global assessor search helpers
+  const resetGlobalAssessorSearch = () => {
+    setShowGlobalAssessorSearch(false);
+    setGlobalSearchQuery('');
+    setGlobalSearchResults([]);
+    setGlobalSearchPage(0);
+    setGlobalSearchLoading(false);
+    setAssessorSearch('');
+  };
+
+  const runGlobalAssessorSearch = async (page = 0) => {
+    try {
+      const q = globalSearchQuery.trim();
+      setGlobalSearchLoading(true);
+      if (!q) {
+        setGlobalSearchResults([]);
+        setGlobalSearchLoading(false);
+        return;
+      }
+      const from = page * GLOBAL_PAGE_SIZE;
+      const to = from + GLOBAL_PAGE_SIZE - 1;
+      const { data, error } = await supabase
+        .from('pima_assessor_records')
+        .select('*')
+        .or(`Mail1.ilike.%${q}%,updated_owner_name.ilike.%${q}%,Mail2.ilike.%${q}%,Mail3.ilike.%${q}%,Parcel.ilike.%${q}%`)
+        .range(from, to);
+      if (error) throw error;
+      const options = (data || []).map(mapDbRowToAssessorRecord);
+      setGlobalSearchResults(options);
+      setGlobalSearchPage(page);
+    } catch (e) {
+      console.error('Global assessor search failed:', e);
+      toast({ title: 'Search failed', description: 'Could not search assessor database', variant: 'destructive' });
+    } finally {
+      setGlobalSearchLoading(false);
+    }
+  };
+
   // Finalize selection from the suggestion dialog
   const finalizeAssessorSelection = (record: AssessorRecord) => {
     if (!pendingCustomer) return;
@@ -277,6 +326,7 @@ export default function PropertyVerification() {
     setShowSelectAssessorDialog(false);
     setAssessorOptions([]);
     setPendingCustomer(null);
+    resetGlobalAssessorSearch();
     toast({ title: 'Verification Complete', description: `Selected record for ${pendingCustomer.first_name} ${pendingCustomer.last_name}` });
   };
 
@@ -295,12 +345,14 @@ export default function PropertyVerification() {
     setShowSelectAssessorDialog(false);
     setAssessorOptions([]);
     setPendingCustomer(null);
+    resetGlobalAssessorSearch();
   };
 
   const cancelAssessorSelection = () => {
     setShowSelectAssessorDialog(false);
     setAssessorOptions([]);
     setPendingCustomer(null);
+    resetGlobalAssessorSearch();
   };
 
   const handleImportAssessorData = async (batchNumber = 0) => {
@@ -1334,29 +1386,91 @@ export default function PropertyVerification() {
               </DialogHeader>
 
               <div className="space-y-3">
-                <Input
-                  value={assessorSearch}
-                  onChange={(e) => setAssessorSearch(e.target.value)}
-                  placeholder="Search by owner, address, or parcel"
-                />
-                <div className="max-h-96 overflow-y-auto space-y-3">
-                  {filteredAssessorOptions.map((option) => (
-                    <div key={option.id} className="border rounded-lg p-3 flex items-start justify-between gap-4">
-                      <div className="text-sm">
-                        <div className="font-medium">{option.ownerName}</div>
-                        <div className="text-muted-foreground">{option.propertyAddress}</div>
-                        <div className="text-muted-foreground">Parcel: {option.parcelNumber}</div>
-                      </div>
-                      <Button size="sm" onClick={() => finalizeAssessorSelection(option)}>
-                        Use this record
+                <div className="flex items-center gap-2">
+                  <Input
+                    className="flex-1"
+                    value={assessorSearch}
+                    onChange={(e) => setAssessorSearch(e.target.value)}
+                    placeholder="Filter suggested options by owner, address, or parcel"
+                  />
+                  <Button variant="outline" onClick={() => setShowGlobalAssessorSearch(v => !v)}>
+                    {showGlobalAssessorSearch ? 'Close global search' : 'Search entire database'}
+                  </Button>
+                </div>
+
+                {showGlobalAssessorSearch ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        className="flex-1"
+                        value={globalSearchQuery}
+                        onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                        placeholder="Search all assessor records (owner, address, parcel)"
+                      />
+                      <Button onClick={() => runGlobalAssessorSearch(0)} disabled={globalSearchLoading || !globalSearchQuery.trim()}>
+                        {globalSearchLoading ? 'Searching...' : 'Search'}
                       </Button>
                     </div>
-                  ))}
 
-                  {filteredAssessorOptions.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No options match your search.</p>
-                  )}
-                </div>
+                    <div className="max-h-96 overflow-y-auto space-y-3">
+                      {globalSearchResults.map((option) => (
+                        <div key={option.id} className="border rounded-lg p-3 flex items-start justify-between gap-4">
+                          <div className="text-sm">
+                            <div className="font-medium">{option.ownerName}</div>
+                            <div className="text-muted-foreground">{option.propertyAddress}</div>
+                            <div className="text-muted-foreground">Parcel: {option.parcelNumber}</div>
+                          </div>
+                          <Button size="sm" onClick={() => finalizeAssessorSelection(option)}>
+                            Use this record
+                          </Button>
+                        </div>
+                      ))}
+
+                      {!globalSearchLoading && globalSearchResults.length === 0 && (
+                        <p className="text-sm text-muted-foreground">No results. Try another search.</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => runGlobalAssessorSearch(Math.max(0, globalSearchPage - 1))}
+                        disabled={globalSearchLoading || globalSearchPage === 0}
+                      >
+                        Previous
+                      </Button>
+                      <div className="text-xs text-muted-foreground">Page {globalSearchPage + 1}</div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => runGlobalAssessorSearch(globalSearchPage + 1)}
+                        disabled={globalSearchLoading || globalSearchResults.length < GLOBAL_PAGE_SIZE}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="max-h-96 overflow-y-auto space-y-3">
+                    {filteredAssessorOptions.map((option) => (
+                      <div key={option.id} className="border rounded-lg p-3 flex items-start justify-between gap-4">
+                        <div className="text-sm">
+                          <div className="font-medium">{option.ownerName}</div>
+                          <div className="text-muted-foreground">{option.propertyAddress}</div>
+                          <div className="text-muted-foreground">Parcel: {option.parcelNumber}</div>
+                        </div>
+                        <Button size="sm" onClick={() => finalizeAssessorSelection(option)}>
+                          Use this record
+                        </Button>
+                      </div>
+                    ))}
+
+                    {filteredAssessorOptions.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No options match your search.</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <DialogFooter>
