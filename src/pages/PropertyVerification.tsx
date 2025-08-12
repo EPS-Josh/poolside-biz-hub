@@ -436,8 +436,13 @@ export default function PropertyVerification() {
 
     setIsVerifying(true);
     try {
-      // Step 1: try address match first
-      const byAddress = await searchAssessorRecords(customer.address);
+      // Step 1: try address match first (gracefully handle errors)
+      let byAddress: AssessorRecord | null = null;
+      try {
+        byAddress = await searchAssessorRecords(customer.address);
+      } catch (e) {
+        console.warn('Address search failed, falling back to last name:', e);
+      }
       if (byAddress) {
         const result = compareRecords(customer, byAddress);
         setVerificationResults(prev => {
