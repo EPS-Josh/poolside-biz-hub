@@ -63,7 +63,16 @@ export default function PropertyVerification() {
   const [assessorOptions, setAssessorOptions] = useState<AssessorRecord[]>([]);
   const [pendingCustomer, setPendingCustomer] = useState<any>(null);
   const [updatingMailingFor, setUpdatingMailingFor] = useState<string | null>(null);
-
+  const [assessorSearch, setAssessorSearch] = useState('');
+  const filteredAssessorOptions = assessorOptions.filter((o) => {
+    const q = assessorSearch.trim().toLowerCase();
+    if (!q) return true;
+    const hay = [o.ownerName, o.updatedOwnerName, o.propertyAddress, o.parcelNumber]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return hay.includes(q);
+  });
   const normalizeText = (text: string): string => {
     return text
       .toUpperCase()
@@ -1324,23 +1333,30 @@ export default function PropertyVerification() {
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {assessorOptions.map((option) => (
-                  <div key={option.id} className="border rounded-lg p-3 flex items-start justify-between gap-4">
-                    <div className="text-sm">
-                      <div className="font-medium">{option.ownerName}</div>
-                      <div className="text-muted-foreground">{option.propertyAddress}</div>
-                      <div className="text-muted-foreground">Parcel: {option.parcelNumber}</div>
+              <div className="space-y-3">
+                <Input
+                  value={assessorSearch}
+                  onChange={(e) => setAssessorSearch(e.target.value)}
+                  placeholder="Search by owner, address, or parcel"
+                />
+                <div className="max-h-96 overflow-y-auto space-y-3">
+                  {filteredAssessorOptions.map((option) => (
+                    <div key={option.id} className="border rounded-lg p-3 flex items-start justify-between gap-4">
+                      <div className="text-sm">
+                        <div className="font-medium">{option.ownerName}</div>
+                        <div className="text-muted-foreground">{option.propertyAddress}</div>
+                        <div className="text-muted-foreground">Parcel: {option.parcelNumber}</div>
+                      </div>
+                      <Button size="sm" onClick={() => finalizeAssessorSelection(option)}>
+                        Use this record
+                      </Button>
                     </div>
-                    <Button size="sm" onClick={() => finalizeAssessorSelection(option)}>
-                      Use this record
-                    </Button>
-                  </div>
-                ))}
+                  ))}
 
-                {assessorOptions.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No options available.</p>
-                )}
+                  {filteredAssessorOptions.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No options match your search.</p>
+                  )}
+                </div>
               </div>
 
               <DialogFooter>
