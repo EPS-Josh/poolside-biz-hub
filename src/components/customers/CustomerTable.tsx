@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -9,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Building, Mail, Phone, Pencil } from 'lucide-react';
+import { Building, Mail, Phone, Pencil, MapPin } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -24,6 +25,8 @@ interface Customer {
   zip_code?: string;
   notes?: string;
   created_at: string;
+  pima_county_resident?: boolean;
+  verification_status?: string;
 }
 
 interface CustomerTableProps {
@@ -50,12 +53,20 @@ export const CustomerTable = ({ customers, onCustomerClick, onEditCustomer }: Cu
         {customers.map((customer) => (
           <TableRow key={customer.id}>
             <TableCell>
-              <button
-                onClick={() => onCustomerClick(customer.id)}
-                className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
-              >
-                {customer.first_name}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onCustomerClick(customer.id)}
+                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-left"
+                >
+                  {customer.first_name}
+                </button>
+                {customer.pima_county_resident === false && (
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <MapPin className="h-3 w-3" />
+                    Non-Pima
+                  </Badge>
+                )}
+              </div>
             </TableCell>
             <TableCell>
               <button

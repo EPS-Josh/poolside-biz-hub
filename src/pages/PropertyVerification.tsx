@@ -348,6 +348,50 @@ export default function PropertyVerification() {
     resetGlobalAssessorSearch();
   };
 
+  const handleFlagNonPimaCounty = async () => {
+    if (!pendingCustomer) return;
+    
+    try {
+      await supabase
+        .from('customers')
+        .update({
+          pima_county_resident: false,
+          verification_status: 'non_pima_flagged',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', pendingCustomer.id);
+
+      const result: VerificationResult = {
+        customer: { ...pendingCustomer, pima_county_resident: false },
+        assessorRecord: null,
+        status: 'not_found',
+        issues: ['Flagged as location not in Pima County'],
+      };
+      
+      setVerificationResults(prev => {
+        const filtered = prev.filter(r => r.customer.id !== pendingCustomer.id);
+        return [...filtered, result];
+      });
+      
+      setShowSelectAssessorDialog(false);
+      setAssessorOptions([]);
+      setPendingCustomer(null);
+      resetGlobalAssessorSearch();
+      
+      toast({
+        title: 'Customer Flagged',
+        description: `${pendingCustomer.first_name} ${pendingCustomer.last_name} flagged as non-Pima County resident`,
+      });
+    } catch (error) {
+      console.error('Error flagging customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to flag customer as non-Pima County',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const cancelAssessorSelection = () => {
     setShowSelectAssessorDialog(false);
     setAssessorOptions([]);
@@ -1473,9 +1517,19 @@ export default function PropertyVerification() {
                 )}
               </div>
 
-              <DialogFooter>
-                <Button variant="outline" onClick={cancelAssessorSelection}>Cancel</Button>
-                <Button variant="secondary" onClick={handleNoAssessorSelection}>No suitable match</Button>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={cancelAssessorSelection}>Cancel</Button>
+                  <Button variant="secondary" onClick={handleNoAssessorSelection}>No suitable match</Button>
+                </div>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleFlagNonPimaCounty}
+                  className="gap-2"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Not in Pima County
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

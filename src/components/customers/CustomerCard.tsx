@@ -2,7 +2,8 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, Mail, Phone, Pencil } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Building, Mail, Phone, Pencil, MapPin } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -17,6 +18,8 @@ interface Customer {
   zip_code?: string;
   notes?: string;
   created_at: string;
+  pima_county_resident?: boolean;
+  verification_status?: string;
 }
 
 interface CustomerCardProps {
@@ -30,9 +33,17 @@ export const CustomerCard = ({ customer, onCustomerClick, onEditCustomer }: Cust
     <CardContent className="p-4">
       <div className="flex justify-between items-start mb-2">
         <div>
-          <h3 className="font-semibold text-lg">
-            {customer.first_name} {customer.last_name}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-lg">
+              {customer.first_name} {customer.last_name}
+            </h3>
+            {customer.pima_county_resident === false && (
+              <Badge variant="secondary" className="gap-1 text-xs">
+                <MapPin className="h-3 w-3" />
+                Non-Pima
+              </Badge>
+            )}
+          </div>
           {customer.company && (
             <div className="flex items-center text-sm text-gray-600 mt-1">
               <Building className="h-3 w-3 mr-1" />

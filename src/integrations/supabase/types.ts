@@ -376,17 +376,23 @@ export type Database = {
           mailing_city: string | null
           mailing_state: string | null
           mailing_zip_code: string | null
+          non_pima_verification_method: string | null
+          non_pima_verification_notes: string | null
+          non_pima_verified_at: string | null
+          non_pima_verified_by: string | null
           notes: string | null
           owner_changed_by: string | null
           owner_changed_date: string | null
           owner_verified_at: string | null
           owner_verified_by: string | null
           phone: string | null
+          pima_county_resident: boolean | null
           previous_first_name: string | null
           previous_last_name: string | null
           state: string | null
           updated_at: string
           user_id: string
+          verification_status: string | null
           zip_code: string | null
         }
         Insert: {
@@ -405,17 +411,23 @@ export type Database = {
           mailing_city?: string | null
           mailing_state?: string | null
           mailing_zip_code?: string | null
+          non_pima_verification_method?: string | null
+          non_pima_verification_notes?: string | null
+          non_pima_verified_at?: string | null
+          non_pima_verified_by?: string | null
           notes?: string | null
           owner_changed_by?: string | null
           owner_changed_date?: string | null
           owner_verified_at?: string | null
           owner_verified_by?: string | null
           phone?: string | null
+          pima_county_resident?: boolean | null
           previous_first_name?: string | null
           previous_last_name?: string | null
           state?: string | null
           updated_at?: string
           user_id: string
+          verification_status?: string | null
           zip_code?: string | null
         }
         Update: {
@@ -434,17 +446,23 @@ export type Database = {
           mailing_city?: string | null
           mailing_state?: string | null
           mailing_zip_code?: string | null
+          non_pima_verification_method?: string | null
+          non_pima_verification_notes?: string | null
+          non_pima_verified_at?: string | null
+          non_pima_verified_by?: string | null
           notes?: string | null
           owner_changed_by?: string | null
           owner_changed_date?: string | null
           owner_verified_at?: string | null
           owner_verified_by?: string | null
           phone?: string | null
+          pima_county_resident?: boolean | null
           previous_first_name?: string | null
           previous_last_name?: string | null
           state?: string | null
           updated_at?: string
           user_id?: string
+          verification_status?: string | null
           zip_code?: string | null
         }
         Relationships: []
