@@ -567,34 +567,32 @@ export default function PropertyVerification() {
       // Step 2: fallback to last name match if address not found
       const lastName = normalizeName(customer.last_name || '');
       if (!lastName) {
-        const result: VerificationResult = {
-          customer,
-          assessorRecord: null,
-          status: 'not_found',
-          issues: ['No assessor records matched the address']
-        };
-        setVerificationResults(prev => {
-          const filtered = prev.filter(r => r.customer.id !== customer.id);
-          return [...filtered, result];
-        });
+        // No last name to search by, but still offer manual options
+        setAssessorOptions([]);
+        setPendingCustomer(customer);
+        setShowSelectAssessorDialog(true);
         setIsVerifying(false);
+        toast({
+          title: 'No Automatic Match',
+          description: `No address or name match found for ${customer.first_name} ${customer.last_name}. Please search manually or flag as non-Pima County.`,
+          variant: 'destructive'
+        });
         return;
       }
 
       // Step 3: last name candidates (Mail1 or updated_owner_name)
       const initialRows = await findAssessorCandidatesByLastName(lastName);
       if (initialRows.length === 0) {
-        const result: VerificationResult = {
-          customer,
-          assessorRecord: null,
-          status: 'not_found',
-          issues: ['No assessor records matched the last name']
-        };
-        setVerificationResults(prev => {
-          const filtered = prev.filter(r => r.customer.id !== customer.id);
-          return [...filtered, result];
-        });
+        // No candidates found, but offer manual search options
+        setAssessorOptions([]);
+        setPendingCustomer(customer);
+        setShowSelectAssessorDialog(true);
         setIsVerifying(false);
+        toast({
+          title: 'No Records Found',
+          description: `No assessor records found for ${customer.first_name} ${customer.last_name}. Please search manually or flag as non-Pima County.`,
+          variant: 'destructive'
+        });
         return;
       }
 
@@ -695,11 +693,12 @@ export default function PropertyVerification() {
         // Step 3: last name candidates
         const initialRows = await findAssessorCandidatesByLastName(lastName);
         if (initialRows.length === 0) {
+          // No candidates found - this customer will need manual verification
           results.push({
             customer,
             assessorRecord: null,
             status: 'not_found',
-            issues: ['No assessor records matched the last name']
+            issues: ['No assessor records matched the last name - manual verification required']
           });
           continue;
         }
