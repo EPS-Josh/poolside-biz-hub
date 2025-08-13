@@ -63,6 +63,11 @@ export default function PropertyVerification() {
   const [assessorOptions, setAssessorOptions] = useState<AssessorRecord[]>([]);
   const [pendingCustomer, setPendingCustomer] = useState<any>(null);
   const [updatingMailingFor, setUpdatingMailingFor] = useState<string | null>(null);
+  const [showSkippedRecords, setShowSkippedRecords] = useState(false);
+
+  // Filter customers - main list only shows Pima County residents
+  const pimaCountyCustomers = customers.filter(customer => customer.pima_county_resident !== false);
+  const skippedCustomers = customers.filter(customer => customer.pima_county_resident === false);
 
   // Local filtering within suggested options
   const [assessorSearch, setAssessorSearch] = useState('');
@@ -698,7 +703,7 @@ export default function PropertyVerification() {
           });
           continue;
         }
-
+      
         if (initialRows.length === 1) {
           results.push(compareRecords(customer, mapDbRowToAssessorRecord(initialRows[0])));
           continue;
@@ -1106,6 +1111,16 @@ export default function PropertyVerification() {
                     <ExternalLink className="h-4 w-4" />
                     Open Assessor Website
                   </Button>
+                  {skippedCustomers.length > 0 && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowSkippedRecords(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Users className="h-4 w-4" />
+                      View Skipped Records ({skippedCustomers.length})
+                    </Button>
+                  )}
                  </div>
                  
                  {/* Progress Bar */}
@@ -1137,7 +1152,7 @@ export default function PropertyVerification() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {customers.filter(c => c.address && !c.owner_verified_at).map((customer) => (
+                  {pimaCountyCustomers.filter(c => c.address && !c.owner_verified_at).map((customer) => (
                     <div
                       key={customer.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
@@ -1529,6 +1544,73 @@ export default function PropertyVerification() {
                 >
                   <MapPin className="h-4 w-4" />
                   Not in Pima County
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Skipped Records Dialog */}
+          <Dialog open={showSkippedRecords} onOpenChange={setShowSkippedRecords}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Skipped Records - Non-Pima County</DialogTitle>
+                <DialogDescription>
+                  These customers have been flagged as not in Pima County and require alternative verification methods.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="max-h-96 overflow-y-auto">
+                {skippedCustomers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No customers have been flagged as non-Pima County residents.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {skippedCustomers.map((customer) => (
+                      <div
+                        key={customer.id}
+                        className="flex items-center justify-between p-4 border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium">
+                              {customer.first_name} {customer.last_name}
+                            </h3>
+                            <Badge variant="secondary" className="gap-1 text-xs">
+                              <MapPin className="h-3 w-3" />
+                              Non-Pima County
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {customer.email && <div>📧 {customer.email}</div>}
+                            {customer.phone && <div>📞 {customer.phone}</div>}
+                            {customer.address && <div>📍 {customer.address}</div>}
+                            {customer.city && customer.state && (
+                              <div>🏢 {customer.city}, {customer.state}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setShowSkippedRecords(false);
+                              navigate(`/customers/${customer.id}`);
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowSkippedRecords(false)}>
+                  Close
                 </Button>
               </DialogFooter>
             </DialogContent>

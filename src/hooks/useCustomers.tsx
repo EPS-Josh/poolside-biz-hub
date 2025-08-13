@@ -19,6 +19,12 @@ interface Customer {
   created_at: string;
   owner_verified_at?: string;
   owner_verified_by?: string;
+  pima_county_resident?: boolean;
+  verification_status?: string;
+  non_pima_verification_method?: string;
+  non_pima_verification_notes?: string;
+  non_pima_verified_at?: string;
+  non_pima_verified_by?: string;
 }
 
 export const useCustomers = (searchTerm: string = '') => {
