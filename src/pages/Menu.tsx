@@ -15,8 +15,10 @@ import {
   UserCheck, 
   Building, 
   Calendar,
-  FileText
+  FileText,
+  ClipboardList
 } from 'lucide-react';
+import { ServiceRecordsList } from '@/components/ServiceRecordsList';
 
 const Menu = () => {
   const navigate = useNavigate();
@@ -155,6 +157,11 @@ const Menu = () => {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Service Records Section */}
+            <div className="mt-12">
+              <ServiceRecordsList />
             </div>
 
             {/* Water Test Analyzer Section */}
