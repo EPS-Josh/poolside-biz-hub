@@ -24,6 +24,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { Employees } from "./pages/Employees";
 import CustomerMapPage from "./pages/CustomerMap";
 import PropertyVerification from "./pages/PropertyVerification";
+import ServiceRecords from "./pages/ServiceRecords";
 
 const queryClient = new QueryClient();
 
@@ -56,7 +57,8 @@ const App = () => (
                 <Employees />
               </ProtectedRoute>
             } />
-          <Route path="/tsbs" element={<TSBs />} />
+            <Route path="/tsbs" element={<TSBs />} />
+            <Route path="/service-records" element={<ServiceRecords />} />
           <Route path="/manuals" element={<Manuals />} />
           <Route path="/manuals/:category" element={<Manuals />} />
           <Route path="/parts-diagrams" element={<PartsDiagrams />} />

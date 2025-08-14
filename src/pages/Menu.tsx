@@ -18,7 +18,7 @@ import {
   FileText,
   ClipboardList
 } from 'lucide-react';
-import { ServiceRecordsList } from '@/components/ServiceRecordsList';
+
 
 const Menu = () => {
   const navigate = useNavigate();
@@ -74,6 +74,13 @@ const Menu = () => {
           icon: Calendar,
           color: "bg-red-500",
           action: () => navigate('/calendar'),
+        },
+        {
+          title: "Service Records",
+          description: "View and manage all service records",
+          icon: ClipboardList,
+          color: "bg-blue-600",
+          action: () => navigate('/service-records'),
         },
         {
           title: "TSB's",
@@ -159,10 +166,6 @@ const Menu = () => {
               ))}
             </div>
 
-            {/* Service Records Section */}
-            <div className="mt-12">
-              <ServiceRecordsList />
-            </div>
 
             {/* Water Test Analyzer Section */}
             <div className="mt-12">
