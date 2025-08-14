@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -143,7 +144,7 @@ export const ServiceRecordsList = () => {
           <div class="header">
             <h1>Service Record</h1>
             <p><span class="label">Customer:</span> ${customerName}</p>
-            <p><span class="label">Date:</span> ${new Date(record.service_date).toLocaleDateString()}</p>
+            <p><span class="label">Date:</span> ${format(parseISO(record.service_date), 'MM/dd/yyyy')}</p>
             <p><span class="label">Service Type:</span> ${record.service_type}</p>
           </div>
           
@@ -190,12 +191,12 @@ export const ServiceRecordsList = () => {
 
   const handleEmail = (record: ServiceRecordWithCustomer) => {
     const customerName = `${record.customers?.first_name || ''} ${record.customers?.last_name || ''}`.trim();
-    const subject = encodeURIComponent(`Service Record - ${customerName} - ${new Date(record.service_date).toLocaleDateString()}`);
+    const subject = encodeURIComponent(`Service Record - ${customerName} - ${format(parseISO(record.service_date), 'MM/dd/yyyy')}`);
     const body = encodeURIComponent(`
 Service Record Details:
 
 Customer: ${customerName}
-Service Date: ${new Date(record.service_date).toLocaleDateString()}
+Service Date: ${format(parseISO(record.service_date), 'MM/dd/yyyy')}
 Service Type: ${record.service_type}
 Technician: ${record.technician_name || 'N/A'}
 
@@ -293,7 +294,7 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {new Date(record.service_date).toLocaleDateString()}
+                          {format(parseISO(record.service_date), 'MM/dd/yyyy')}
                         </TableCell>
                         <TableCell>{record.service_type}</TableCell>
                         <TableCell>{record.technician_name || 'N/A'}</TableCell>
