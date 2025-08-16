@@ -9,7 +9,8 @@ export const SERVICES = [
   'Equipment Installation',
   'Emergency Service',
   'Collar Set',
-  'Consultation'
+  'Consultation',
+  'Follow up - No Charge'
 ];
 
 export const TIME_SLOTS = [
