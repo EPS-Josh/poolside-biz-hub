@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X, Users, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X, Users, ShieldCheck, Loader2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
@@ -45,6 +45,7 @@ export default function PropertyVerification() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [verificationResults, setVerificationResults] = useState<VerificationResult[]>([]);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyingCustomerId, setVerifyingCustomerId] = useState<string | null>(null);
   const [editingOwner, setEditingOwner] = useState<string | null>(null);
   const [editOwnerName, setEditOwnerName] = useState('');
   const [showUpdateCustomerDialog, setShowUpdateCustomerDialog] = useState(false);
@@ -491,6 +492,7 @@ export default function PropertyVerification() {
       setImportProgress(null);
     } finally {
       setIsVerifying(false);
+      setVerifyingCustomerId(null);
     }
   };
 
@@ -577,6 +579,7 @@ export default function PropertyVerification() {
     }
 
     setIsVerifying(true);
+    setVerifyingCustomerId(customer.id);
     try {
       // Step 1: try address match first (gracefully handle errors)
       let byAddress: AssessorRecord | null = null;
@@ -593,6 +596,7 @@ export default function PropertyVerification() {
         });
         toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
         setIsVerifying(false);
+        setVerifyingCustomerId(null);
         return;
       }
 
@@ -604,6 +608,7 @@ export default function PropertyVerification() {
         setPendingCustomer(customer);
         setShowSelectAssessorDialog(true);
         setIsVerifying(false);
+        setVerifyingCustomerId(null);
         toast({
           title: 'No Automatic Match',
           description: `No address or name match found for ${customer.first_name} ${customer.last_name}. Please search manually or flag as non-Pima County.`,
@@ -620,6 +625,7 @@ export default function PropertyVerification() {
         setPendingCustomer(customer);
         setShowSelectAssessorDialog(true);
         setIsVerifying(false);
+        setVerifyingCustomerId(null);
         toast({
           title: 'No Records Found',
           description: `No assessor records found for ${customer.first_name} ${customer.last_name}. Please search manually or flag as non-Pima County.`,
@@ -637,6 +643,7 @@ export default function PropertyVerification() {
         });
         toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
         setIsVerifying(false);
+        setVerifyingCustomerId(null);
         return;
       }
 
@@ -658,6 +665,7 @@ export default function PropertyVerification() {
         });
         toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
         setIsVerifying(false);
+        setVerifyingCustomerId(null);
         return;
       }
 
@@ -681,6 +689,7 @@ export default function PropertyVerification() {
       setPendingCustomer(customer);
       setShowSelectAssessorDialog(true);
       setIsVerifying(false);
+      setVerifyingCustomerId(null);
     } catch (error) {
       toast({
         title: 'Verification Error',
@@ -688,6 +697,7 @@ export default function PropertyVerification() {
         variant: 'destructive'
       });
       setIsVerifying(false);
+      setVerifyingCustomerId(null);
     }
   };
 
@@ -770,6 +780,7 @@ export default function PropertyVerification() {
 
     setVerificationResults(results);
     setIsVerifying(false);
+    setVerifyingCustomerId(null);
 
     toast({
       title: 'Bulk Verification Complete',
@@ -1120,7 +1131,11 @@ export default function PropertyVerification() {
                     disabled={isVerifying}
                     className="flex items-center gap-2"
                   >
-                    <MapPin className="h-4 w-4" />
+                    {isVerifying ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <MapPin className="h-4 w-4" />
+                    )}
                     {isVerifying ? 'Verifying...' : 'Bulk Verify All Customers'}
                   </Button>
                   {importProgress?.hasMoreBatches && (
@@ -1130,7 +1145,11 @@ export default function PropertyVerification() {
                       disabled={isVerifying}
                       className="flex items-center gap-2"
                     >
-                      <Download className="h-4 w-4" />
+                      {isVerifying ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                       Continue Import
                     </Button>
                   )}
@@ -1155,19 +1174,22 @@ export default function PropertyVerification() {
                  </div>
                  
                  {/* Progress Bar */}
-                 {importProgress && (
-                   <div className="space-y-2">
-                     <div className="flex justify-between text-sm">
-                       <span>Import Progress</span>
-                       <span>{importProgress.progress}%</span>
-                     </div>
-                     <Progress value={importProgress.progress} className="w-full" />
-                     <div className="text-xs text-muted-foreground">
-                       Batch {importProgress.batchNumber + 1} • {importProgress.inserted} records imported
-                       {importProgress.hasMoreBatches && ' • More batches remaining'}
-                     </div>
-                   </div>
-                 )}
+                  {importProgress && (
+                    <div className="space-y-2 p-4 bg-muted/50 rounded-lg border">
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          <span className="font-medium">Import Progress</span>
+                        </div>
+                        <span className="font-medium">{importProgress.progress}%</span>
+                      </div>
+                      <Progress value={importProgress.progress} className="w-full" />
+                      <div className="text-xs text-muted-foreground">
+                        Batch {importProgress.batchNumber + 1} • {importProgress.inserted} records imported
+                        {importProgress.hasMoreBatches && ' • More batches remaining'}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
             </Card>
           </div>
@@ -1202,7 +1224,11 @@ export default function PropertyVerification() {
                           variant="outline"
                           onClick={() => handleVerifyCustomer(customer)}
                           disabled={isVerifying || !customer.address}
+                          className="flex items-center gap-2"
                         >
+                          {verifyingCustomerId === customer.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : null}
                           Verify
                         </Button>
                         <Button
