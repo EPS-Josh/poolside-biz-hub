@@ -353,6 +353,38 @@ export default function PropertyVerification() {
     resetGlobalAssessorSearch();
   };
 
+  const handleSkipCustomer = async (customer: any) => {
+    if (!user?.id) return;
+
+    try {
+      await supabase
+        .from('customers')
+        .update({
+          pima_county_resident: false,
+          verification_status: 'skipped',
+          non_pima_verified_by: user.id,
+          non_pima_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id);
+
+      // Refresh customer list to move customer to skipped records
+      fetchCustomers?.();
+
+      toast({
+        title: 'Customer Skipped',
+        description: `${customer.first_name} ${customer.last_name} moved to skipped records`,
+      });
+    } catch (error) {
+      console.error('Error skipping customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to skip customer',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleFlagNonPimaCounty = async () => {
     if (!pendingCustomer) return;
     
@@ -1164,14 +1196,25 @@ export default function PropertyVerification() {
                           {customer.address ? customer.address : 'No address on file'}
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleVerifyCustomer(customer)}
-                        disabled={isVerifying || !customer.address}
-                      >
-                        Verify
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleVerifyCustomer(customer)}
+                          disabled={isVerifying || !customer.address}
+                        >
+                          Verify
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleSkipCustomer(customer)}
+                          disabled={isVerifying}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          Skip
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
