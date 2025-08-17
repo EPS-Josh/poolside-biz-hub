@@ -10,7 +10,8 @@ export const SERVICES = [
   'Emergency Service',
   'Collar Set',
   'Consultation',
-  'Follow up - No Charge'
+  'Follow up - No Charge',
+  'Pool Drain & Refill'
 ];
 
 export const TIME_SLOTS = [
