@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -27,6 +27,7 @@ interface CustomerSelectProps {
 export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange }) => {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const commandListRef = useRef<HTMLDivElement>(null);
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers-select'],
@@ -70,6 +71,13 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
 
   const selectedCustomer = customers.find(customer => customer.id === value);
 
+  // Reset scroll position when popover opens
+  useEffect(() => {
+    if (open && commandListRef.current) {
+      commandListRef.current.scrollTop = 0;
+    }
+  }, [open]);
+
   return (
     <div className="space-y-2">
       <Label htmlFor="customer">Customer</Label>
@@ -90,7 +98,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
         <PopoverContent className="w-full p-0" align="start">
           <Command>
             <CommandInput placeholder="Search by last name..." />
-            <CommandList>
+            <CommandList ref={commandListRef} className="max-h-[200px] overflow-y-auto">
               <CommandEmpty>No customers found.</CommandEmpty>
               <CommandGroup>
                 {customers.map((customer) => (
