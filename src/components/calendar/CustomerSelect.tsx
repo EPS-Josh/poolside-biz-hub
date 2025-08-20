@@ -28,6 +28,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const commandListRef = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState('');
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customers-select'],
@@ -74,14 +75,17 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
   // Reset scroll position when popover opens
   useEffect(() => {
     if (open && commandListRef.current) {
-      commandListRef.current.scrollTop = 0;
+      const el = commandListRef.current;
+      requestAnimationFrame(() => {
+        el.scrollTop = 0;
+      });
     }
-  }, [open]);
+  }, [open, search]);
 
   return (
     <div className="space-y-2">
       <Label htmlFor="customer">Customer</Label>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) setSearch(''); }}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -96,7 +100,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
-          <Command>
+          <Command value={search} onValueChange={setSearch}>
             <CommandInput placeholder="Search by last name..." />
             <CommandList ref={commandListRef} className="max-h-[200px] overflow-y-auto">
               <CommandEmpty>No customers found.</CommandEmpty>
