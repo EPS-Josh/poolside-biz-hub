@@ -1116,27 +1116,41 @@ export default function PropertyVerification() {
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <MetricsCard
-              title="Total Customers"
-              value={customers.length}
-              icon={Users}
-            />
-            <MetricsCard
-              title="Verified Original Owners"
-              value={customers.filter(c => c.owner_verified_at && !c.previous_first_name && !c.previous_last_name).length}
-              icon={UserCheck}
-            />
-            <MetricsCard
-              title="Verified Changed Owners"
-              value={customers.filter(c => c.owner_verified_at && (c.previous_first_name || c.previous_last_name)).length}
-              icon={UserX}
-            />
-            <MetricsCard
-              title="Not Verified"
-              value={customers.filter(c => !c.owner_verified_at).length}
-              icon={UserSearch}
-            />
+          <div className="space-y-4 mb-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Customer Statistics</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchCustomers?.()}
+                className="flex items-center gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Refresh Totals
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <MetricsCard
+                title="Total Customers"
+                value={customers.length}
+                icon={Users}
+              />
+              <MetricsCard
+                title="Verified Original Owners"
+                value={customers.filter(c => c.owner_verified_at && !c.previous_first_name && !c.previous_last_name).length}
+                icon={UserCheck}
+              />
+              <MetricsCard
+                title="Verified Changed Owners"
+                value={customers.filter(c => c.owner_verified_at && (c.previous_first_name || c.previous_last_name)).length}
+                icon={UserX}
+              />
+              <MetricsCard
+                title="Not Verified"
+                value={customers.filter(c => !c.owner_verified_at).length}
+                icon={UserSearch}
+              />
+            </div>
           </div>
 
           {/* Controls */}
