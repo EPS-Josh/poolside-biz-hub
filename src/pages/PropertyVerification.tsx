@@ -1121,13 +1121,13 @@ export default function PropertyVerification() {
               icon={Users}
             />
             <MetricsCard
-              title="Original Owners"
-              value={customers.filter(c => c.owner_verified_at).length}
+              title="Verified Original Owners"
+              value={customers.filter(c => c.owner_verified_at && !c.previous_first_name && !c.previous_last_name).length}
               icon={UserCheck}
             />
             <MetricsCard
-              title="Not Original Owner"
-              value={customers.filter(c => c.previous_first_name || c.previous_last_name).length}
+              title="Verified Changed Owners"
+              value={customers.filter(c => c.owner_verified_at && (c.previous_first_name || c.previous_last_name)).length}
               icon={UserX}
             />
             <MetricsCard
