@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X, Users, ShieldCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, AlertTriangle, CheckCircle, ExternalLink, Download, Edit2, Save, X, Users, ShieldCheck, Loader2, UserCheck, UserX, UserSearch } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { MetricsCard } from '@/components/MetricsCard';
 
 interface AssessorRecord {
   id?: string;
@@ -1110,6 +1111,30 @@ export default function PropertyVerification() {
                 Verify customer records against Pima County Assessor data
               </p>
             </div>
+          </div>
+
+          {/* Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <MetricsCard
+              title="Total Customers"
+              value={customers.length}
+              icon={Users}
+            />
+            <MetricsCard
+              title="Original Owners"
+              value={customers.filter(c => c.owner_verified_at).length}
+              icon={UserCheck}
+            />
+            <MetricsCard
+              title="Not Original Owner"
+              value={customers.filter(c => c.previous_first_name || c.previous_last_name).length}
+              icon={UserX}
+            />
+            <MetricsCard
+              title="Not Verified"
+              value={customers.filter(c => !c.owner_verified_at).length}
+              icon={UserSearch}
+            />
           </div>
 
           {/* Controls */}

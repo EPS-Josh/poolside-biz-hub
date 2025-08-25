@@ -25,6 +25,8 @@ interface Customer {
   non_pima_verification_notes?: string;
   non_pima_verified_at?: string;
   non_pima_verified_by?: string;
+  previous_first_name?: string;
+  previous_last_name?: string;
 }
 
 export const useCustomers = (searchTerm: string = '') => {
