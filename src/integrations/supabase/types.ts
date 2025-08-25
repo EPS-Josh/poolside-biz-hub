@@ -62,6 +62,13 @@ export type Database = {
             foreignKeyName: "appointments_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "customer_service_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
@@ -292,6 +299,13 @@ export type Database = {
             foreignKeyName: "customer_photos_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "customer_service_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_photos_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
@@ -350,6 +364,13 @@ export type Database = {
           water_features?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "customer_service_details_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_service_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "customer_service_details_customer_id_fkey"
             columns: ["customer_id"]
@@ -839,6 +860,13 @@ export type Database = {
             foreignKeyName: "quickbooks_customer_sync_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "customer_service_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quickbooks_customer_sync_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
@@ -962,6 +990,13 @@ export type Database = {
           work_performed?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "service_records_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_service_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_records_customer_id_fkey"
             columns: ["customer_id"]
@@ -1126,7 +1161,60 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      customer_service_view: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string | null
+          email: string | null
+          first_name: string | null
+          id: string | null
+          last_name: string | null
+          notes: string | null
+          owner_verified_at: string | null
+          phone: string | null
+          pima_county_resident: boolean | null
+          state: string | null
+          updated_at: string | null
+          verification_status: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          email?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          notes?: string | null
+          owner_verified_at?: string | null
+          phone?: never
+          pima_county_resident?: boolean | null
+          state?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string | null
+          email?: never
+          first_name?: string | null
+          id?: string | null
+          last_name?: string | null
+          notes?: string | null
+          owner_verified_at?: string | null
+          phone?: never
+          pima_county_resident?: boolean | null
+          state?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_tokens: {
@@ -1151,6 +1239,14 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      log_sensitive_data_access: {
+        Args: {
+          access_type: string
+          accessed_table: string
+          customer_id: string
+        }
+        Returns: undefined
       }
       validate_role_assignment: {
         Args: {
