@@ -1136,7 +1136,7 @@ export default function PropertyVerification() {
                 icon={Users}
               />
               <MetricsCard
-                title="Original Owners"
+                title="Customers Verified"
                 value={customers.filter(c => c.owner_verified_at).length}
                 icon={UserCheck}
               />
