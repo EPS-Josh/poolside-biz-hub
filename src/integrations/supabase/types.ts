@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1129,6 +1129,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_current_user_context: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -1139,8 +1143,8 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -1150,8 +1154,8 @@ export type Database = {
       }
       validate_role_assignment: {
         Args: {
-          target_user_id: string
           role_to_assign: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
         }
         Returns: boolean
       }
