@@ -1061,6 +1061,8 @@ export default function PropertyVerification() {
           last_name: lastName,
           owner_changed_date: new Date().toISOString(),
           owner_changed_by: user.id,
+          owner_verified_at: new Date().toISOString(),
+          owner_verified_by: user.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', matchingCustomer.id);
