@@ -1225,6 +1225,26 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_customer_service_data: {
+        Args: { customer_filter_id?: string; limit_results?: number }
+        Returns: {
+          address: string
+          city: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          notes: string
+          owner_verified_at: string
+          phone: string
+          pima_county_resident: boolean
+          state: string
+          updated_at: string
+          verification_status: string
+          zip_code: string
+        }[]
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
