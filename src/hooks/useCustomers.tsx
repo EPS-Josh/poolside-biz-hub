@@ -99,6 +99,7 @@ export const useCustomers = (searchTerm: string = '') => {
       const fullName = `${customer.first_name} ${customer.last_name}`.toLowerCase();
       const email = customer.email?.toLowerCase() || '';
       const company = customer.company?.toLowerCase() || '';
+      const address = customer.address?.toLowerCase() || '';
       const city = customer.city?.toLowerCase() || '';
       const state = customer.state?.toLowerCase() || '';
       const phone = customer.phone?.toLowerCase() || '';
@@ -107,6 +108,7 @@ export const useCustomers = (searchTerm: string = '') => {
         fullName.includes(lowercaseSearch) ||
         email.includes(lowercaseSearch) ||
         company.includes(lowercaseSearch) ||
+        address.includes(lowercaseSearch) ||
         city.includes(lowercaseSearch) ||
         state.includes(lowercaseSearch) ||
         phone.includes(lowercaseSearch)
