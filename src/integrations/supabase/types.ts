@@ -22,8 +22,13 @@ export type Database = {
           customer_id: string | null
           external_event_id: string | null
           id: string
+          is_recurring: boolean | null
           last_synced_at: string | null
           notes: string | null
+          occurrence_number: number | null
+          recurring_end_date: string | null
+          recurring_frequency: string | null
+          recurring_parent_id: string | null
           service_type: string
           status: string
           updated_at: string
@@ -36,8 +41,13 @@ export type Database = {
           customer_id?: string | null
           external_event_id?: string | null
           id?: string
+          is_recurring?: boolean | null
           last_synced_at?: string | null
           notes?: string | null
+          occurrence_number?: number | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          recurring_parent_id?: string | null
           service_type: string
           status?: string
           updated_at?: string
@@ -50,8 +60,13 @@ export type Database = {
           customer_id?: string | null
           external_event_id?: string | null
           id?: string
+          is_recurring?: boolean | null
           last_synced_at?: string | null
           notes?: string | null
+          occurrence_number?: number | null
+          recurring_end_date?: string | null
+          recurring_frequency?: string | null
+          recurring_parent_id?: string | null
           service_type?: string
           status?: string
           updated_at?: string
@@ -70,6 +85,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_recurring_parent_id_fkey"
+            columns: ["recurring_parent_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
         ]
