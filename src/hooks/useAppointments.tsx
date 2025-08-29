@@ -36,7 +36,7 @@ export const useAppointments = (viewType: 'month' | 'week' | 'day', currentDate:
         .from('appointments')
         .select(`
           *,
-          customers (
+          customers!customer_id (
             first_name,
             last_name
           )
