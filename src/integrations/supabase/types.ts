@@ -938,6 +938,36 @@ export type Database = {
           },
         ]
       }
+      saved_service_routes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          route_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          route_data: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          route_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       service_records: {
         Row: {
           after_readings: Json | null

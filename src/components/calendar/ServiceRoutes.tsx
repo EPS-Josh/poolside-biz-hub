@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppointments } from '@/hooks/useAppointments';
@@ -11,6 +11,9 @@ import { MapPin, Clock, User, Route, Shuffle, ArrowUp, ArrowDown, Plus, Save, Ti
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface ServiceRoute {
   id: string;
@@ -560,9 +563,81 @@ export const ServiceRoutes: React.FC = () => {
   const [selectedRoute, setSelectedRoute] = useState<ServiceRoute | null>(null);
   const [showBuilder, setShowBuilder] = useState(false);
   const [customRoutes, setCustomRoutes] = useState<ServiceRoute[]>([]);
+  const { user } = useAuth();
+  const [savedRoutes, setSavedRoutes] = useState<any[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [selectedSavedId, setSelectedSavedId] = useState('');
   
   const { data: appointments = [] } = useAppointments('day', selectedDate);
 
+  const fetchSavedRoutes = async () => {
+    try {
+      setLoadingSaved(true);
+      const { data, error } = await supabase
+        .from('saved_service_routes')
+        .select('id, name, description, route_data, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setSavedRoutes(data || []);
+    } catch (err) {
+      console.error('Error loading saved routes:', err);
+      toast.error('Failed to load saved routes');
+    } finally {
+      setLoadingSaved(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) fetchSavedRoutes();
+  }, [user, selectedDate]);
+
+  const saveCurrentRoutes = async () => {
+    if (!user) {
+      toast.error('Please sign in to save routes');
+      return;
+    }
+    if (customRoutes.length === 0) {
+      toast.error('No custom routes to save');
+      return;
+    }
+    try {
+      setLoadingSaved(true);
+      const payload = {
+        user_id: user.id,
+        name: saveName || `Routes ${format(selectedDate, 'yyyy-MM-dd')}`,
+        description: `Routes for ${format(selectedDate, 'yyyy-MM-dd')}`,
+        route_data: JSON.parse(JSON.stringify({
+          date: format(selectedDate, 'yyyy-MM-dd'),
+          routes: customRoutes,
+        })) as any,
+      };
+      const { error } = await supabase.from('saved_service_routes').insert(payload);
+      if (error) throw error;
+      toast.success('Routes saved');
+      setShowSaveDialog(false);
+      setSaveName('');
+      fetchSavedRoutes();
+    } catch (err) {
+      console.error('Error saving routes:', err);
+      toast.error('Failed to save routes');
+    } finally {
+      setLoadingSaved(false);
+    }
+  };
+
+  const loadSelectedRouteSet = () => {
+    const item = savedRoutes.find(r => r.id === selectedSavedId);
+    if (!item) return;
+    const data = (item as any).route_data as any;
+    if (data?.routes) {
+      setCustomRoutes(data.routes);
+      toast.success('Routes loaded');
+    } else {
+      toast.error('Saved data is invalid');
+    }
+  };
   // Combine auto-generated and custom routes
   const allRoutes = useMemo(() => {
     // Auto-generated routes from unassigned appointments
@@ -626,11 +701,61 @@ export const ServiceRoutes: React.FC = () => {
               <Plus className="h-4 w-4 mr-2" />
               {showBuilder ? "Hide Builder" : "Build Routes"}
             </Button>
+
+            <select
+              value={selectedSavedId}
+              onChange={(e) => setSelectedSavedId(e.target.value)}
+              disabled={loadingSaved}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="">Saved for {format(selectedDate, 'MM/dd')}</option>
+              {savedRoutes
+                .filter((r: any) => (r.route_data?.date) === format(selectedDate, 'yyyy-MM-dd'))
+                .map((r: any) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+            </select>
+            <Button variant="outline" onClick={() => setShowSaveDialog(true)}>
+              <Save className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+            <Button onClick={loadSelectedRouteSet} disabled={!selectedSavedId}>
+              Load
+            </Button>
             <Badge variant="secondary">
               {totalAppointments} appointments
             </Badge>
           </div>
         </div>
+ 
+        <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Save Routes</DialogTitle>
+              <DialogDescription>
+                Name this set of routes for {format(selectedDate, 'MMMM d, yyyy')}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Label htmlFor="route-set-name">Route Set Name</Label>
+              <Input
+                id="route-set-name"
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder={`Routes ${format(selectedDate, 'yyyy-MM-dd')}`}
+              />
+              <div className="flex justify-end space-x-2 pt-2">
+                <Button variant="outline" onClick={() => setShowSaveDialog(false)}>Cancel</Button>
+                <Button onClick={saveCurrentRoutes} disabled={loadingSaved}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Route Builder */}
         {showBuilder && (
@@ -731,6 +856,9 @@ export const ServiceRoutes: React.FC = () => {
               <Route className="h-5 w-5" />
               <span>{selectedRoute?.name} - {selectedRoute?.area}</span>
             </DialogTitle>
+            <DialogDescription>
+              Full route details for {format(selectedDate, 'MMMM d, yyyy')}
+            </DialogDescription>
           </DialogHeader>
           
           {selectedRoute && (
