@@ -3,8 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAppointments } from '@/hooks/useAppointments';
-import { MapPin, Clock, User, Route, Shuffle, ArrowUp, ArrowDown, Plus, Save } from 'lucide-react';
+import { CustomerSelect } from './CustomerSelect';
+import { MapPin, Clock, User, Route, Shuffle, ArrowUp, ArrowDown, Plus, Save, Timer, AlertCircle } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
@@ -17,6 +20,23 @@ interface ServiceRoute {
   totalDistance?: number;
   isCustom?: boolean;
   optimizedOrder?: number[];
+  estimatedDuration?: number; // in minutes
+}
+
+interface TestAppointment {
+  id: string;
+  customer_id: string;
+  appointment_time: string;
+  service_type: string;
+  isTest?: boolean;
+  customers?: {
+    first_name: string;
+    last_name: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
+  };
 }
 
 interface RouteBuilderProps {
@@ -24,10 +44,46 @@ interface RouteBuilderProps {
   onRoutesChange: (routes: ServiceRoute[]) => void;
 }
 
+// Calculate estimated travel time between appointments (simplified)
+const calculateTravelTime = (from: any, to: any): number => {
+  if (!from.customers || !to.customers) return 15; // Default 15 minutes
+  
+  const fromZip = from.customers.zip_code || '';
+  const toZip = to.customers.zip_code || '';
+  
+  // Simple estimation: same zip = 10 min, different zip = 20 min, no zip = 15 min
+  if (fromZip && toZip) {
+    return fromZip === toZip ? 10 : 20;
+  }
+  return 15;
+};
+
+// Calculate service duration based on service type
+const getServiceDuration = (serviceType: string): number => {
+  const durations: { [key: string]: number } = {
+    'Pool Cleaning': 45,
+    'Pool Repair': 90,
+    'Equipment Service': 60,
+    'Chemical Balance': 30,
+    'Filter Cleaning': 30,
+    'Emergency Service': 120,
+    'Initial Service': 60,
+    'Weekly Service': 45,
+    'Bi-weekly Service': 45,
+    'Monthly Service': 60,
+  };
+  return durations[serviceType] || 45; // Default 45 minutes
+};
+
 const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChange }) => {
   const [customRoutes, setCustomRoutes] = useState<ServiceRoute[]>([]);
   const [selectedAppointments, setSelectedAppointments] = useState<Set<string>>(new Set());
   const [newRouteName, setNewRouteName] = useState('');
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState<string>('');
+  const [testCustomerId, setTestCustomerId] = useState('');
+  const [testTime, setTestTime] = useState('');
+  const [testServiceType, setTestServiceType] = useState('Pool Cleaning');
 
   const unassignedAppointments = appointments.filter(apt => 
     !customRoutes.some(route => route.appointments.some(rApt => rApt.id === apt.id))
@@ -39,12 +95,16 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
     const selectedAppts = appointments.filter(apt => selectedAppointments.has(apt.id));
     if (selectedAppts.length === 0) return;
 
+    const sortedAppts = selectedAppts.sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+    const estimatedDuration = calculateRouteDuration(sortedAppts);
+
     const newRoute: ServiceRoute = {
       id: `custom-${Date.now()}`,
       name: newRouteName,
       area: 'Custom Route',
-      appointments: selectedAppts,
-      isCustom: true
+      appointments: sortedAppts,
+      isCustom: true,
+      estimatedDuration
     };
 
     const updatedRoutes = [...customRoutes, newRoute];
@@ -52,6 +112,77 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
     setSelectedAppointments(new Set());
     setNewRouteName('');
     onRoutesChange(updatedRoutes);
+  };
+
+  const calculateRouteDuration = (appts: any[]): number => {
+    if (appts.length === 0) return 0;
+    
+    let totalDuration = 0;
+    
+    for (let i = 0; i < appts.length; i++) {
+      // Add service time
+      totalDuration += getServiceDuration(appts[i].service_type);
+      
+      // Add travel time to next appointment
+      if (i < appts.length - 1) {
+        totalDuration += calculateTravelTime(appts[i], appts[i + 1]);
+      }
+    }
+    
+    return totalDuration;
+  };
+
+  const addTestCustomerToRoute = async () => {
+    if (!testCustomerId || !testTime || !selectedRouteId) return;
+    
+    // Fetch customer details
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', testCustomerId)
+      .single();
+    
+    if (!customer) return;
+
+    const testAppointment: TestAppointment = {
+      id: `test-${Date.now()}`,
+      customer_id: testCustomerId,
+      appointment_time: testTime,
+      service_type: testServiceType,
+      isTest: true,
+      customers: {
+        first_name: customer.first_name,
+        last_name: customer.last_name,
+        address: customer.address,
+        city: customer.city,
+        state: customer.state,
+        zip_code: customer.zip_code
+      }
+    };
+
+    const updatedRoutes = customRoutes.map(route => {
+      if (route.id === selectedRouteId) {
+        const newAppointments = [...route.appointments, testAppointment]
+          .sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+        
+        return {
+          ...route,
+          appointments: newAppointments,
+          estimatedDuration: calculateRouteDuration(newAppointments)
+        };
+      }
+      return route;
+    });
+
+    setCustomRoutes(updatedRoutes);
+    onRoutesChange(updatedRoutes);
+    
+    // Reset form
+    setTestCustomerId('');
+    setTestTime('');
+    setTestServiceType('Pool Cleaning');
+    setShowAddCustomer(false);
   };
 
   const optimizeRoute = (routeId: string) => {
@@ -71,7 +202,11 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
     });
 
     const updatedRoutes = customRoutes.map(r => 
-      r.id === routeId ? { ...r, appointments: optimized } : r
+      r.id === routeId ? { 
+        ...r, 
+        appointments: optimized,
+        estimatedDuration: calculateRouteDuration(optimized)
+      } : r
     );
     setCustomRoutes(updatedRoutes);
     onRoutesChange(updatedRoutes);
@@ -88,7 +223,11 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
     items.splice(result.destination.index, 0, reorderedItem);
 
     const updatedRoutes = customRoutes.map(r => 
-      r.id === routeId ? { ...r, appointments: items } : r
+      r.id === routeId ? { 
+        ...r, 
+        appointments: items,
+        estimatedDuration: calculateRouteDuration(items)
+      } : r
     );
     setCustomRoutes(updatedRoutes);
     onRoutesChange(updatedRoutes);
@@ -148,6 +287,82 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
         </CardContent>
       </Card>
 
+      {/* Add Customer to Route */}
+      {customRoutes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <User className="h-5 w-5 text-primary" />
+              <span>Test Route Timing</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!showAddCustomer ? (
+              <Button onClick={() => setShowAddCustomer(true)} variant="outline" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer to Test Timing
+              </Button>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <Label>Select Route</Label>
+                  <select
+                    value={selectedRouteId}
+                    onChange={(e) => setSelectedRouteId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Choose a route...</option>
+                    {customRoutes.map((route) => (
+                      <option key={route.id} value={route.id}>
+                        {route.name} ({route.appointments.length} stops)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <CustomerSelect value={testCustomerId} onChange={setTestCustomerId} />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Time</Label>
+                    <Input
+                      type="time"
+                      value={testTime}
+                      onChange={(e) => setTestTime(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Service Type</Label>
+                    <select
+                      value={testServiceType}
+                      onChange={(e) => setTestServiceType(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="Pool Cleaning">Pool Cleaning</option>
+                      <option value="Pool Repair">Pool Repair</option>
+                      <option value="Equipment Service">Equipment Service</option>
+                      <option value="Chemical Balance">Chemical Balance</option>
+                      <option value="Filter Cleaning">Filter Cleaning</option>
+                      <option value="Emergency Service">Emergency Service</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex space-x-2">
+                  <Button onClick={addTestCustomerToRoute} disabled={!testCustomerId || !testTime || !selectedRouteId}>
+                    <Timer className="h-4 w-4 mr-2" />
+                    Add & Calculate Timing
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddCustomer(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Custom Routes */}
       {customRoutes.map((route) => (
         <Card key={route.id}>
@@ -157,6 +372,12 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
                 <Route className="h-5 w-5 text-primary" />
                 <span>{route.name}</span>
                 <Badge variant="outline">{route.appointments.length} stops</Badge>
+                {route.estimatedDuration && (
+                  <Badge variant="secondary" className="ml-2">
+                    <Timer className="h-3 w-3 mr-1" />
+                    {Math.round(route.estimatedDuration / 60)}h {route.estimatedDuration % 60}m
+                  </Badge>
+                )}
               </CardTitle>
               <div className="flex space-x-2">
                 <Button size="sm" variant="outline" onClick={() => optimizeRoute(route.id)}>
@@ -174,31 +395,45 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
                     {route.appointments.map((apt, index) => (
                       <Draggable key={apt.id} draggableId={apt.id} index={index}>
                         {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`p-3 border rounded-lg ${
-                              snapshot.isDragging ? 'bg-blue-50 border-blue-200' : 'bg-white'
-                            }`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium">
-                                {index + 1}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="font-medium">
-                                    {apt.customers?.first_name} {apt.customers?.last_name}
-                                  </span>
-                                  <Badge variant="outline">{apt.appointment_time}</Badge>
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {apt.service_type} • {apt.customers?.address || 'No address'}
-                                </div>
-                              </div>
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        className={`p-3 border rounded-lg ${
+                          snapshot.isDragging ? 'bg-blue-50 border-blue-200' : 
+                          apt.isTest ? 'bg-orange-50 border-orange-200' : 'bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">
+                                {apt.customers?.first_name} {apt.customers?.last_name}
+                              </span>
+                              <Badge variant="outline">{apt.appointment_time}</Badge>
+                              {apt.isTest && (
+                                <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                                  Test
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {apt.service_type} • {apt.customers?.address || 'No address'}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Service: {getServiceDuration(apt.service_type)}min
+                              {index < route.appointments.length - 1 && (
+                                <span className="ml-2">
+                                  Travel: {calculateTravelTime(apt, route.appointments[index + 1])}min
+                                </span>
+                              )}
                             </div>
                           </div>
+                        </div>
+                      </div>
                         )}
                       </Draggable>
                     ))}
