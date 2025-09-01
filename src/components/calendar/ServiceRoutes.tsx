@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAppointments } from '@/hooks/useAppointments';
-import { MapPin, Clock, User, Route } from 'lucide-react';
+import { MapPin, Clock, User, Route, Shuffle, ArrowUp, ArrowDown, Plus, Save } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 
@@ -14,21 +15,224 @@ interface ServiceRoute {
   area: string;
   appointments: any[];
   totalDistance?: number;
+  isCustom?: boolean;
+  optimizedOrder?: number[];
 }
+
+interface RouteBuilderProps {
+  appointments: any[];
+  onRoutesChange: (routes: ServiceRoute[]) => void;
+}
+
+const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChange }) => {
+  const [customRoutes, setCustomRoutes] = useState<ServiceRoute[]>([]);
+  const [selectedAppointments, setSelectedAppointments] = useState<Set<string>>(new Set());
+  const [newRouteName, setNewRouteName] = useState('');
+
+  const unassignedAppointments = appointments.filter(apt => 
+    !customRoutes.some(route => route.appointments.some(rApt => rApt.id === apt.id))
+  );
+
+  const createNewRoute = () => {
+    if (!newRouteName.trim()) return;
+    
+    const selectedAppts = appointments.filter(apt => selectedAppointments.has(apt.id));
+    if (selectedAppts.length === 0) return;
+
+    const newRoute: ServiceRoute = {
+      id: `custom-${Date.now()}`,
+      name: newRouteName,
+      area: 'Custom Route',
+      appointments: selectedAppts,
+      isCustom: true
+    };
+
+    const updatedRoutes = [...customRoutes, newRoute];
+    setCustomRoutes(updatedRoutes);
+    setSelectedAppointments(new Set());
+    setNewRouteName('');
+    onRoutesChange(updatedRoutes);
+  };
+
+  const optimizeRoute = (routeId: string) => {
+    const route = customRoutes.find(r => r.id === routeId);
+    if (!route) return;
+
+    // Simple optimization: sort by time, then by proximity (basic zip code grouping)
+    const optimized = [...route.appointments].sort((a, b) => {
+      // First sort by time
+      const timeCompare = a.appointment_time.localeCompare(b.appointment_time);
+      if (timeCompare !== 0) return timeCompare;
+      
+      // Then by zip code for proximity
+      const zipA = a.customers?.zip_code || '';
+      const zipB = b.customers?.zip_code || '';
+      return zipA.localeCompare(zipB);
+    });
+
+    const updatedRoutes = customRoutes.map(r => 
+      r.id === routeId ? { ...r, appointments: optimized } : r
+    );
+    setCustomRoutes(updatedRoutes);
+    onRoutesChange(updatedRoutes);
+  };
+
+  const handleDragEnd = (result: any, routeId: string) => {
+    if (!result.destination) return;
+
+    const route = customRoutes.find(r => r.id === routeId);
+    if (!route) return;
+
+    const items = Array.from(route.appointments);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    const updatedRoutes = customRoutes.map(r => 
+      r.id === routeId ? { ...r, appointments: items } : r
+    );
+    setCustomRoutes(updatedRoutes);
+    onRoutesChange(updatedRoutes);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Route Builder Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Plus className="h-5 w-5" />
+            <span>Build New Route</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex space-x-2">
+            <input
+              type="text"
+              placeholder="Enter route name..."
+              value={newRouteName}
+              onChange={(e) => setNewRouteName(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+            />
+            <Button onClick={createNewRoute} disabled={!newRouteName.trim() || selectedAppointments.size === 0}>
+              Create Route
+            </Button>
+          </div>
+          
+          <div>
+            <p className="text-sm text-muted-foreground mb-2">
+              Select appointments to include ({selectedAppointments.size} selected):
+            </p>
+            <div className="max-h-40 overflow-y-auto space-y-2">
+              {unassignedAppointments.map((apt) => (
+                <label key={apt.id} className="flex items-center space-x-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedAppointments.has(apt.id)}
+                    onChange={(e) => {
+                      const newSelection = new Set(selectedAppointments);
+                      if (e.target.checked) {
+                        newSelection.add(apt.id);
+                      } else {
+                        newSelection.delete(apt.id);
+                      }
+                      setSelectedAppointments(newSelection);
+                    }}
+                  />
+                  <span>
+                    {apt.appointment_time} - {apt.customers?.first_name} {apt.customers?.last_name} ({apt.service_type})
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Custom Routes */}
+      {customRoutes.map((route) => (
+        <Card key={route.id}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Route className="h-5 w-5 text-primary" />
+                <span>{route.name}</span>
+                <Badge variant="outline">{route.appointments.length} stops</Badge>
+              </CardTitle>
+              <div className="flex space-x-2">
+                <Button size="sm" variant="outline" onClick={() => optimizeRoute(route.id)}>
+                  <Shuffle className="h-4 w-4 mr-1" />
+                  Optimize
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <DragDropContext onDragEnd={(result) => handleDragEnd(result, route.id)}>
+              <Droppable droppableId={route.id}>
+                {(provided) => (
+                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
+                    {route.appointments.map((apt, index) => (
+                      <Draggable key={apt.id} draggableId={apt.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`p-3 border rounded-lg ${
+                              snapshot.isDragging ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-medium">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium">
+                                    {apt.customers?.first_name} {apt.customers?.last_name}
+                                  </span>
+                                  <Badge variant="outline">{apt.appointment_time}</Badge>
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {apt.service_type} • {apt.customers?.address || 'No address'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
 
 export const ServiceRoutes: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(getCurrentPhoenixDate());
   const [selectedRoute, setSelectedRoute] = useState<ServiceRoute | null>(null);
+  const [showBuilder, setShowBuilder] = useState(false);
+  const [customRoutes, setCustomRoutes] = useState<ServiceRoute[]>([]);
   
   const { data: appointments = [] } = useAppointments('day', selectedDate);
 
-  // Group appointments by geographical area based on zip codes
-  const serviceRoutes = useMemo(() => {
+  // Combine auto-generated and custom routes
+  const allRoutes = useMemo(() => {
+    // Auto-generated routes from unassigned appointments
+    const unassignedAppointments = appointments.filter(apt => 
+      !customRoutes.some(route => route.appointments.some(rApt => rApt.id === apt.id))
+    );
+
     const routeMap = new Map<string, any[]>();
     
-    appointments.forEach((appointment) => {
+    unassignedAppointments.forEach((appointment) => {
       if (appointment.customers) {
-        // Use zip code for geographical routing, fallback to service type
         const customer = appointment.customers;
         const area = customer.zip_code ? `Zip Code ${customer.zip_code}` : appointment.service_type || 'General Service';
         
@@ -39,15 +243,18 @@ export const ServiceRoutes: React.FC = () => {
       }
     });
 
-    return Array.from(routeMap.entries()).map(([area, appts], index) => ({
-      id: `route-${index}`,
-      name: `Route ${String.fromCharCode(65 + index)}`, // Route A, B, C, etc.
+    const autoRoutes = Array.from(routeMap.entries()).map(([area, appts], index) => ({
+      id: `auto-route-${index}`,
+      name: `Auto Route ${String.fromCharCode(65 + index)}`,
       area,
-      appointments: appts.sort((a, b) => a.appointment_time.localeCompare(b.appointment_time))
+      appointments: appts.sort((a, b) => a.appointment_time.localeCompare(b.appointment_time)),
+      isCustom: false
     }));
-  }, [appointments]);
 
-  const totalAppointments = serviceRoutes.reduce((sum, route) => sum + route.appointments.length, 0);
+    return [...customRoutes, ...autoRoutes];
+  }, [appointments, customRoutes]);
+
+  const totalAppointments = allRoutes.reduce((sum, route) => sum + route.appointments.length, 0);
 
   return (
     <>
@@ -66,14 +273,29 @@ export const ServiceRoutes: React.FC = () => {
               onChange={(e) => setSelectedDate(new Date(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-md"
             />
+            <Button 
+              variant={showBuilder ? "default" : "outline"}
+              onClick={() => setShowBuilder(!showBuilder)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {showBuilder ? "Hide Builder" : "Build Routes"}
+            </Button>
             <Badge variant="secondary">
               {totalAppointments} appointments
             </Badge>
           </div>
         </div>
 
+        {/* Route Builder */}
+        {showBuilder && (
+          <RouteBuilder 
+            appointments={appointments} 
+            onRoutesChange={setCustomRoutes}
+          />
+        )}
+
         {/* Routes Grid */}
-        {serviceRoutes.length === 0 ? (
+        {allRoutes.length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
               <Route className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -85,13 +307,14 @@ export const ServiceRoutes: React.FC = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {serviceRoutes.map((route) => (
+            {allRoutes.map((route) => (
               <Card key={route.id} className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center space-x-2">
                       <Route className="h-5 w-5 text-primary" />
                       <span>{route.name}</span>
+                      {route.isCustom && <Badge variant="secondary" className="text-xs">Custom</Badge>}
                     </CardTitle>
                     <Badge variant="outline">
                       {route.appointments.length} stops
