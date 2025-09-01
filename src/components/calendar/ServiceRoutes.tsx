@@ -638,37 +638,8 @@ export const ServiceRoutes: React.FC = () => {
       toast.error('Saved data is invalid');
     }
   };
-  // Combine auto-generated and custom routes
-  const allRoutes = useMemo(() => {
-    // Auto-generated routes from unassigned appointments
-    const unassignedAppointments = appointments.filter(apt => 
-      !customRoutes.some(route => route.appointments.some(rApt => rApt.id === apt.id))
-    );
-
-    const routeMap = new Map<string, any[]>();
-    
-    unassignedAppointments.forEach((appointment) => {
-      if (appointment.customers) {
-        const customer = appointment.customers;
-        const area = customer.zip_code ? `Zip Code ${customer.zip_code}` : appointment.service_type || 'General Service';
-        
-        if (!routeMap.has(area)) {
-          routeMap.set(area, []);
-        }
-        routeMap.get(area)!.push(appointment);
-      }
-    });
-
-    const autoRoutes = Array.from(routeMap.entries()).map(([area, appts], index) => ({
-      id: `auto-route-${index}`,
-      name: `Auto Route ${String.fromCharCode(65 + index)}`,
-      area,
-      appointments: appts.sort((a, b) => a.appointment_time.localeCompare(b.appointment_time)),
-      isCustom: false
-    }));
-
-    return [...customRoutes, ...autoRoutes];
-  }, [appointments, customRoutes]);
+  // Only show custom routes
+  const allRoutes = customRoutes;
 
   const totalAppointments = allRoutes.reduce((sum, route) => sum + route.appointments.length, 0);
 
