@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppointments } from '@/hooks/useAppointments';
 import { CustomerSelect } from './CustomerSelect';
-import { MapPin, Clock, User, Route, Shuffle, ArrowUp, ArrowDown, Plus, Save, Timer, AlertCircle } from 'lucide-react';
+import { MapPin, Clock, User, Route, Shuffle, ArrowUp, ArrowDown, Plus, Save, Timer, AlertCircle, Edit3, Check, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { format } from 'date-fns';
 import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
@@ -84,6 +84,8 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
   const [testCustomerId, setTestCustomerId] = useState('');
   const [testTime, setTestTime] = useState('');
   const [testServiceType, setTestServiceType] = useState('Pool Cleaning');
+  const [editingTime, setEditingTime] = useState<{routeId: string, appointmentId: string} | null>(null);
+  const [editTimeValue, setEditTimeValue] = useState('');
 
   const unassignedAppointments = appointments.filter(apt => 
     !customRoutes.some(route => route.appointments.some(rApt => rApt.id === apt.id))
@@ -183,6 +185,60 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
     setTestTime('');
     setTestServiceType('Pool Cleaning');
     setShowAddCustomer(false);
+  };
+
+  const startEditingTime = (routeId: string, appointmentId: string, currentTime: string) => {
+    setEditingTime({ routeId, appointmentId });
+    setEditTimeValue(currentTime);
+  };
+
+  const saveTimeEdit = () => {
+    if (!editingTime) return;
+    
+    const updatedRoutes = customRoutes.map(route => {
+      if (route.id === editingTime.routeId) {
+        const updatedAppointments = route.appointments.map(apt => {
+          if (apt.id === editingTime.appointmentId) {
+            return { ...apt, appointment_time: editTimeValue, timeModified: true };
+          }
+          return apt;
+        }).sort((a, b) => a.appointment_time.localeCompare(b.appointment_time));
+
+        return {
+          ...route,
+          appointments: updatedAppointments,
+          estimatedDuration: calculateRouteDuration(updatedAppointments)
+        };
+      }
+      return route;
+    });
+
+    setCustomRoutes(updatedRoutes);
+    onRoutesChange(updatedRoutes);
+    setEditingTime(null);
+    setEditTimeValue('');
+  };
+
+  const cancelTimeEdit = () => {
+    setEditingTime(null);
+    setEditTimeValue('');
+  };
+
+  const removeAppointment = (routeId: string, appointmentId: string) => {
+    const updatedRoutes = customRoutes.map(route => {
+      if (route.id === routeId) {
+        const filteredAppointments = route.appointments.filter(apt => apt.id !== appointmentId);
+        return {
+          ...route,
+          appointments: filteredAppointments,
+          estimatedDuration: calculateRouteDuration(filteredAppointments)
+        };
+      }
+      return route;
+    });
+
+    setCustomRoutes(updatedRoutes);
+    onRoutesChange(updatedRoutes);
   };
 
   const optimizeRoute = (routeId: string) => {
@@ -413,10 +469,49 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
                               <span className="font-medium">
                                 {apt.customers?.first_name} {apt.customers?.last_name}
                               </span>
-                              <Badge variant="outline">{apt.appointment_time}</Badge>
+                              
+                              {editingTime?.routeId === route.id && editingTime?.appointmentId === apt.id ? (
+                                <div className="flex items-center space-x-1">
+                                  <input
+                                    type="time"
+                                    value={editTimeValue}
+                                    onChange={(e) => setEditTimeValue(e.target.value)}
+                                    className="px-2 py-1 text-xs border rounded"
+                                  />
+                                  <Button size="sm" variant="ghost" onClick={saveTimeEdit}>
+                                    <Check className="h-3 w-3 text-green-600" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={cancelTimeEdit}>
+                                    <X className="h-3 w-3 text-red-600" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center space-x-1">
+                                  <Badge 
+                                    variant="outline" 
+                                    className={apt.timeModified ? 'bg-blue-50 border-blue-300' : ''}
+                                  >
+                                    {apt.appointment_time}
+                                  </Badge>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => startEditingTime(route.id, apt.id, apt.appointment_time)}
+                                    className="h-5 w-5 p-0"
+                                  >
+                                    <Edit3 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                              
                               {apt.isTest && (
                                 <Badge variant="secondary" className="bg-orange-100 text-orange-800">
                                   Test
+                                </Badge>
+                              )}
+                              {apt.timeModified && (
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                  Modified
                                 </Badge>
                               )}
                             </div>
@@ -432,6 +527,17 @@ const RouteBuilder: React.FC<RouteBuilderProps> = ({ appointments, onRoutesChang
                               )}
                             </div>
                           </div>
+                          
+                          {apt.isTest && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => removeAppointment(route.id, apt.id)}
+                              className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                         )}
