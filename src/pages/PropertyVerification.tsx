@@ -703,8 +703,8 @@ export default function PropertyVerification() {
   };
 
   const handleBulkVerify = async () => {
-    // Filter to only Pima County residents with addresses (ignore skipped records)
-    const customersWithAddresses = pimaCountyCustomers.filter(c => c.address);
+    // Filter to only Pima County residents with addresses and not already verified
+    const customersWithAddresses = pimaCountyCustomers.filter(c => c.address && !c.owner_verified_at);
     
     if (customersWithAddresses.length === 0) {
       toast({
