@@ -38,7 +38,11 @@ export const useAppointments = (viewType: 'month' | 'week' | 'day', currentDate:
           *,
           customers!customer_id (
             first_name,
-            last_name
+            last_name,
+            address,
+            city,
+            state,
+            zip_code
           )
         `)
         .gte('appointment_date', format(startDate, 'yyyy-MM-dd'))

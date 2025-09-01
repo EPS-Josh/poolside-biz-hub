@@ -11,10 +11,11 @@ import { CalendarIntegrations } from '@/components/calendar/CalendarIntegrations
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarIcon, Plus, List, Grid, Users, Settings } from 'lucide-react';
+import { ServiceRoutes } from '@/components/calendar/ServiceRoutes';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 
-type ViewType = 'month' | 'week' | 'day' | 'list';
+type ViewType = 'month' | 'week' | 'day' | 'list' | 'routes';
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -123,6 +124,8 @@ const Calendar = () => {
                       <CardContent className="p-0">
                         {viewType === 'list' ? (
                           <AppointmentList />
+                        ) : viewType === 'routes' ? (
+                          <ServiceRoutes />
                         ) : (
                           <CalendarView
                             viewType={viewType}
@@ -161,7 +164,7 @@ const Calendar = () => {
                           <CalendarIcon className="h-4 w-4 mr-2" />
                           View All Appointments
                         </Button>
-                        <Button variant="outline" className="w-full justify-start">
+                        <Button variant="outline" className="w-full justify-start" onClick={() => setViewType('routes')}>
                           <Grid className="h-4 w-4 mr-2" />
                           Service Routes
                         </Button>
