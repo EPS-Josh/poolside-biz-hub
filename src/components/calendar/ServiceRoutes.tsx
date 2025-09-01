@@ -270,7 +270,12 @@ export const ServiceRoutes: React.FC = () => {
             <input
               type="date"
               value={format(selectedDate, 'yyyy-MM-dd')}
-              onChange={(e) => setSelectedDate(new Date(e.target.value))}
+              onChange={(e) => {
+                // Parse date in local timezone to avoid UTC conversion issues
+                const [year, month, day] = e.target.value.split('-');
+                const localDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                setSelectedDate(localDate);
+              }}
               className="px-3 py-2 border border-gray-300 rounded-md"
             />
             <Button 
