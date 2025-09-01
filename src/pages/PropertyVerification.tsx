@@ -703,12 +703,13 @@ export default function PropertyVerification() {
   };
 
   const handleBulkVerify = async () => {
-    const customersWithAddresses = customers.filter(c => c.address);
+    // Filter to only Pima County residents with addresses (ignore skipped records)
+    const customersWithAddresses = pimaCountyCustomers.filter(c => c.address);
     
     if (customersWithAddresses.length === 0) {
       toast({
         title: 'No Addresses Found',
-        description: 'No customers have addresses to verify',
+        description: 'No Pima County customers have addresses to verify',
         variant: 'destructive'
       });
       return;
@@ -717,7 +718,7 @@ export default function PropertyVerification() {
     setIsVerifying(true);
     const results: VerificationResult[] = [];
 
-    for (const customer of customersWithAddresses.slice(0, 5)) { // Limit for demo
+    for (const customer of customersWithAddresses.slice(0, 20)) { // Process 20 customers at a time
       try {
         // Step 1: try address match first
         const byAddress = await searchAssessorRecords(customer.address);
