@@ -218,6 +218,7 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Weekly Pool Cleaning">Weekly Pool Cleaning</SelectItem>
                   <SelectItem value="regular-maintenance">Regular Maintenance</SelectItem>
                   <SelectItem value="chemical-balance">Chemical Balance</SelectItem>
                   <SelectItem value="equipment-repair">Equipment Repair</SelectItem>
