@@ -158,6 +158,9 @@ const Analytics = () => {
       };
 
       const typeCounts = data?.reduce((acc, record) => {
+        if (!record.service_type || record.service_type.trim() === '') {
+          return acc; // Skip empty service types
+        }
         const normalizedType = normalizeServiceType(record.service_type);
         acc[normalizedType] = (acc[normalizedType] || 0) + 1;
         return acc;
