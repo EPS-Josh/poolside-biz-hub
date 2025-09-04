@@ -212,6 +212,7 @@ export const CustomerScannedDocuments = ({ customerId }: CustomerScannedDocument
       case 'contract': return 'Contract';
       case 'invoice': return 'Invoice';
       case 'permit': return 'Permit';
+      case 'fps_inc_doc': return 'FPS Inc. Doc';
       case 'other': return 'Other';
       default: return 'Other';
     }
@@ -222,6 +223,7 @@ export const CustomerScannedDocuments = ({ customerId }: CustomerScannedDocument
       case 'contract': return 'bg-blue-100 text-blue-800';
       case 'invoice': return 'bg-green-100 text-green-800';
       case 'permit': return 'bg-yellow-100 text-yellow-800';
+      case 'fps_inc_doc': return 'bg-indigo-100 text-indigo-800';
       case 'other': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -312,6 +314,7 @@ export const CustomerScannedDocuments = ({ customerId }: CustomerScannedDocument
                   <SelectItem value="contract">Contract</SelectItem>
                   <SelectItem value="invoice">Invoice</SelectItem>
                   <SelectItem value="permit">Permit</SelectItem>
+                  <SelectItem value="fps_inc_doc">FPS Inc. Doc</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
