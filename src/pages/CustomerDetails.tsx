@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, User, Building, Mail, Phone, MapPin, Clock, UserX, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, User, Building, Mail, Phone, MapPin, Clock, UserX, ShieldCheck, FileText, FileImage } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Customer {
@@ -261,6 +261,40 @@ const CustomerDetails = () => {
 
             {/* Photos Section */}
             <CustomerPhotos customerId={customer.id} />
+
+            {/* Plans, Prints, Drawings Section */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileImage className="h-5 w-5" />
+                  Plans, Prints, Drawings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileImage className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Plans, prints, and drawings will be displayed here.</p>
+                  <p className="text-sm mt-2">Feature coming soon...</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Scanned Documents Section */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Scanned Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Scanned documents will be displayed here.</p>
+                  <p className="text-sm mt-2">Feature coming soon...</p>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Previous Owner Information */}
             {customer.owner_changed_date && customer.previous_first_name && customer.previous_last_name && (
