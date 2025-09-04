@@ -1,17 +1,43 @@
 
 export const SERVICES = [
   'Weekly Pool Cleaning',
+  'Bi-Weekly Pool Cleaning', 
+  'One-Time Pool Cleaning',
   'Chemical Balancing',
   'Equipment Repair',
+  'Equipment Installation',
   'Filter Cleaning',
+  'Filter Maintenance',
   'Pool Opening',
   'Pool Closing',
-  'Equipment Installation',
+  'Pool Drain & Refill',
+  'Regular Maintenance',
   'Emergency Service',
-  'Collar Set',
+  'Inspection',
   'Consultation',
   'Follow up - No Charge',
-  'Pool Drain & Refill'
+  'Collar Set'
+];
+
+// Service types for forms that need value/label pairs
+export const SERVICE_TYPES = [
+  { value: 'Weekly Pool Cleaning', label: 'Weekly Pool Cleaning' },
+  { value: 'Bi-Weekly Pool Cleaning', label: 'Bi-Weekly Pool Cleaning' },
+  { value: 'One-Time Pool Cleaning', label: 'One-Time Pool Cleaning' },
+  { value: 'Chemical Balancing', label: 'Chemical Balancing' },
+  { value: 'Equipment Repair', label: 'Equipment Repair' },
+  { value: 'Equipment Installation', label: 'Equipment Installation' },
+  { value: 'Filter Cleaning', label: 'Filter Cleaning' },
+  { value: 'Filter Maintenance', label: 'Filter Maintenance' },
+  { value: 'Pool Opening', label: 'Pool Opening' },
+  { value: 'Pool Closing', label: 'Pool Closing' },
+  { value: 'Pool Drain & Refill', label: 'Pool Drain & Refill' },
+  { value: 'Regular Maintenance', label: 'Regular Maintenance' },
+  { value: 'Emergency Service', label: 'Emergency Service' },
+  { value: 'Inspection', label: 'Inspection' },
+  { value: 'Consultation', label: 'Consultation' },
+  { value: 'Follow up - No Charge', label: 'Follow up - No Charge' },
+  { value: 'Collar Set', label: 'Collar Set' }
 ];
 
 export const TIME_SLOTS = [

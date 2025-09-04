@@ -39,6 +39,8 @@ interface ServiceRecord {
   parts_used?: any;
 }
 
+import { SERVICE_TYPES } from '@/components/calendar/constants';
+
 interface EditServiceRecordFormProps {
   record: ServiceRecord;
   open: boolean;
@@ -218,16 +220,11 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Weekly Pool Cleaning">Weekly Pool Cleaning</SelectItem>
-                  <SelectItem value="regular-maintenance">Regular Maintenance</SelectItem>
-                  <SelectItem value="chemical-balance">Chemical Balance</SelectItem>
-                  <SelectItem value="equipment-repair">Equipment Repair</SelectItem>
-                  <SelectItem value="cleaning">Pool Cleaning</SelectItem>
-                  <SelectItem value="filter-maintenance">Filter Maintenance</SelectItem>
-                  <SelectItem value="equipment-installation">Equipment Installation</SelectItem>
-                  <SelectItem value="inspection">Inspection</SelectItem>
-                  <SelectItem value="consultation">Consultation</SelectItem>
-                  <SelectItem value="emergency-service">Emergency Service</SelectItem>
+                  {SERVICE_TYPES.map(service => (
+                    <SelectItem key={service.value} value={service.value}>
+                      {service.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

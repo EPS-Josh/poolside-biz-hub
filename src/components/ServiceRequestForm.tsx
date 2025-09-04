@@ -41,6 +41,8 @@ const serviceRequestSchema = z.object({
 
 type ServiceRequestForm = z.infer<typeof serviceRequestSchema>;
 
+import { SERVICE_TYPES } from '@/components/calendar/constants';
+
 interface ServiceRequestFormProps {
   children: React.ReactNode;
 }
@@ -203,14 +205,11 @@ export const ServiceRequestForm = ({ children }: ServiceRequestFormProps) => {
                       {...field}
                     >
                       <option value="">Select a service...</option>
-                      <option value="weekly-cleaning">Weekly Pool Cleaning</option>
-                      <option value="bi-weekly-cleaning">Bi-Weekly Pool Cleaning</option>
-                      <option value="one-time-cleaning">One-Time Pool Cleaning</option>
-                      <option value="equipment-repair">Equipment Repair</option>
-                      <option value="equipment-installation">Equipment Installation</option>
-                      <option value="chemical-balancing">Chemical Balancing</option>
-                      <option value="consultation">Free Consultation</option>
-                      <option value="other">Other</option>
+                      {SERVICE_TYPES.map(service => (
+                        <option key={service.value} value={service.value}>
+                          {service.label}
+                        </option>
+                      ))}
                     </select>
                   </FormControl>
                   <FormMessage />
