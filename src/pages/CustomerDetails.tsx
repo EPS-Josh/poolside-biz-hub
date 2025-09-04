@@ -5,6 +5,8 @@ import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { CustomerServiceForm } from '@/components/CustomerServiceForm';
 import { CustomerPhotos } from '@/components/CustomerPhotos';
+import { CustomerPlansDrawings } from '@/components/CustomerPlansDrawings';
+import { CustomerScannedDocuments } from '@/components/CustomerScannedDocuments';
 import { ServiceHistory } from '@/components/ServiceHistory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -263,38 +265,10 @@ const CustomerDetails = () => {
             <CustomerPhotos customerId={customer.id} />
 
             {/* Plans, Prints, Drawings Section */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileImage className="h-5 w-5" />
-                  Plans, Prints, Drawings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileImage className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Plans, prints, and drawings will be displayed here.</p>
-                  <p className="text-sm mt-2">Feature coming soon...</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CustomerPlansDrawings customerId={customer.id} />
 
             {/* Scanned Documents Section */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Scanned Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Scanned documents will be displayed here.</p>
-                  <p className="text-sm mt-2">Feature coming soon...</p>
-                </div>
-              </CardContent>
-            </Card>
+            <CustomerScannedDocuments customerId={customer.id} />
 
             {/* Previous Owner Information */}
             {customer.owner_changed_date && customer.previous_first_name && customer.previous_last_name && (
