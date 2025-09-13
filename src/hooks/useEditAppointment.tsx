@@ -17,25 +17,62 @@ export const useEditAppointment = (appointment: any, onClose: () => void) => {
 
       const dateString = formatPhoenixDateForDatabase(appointmentData.date);
       const time24Hour = convertTo24Hour(appointmentData.time);
+      const { recurringOption } = appointmentData;
       
       console.log('Updating appointment with Phoenix date:', dateString);
-      console.log('Original date object:', appointmentData.date);
-      console.log('Time being saved (24-hour):', time24Hour);
-      console.log('Original time (12-hour):', appointmentData.time);
+      console.log('Recurring option:', recurringOption);
 
-      const { error } = await supabase
-        .from('appointments')
-        .update({
-          customer_id: appointmentData.customerId || null,
-          appointment_date: dateString,
-          appointment_time: time24Hour,
-          service_type: appointmentData.service,
-          status: appointmentData.status,
-          notes: appointmentData.notes || null
-        })
-        .eq('id', appointment.id);
-      
-      if (error) throw error;
+      // Handle different recurring update scenarios
+      if (recurringOption === 'single' || !appointment.is_recurring) {
+        // Update only this appointment
+        const { error } = await supabase
+          .from('appointments')
+          .update({
+            customer_id: appointmentData.customerId || null,
+            appointment_date: dateString,
+            appointment_time: time24Hour,
+            service_type: appointmentData.service,
+            status: appointmentData.status,
+            notes: appointmentData.notes || null
+          })
+          .eq('id', appointment.id);
+        
+        if (error) throw error;
+      } else if (recurringOption === 'future') {
+        // Update this and all future appointments in the series
+        const parentId = appointment.recurring_parent_id || appointment.id;
+        
+        const { error } = await supabase
+          .from('appointments')
+          .update({
+            customer_id: appointmentData.customerId || null,
+            appointment_date: dateString,
+            appointment_time: time24Hour,
+            service_type: appointmentData.service,
+            status: appointmentData.status,
+            notes: appointmentData.notes || null
+          })
+          .or(`id.eq.${appointment.id},and(recurring_parent_id.eq.${parentId},appointment_date.gte.${appointment.appointment_date})`);
+        
+        if (error) throw error;
+      } else if (recurringOption === 'all') {
+        // Update all appointments in the series
+        const parentId = appointment.recurring_parent_id || appointment.id;
+        
+        const { error } = await supabase
+          .from('appointments')
+          .update({
+            customer_id: appointmentData.customerId || null,
+            appointment_date: dateString,
+            appointment_time: time24Hour,
+            service_type: appointmentData.service,
+            status: appointmentData.status,
+            notes: appointmentData.notes || null
+          })
+          .or(`id.eq.${parentId},recurring_parent_id.eq.${parentId}`);
+        
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
@@ -48,5 +85,55 @@ export const useEditAppointment = (appointment: any, onClose: () => void) => {
     }
   });
 
-  return { updateAppointmentMutation };
+  const deleteAppointmentMutation = useMutation({
+    mutationFn: async (deleteData: { recurringOption: 'single' | 'future' | 'all' }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { recurringOption } = deleteData;
+      
+      console.log('Deleting appointment with recurring option:', recurringOption);
+
+      // Handle different recurring delete scenarios
+      if (recurringOption === 'single' || !appointment.is_recurring) {
+        // Delete only this appointment
+        const { error } = await supabase
+          .from('appointments')
+          .delete()
+          .eq('id', appointment.id);
+        
+        if (error) throw error;
+      } else if (recurringOption === 'future') {
+        // Delete this and all future appointments in the series
+        const parentId = appointment.recurring_parent_id || appointment.id;
+        
+        const { error } = await supabase
+          .from('appointments')
+          .delete()
+          .or(`id.eq.${appointment.id},and(recurring_parent_id.eq.${parentId},appointment_date.gte.${appointment.appointment_date})`);
+        
+        if (error) throw error;
+      } else if (recurringOption === 'all') {
+        // Delete all appointments in the series
+        const parentId = appointment.recurring_parent_id || appointment.id;
+        
+        const { error } = await supabase
+          .from('appointments')
+          .delete()
+          .or(`id.eq.${parentId},recurring_parent_id.eq.${parentId}`);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      toast.success('Appointment deleted successfully!');
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Error deleting appointment:', error);
+      toast.error('Failed to delete appointment');
+    }
+  });
+
+  return { updateAppointmentMutation, deleteAppointmentMutation };
 };
