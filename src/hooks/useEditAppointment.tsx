@@ -42,7 +42,8 @@ export const useEditAppointment = (appointment: any, onClose: () => void) => {
         // Update this and all future appointments in the series
         const parentId = appointment.recurring_parent_id || appointment.id;
         
-        const { error } = await supabase
+        // First, update only the current appointment with the new date
+        const { error: currentError } = await supabase
           .from('appointments')
           .update({
             customer_id: appointmentData.customerId || null,
@@ -52,9 +53,24 @@ export const useEditAppointment = (appointment: any, onClose: () => void) => {
             status: appointmentData.status,
             notes: appointmentData.notes || null
           })
-          .or(`id.eq.${appointment.id},and(recurring_parent_id.eq.${parentId},appointment_date.gte.${appointment.appointment_date})`);
+          .eq('id', appointment.id);
         
-        if (error) throw error;
+        if (currentError) throw currentError;
+        
+        // Then, update future appointments (excluding current) with only non-date fields
+        const { error: futureError } = await supabase
+          .from('appointments')
+          .update({
+            customer_id: appointmentData.customerId || null,
+            appointment_time: time24Hour,
+            service_type: appointmentData.service,
+            status: appointmentData.status,
+            notes: appointmentData.notes || null
+          })
+          .eq('recurring_parent_id', parentId)
+          .gt('appointment_date', appointment.appointment_date);
+        
+        if (futureError) throw futureError;
       } else if (recurringOption === 'all') {
         // Update all appointments in the series
         const parentId = appointment.recurring_parent_id || appointment.id;
