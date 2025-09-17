@@ -146,7 +146,7 @@ const Calendar = () => {
                         <CardTitle className="text-lg">Today's Appointments</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <AppointmentList limit={5} dateFilter={phoenixToday} />
+                        <AppointmentList limit={20} dateFilter={phoenixToday} />
                       </CardContent>
                     </Card>
 
