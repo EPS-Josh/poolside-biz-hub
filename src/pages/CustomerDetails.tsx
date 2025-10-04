@@ -8,6 +8,7 @@ import { CustomerPhotos } from '@/components/CustomerPhotos';
 import { CustomerPlansDrawings } from '@/components/CustomerPlansDrawings';
 import { CustomerScannedDocuments } from '@/components/CustomerScannedDocuments';
 import { ServiceHistory } from '@/components/ServiceHistory';
+import { CustomerAccountManager } from '@/components/customers/CustomerAccountManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +40,11 @@ interface Customer {
   owner_changed_by?: string;
   owner_verified_at?: string;
   owner_verified_by?: string;
+  customer_user_id?: string | null;
+}
+
+interface CompanyData {
+  company_name: string;
 }
 
 const CustomerDetails = () => {
@@ -48,6 +54,7 @@ const CustomerDetails = () => {
   const { toast } = useToast();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState('Your Company');
 
   const fetchCustomer = async () => {
     if (!user || !id) return;
@@ -64,6 +71,17 @@ const CustomerDetails = () => {
       }
 
       setCustomer(data);
+
+      // Fetch company name
+      const { data: companyData } = await supabase
+        .from('company_data')
+        .select('company_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (companyData?.company_name) {
+        setCompanyName(companyData.company_name);
+      }
     } catch (error) {
       console.error('Error fetching customer:', error);
       toast({
@@ -162,6 +180,19 @@ const CustomerDetails = () => {
                   <p className="text-gray-600">Customer Details & Service Information</p>
                 </div>
               </div>
+            </div>
+
+            {/* Customer Account Management */}
+            <div className="mb-6">
+              <CustomerAccountManager
+                customerId={customer.id}
+                customerEmail={customer.email}
+                customerFirstName={customer.first_name}
+                customerLastName={customer.last_name}
+                customerUserId={customer.customer_user_id || null}
+                companyName={companyName}
+                onAccountLinked={fetchCustomer}
+              />
             </div>
 
             {/* Customer Basic Info */}

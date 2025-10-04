@@ -25,3 +25,6 @@ verify_jwt = false
 
 [functions.geocode-customer]
 verify_jwt = false
+
+[functions.send-customer-invitation]
+verify_jwt = false

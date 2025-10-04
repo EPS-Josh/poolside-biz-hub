@@ -31,6 +31,7 @@ import ClientPortalServiceHistory from "./pages/ClientPortalServiceHistory";
 import ClientPortalPhotos from "./pages/ClientPortalPhotos";
 import ClientPortalProfile from "./pages/ClientPortalProfile";
 import ClientPortalRequestService from "./pages/ClientPortalRequestService";
+import CustomerLogin from "./pages/CustomerLogin";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,8 @@ const App = () => (
           <Route path="/parts-diagrams/:category" element={<PartsDiagrams />} />
           <Route path="/eula" element={<EULA />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            {/* Customer Login */}
+            <Route path="/customer-login" element={<CustomerLogin />} />
             {/* Client Portal Routes */}
             <Route path="/client-portal" element={<ClientPortal />} />
             <Route path="/client-portal/appointments" element={<ClientPortalAppointments />} />

@@ -36,6 +36,15 @@ export const Header = () => {
               <Menu className="h-4 w-4" />
               <span>Menu</span>
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/customer-login')}
+              className="flex items-center space-x-2"
+            >
+              <User className="h-4 w-4" />
+              <span>Client Portal</span>
+            </Button>
           </div>
           
           {/* Center Logo */}
