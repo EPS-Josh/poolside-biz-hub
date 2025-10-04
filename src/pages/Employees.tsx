@@ -110,7 +110,13 @@ export const Employees = () => {
         })
       );
 
-      setUsers(usersWithRoles);
+      // Filter out customer-only accounts - only show business employees
+      const businessRoles = ['admin', 'manager', 'technician', 'guest'];
+      const employeeUsers = usersWithRoles.filter(u => 
+        u.roles.some(role => businessRoles.includes(role))
+      );
+
+      setUsers(employeeUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
