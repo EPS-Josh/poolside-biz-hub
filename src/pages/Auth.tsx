@@ -3,19 +3,27 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthForm } from '@/components/AuthForm';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 const Auth = () => {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const { user, loading } = useAuth();
+  const { roles, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && !loading) {
-      navigate('/menu');
+    if (user && !loading && !rolesLoading) {
+      // Check if user is a customer - redirect to client portal
+      if (roles.includes('customer')) {
+        navigate('/client-portal');
+      } else {
+        // Business user - redirect to menu
+        navigate('/menu');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, rolesLoading, roles, navigate]);
 
   if (loading) {
     return (

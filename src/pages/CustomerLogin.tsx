@@ -23,19 +23,22 @@ const CustomerLogin = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if this is a password reset flow
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get('type');
+    
+    if (type === 'recovery') {
+      // User clicked password reset link - show password reset form
+      setIsPasswordReset(true);
+      return; // Don't redirect, let them reset password first
+    }
+    
+    // Normal login flow - redirect authenticated users
     if (user && !loading) {
       navigate('/client-portal');
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    // Check if this is a password reset flow
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const type = hashParams.get('type');
-    if (type === 'recovery') {
-      setIsPasswordReset(true);
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
