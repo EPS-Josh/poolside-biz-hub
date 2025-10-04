@@ -16,6 +16,7 @@ interface InvitationRequest {
   firstName: string;
   lastName: string;
   companyName: string;
+  appUrl?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -36,8 +37,12 @@ const handler = async (req: Request): Promise<Response> => {
       email, 
       firstName, 
       lastName,
-      companyName 
+      companyName,
+      appUrl
     }: InvitationRequest = await req.json();
+
+    // Get the application URL from parameter or request referer
+    const baseUrl = appUrl || req.headers.get('referer')?.split('/customer')[0] || 'https://lovableproject.com';
 
     console.log('Creating invitation for customer:', customerId, email);
 
@@ -120,7 +125,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Only send email with password if it's a new user
     if (tempPassword) {
       // Send invitation email with temporary password
-      const loginUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/customer-login`;
+      const loginUrl = `${baseUrl}/customer-login`;
       
       const htmlContent = `
       <!DOCTYPE html>
@@ -254,7 +259,7 @@ const handler = async (req: Request): Promise<Response> => {
       // User already exists, send portal access notification
       console.log("User already exists, sending portal access notification");
       
-      const loginUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/customer-login`;
+      const loginUrl = `${baseUrl}/customer-login`;
       
       const htmlContent = `
       <!DOCTYPE html>

@@ -47,6 +47,7 @@ export const CustomerAccountManager = ({
           firstName: customerFirstName,
           lastName: customerLastName,
           companyName,
+          appUrl: window.location.origin,
         },
       });
 
