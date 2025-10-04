@@ -246,14 +246,22 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     } else {
-      // User already exists, just notify about portal access
-      console.log("User already exists, account linked without sending email");
+      // User already exists, send password reset email
+      console.log("User already exists, sending password reset email");
+      
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/customer-login`,
+      });
+
+      if (resetError) {
+        console.error('Error sending password reset:', resetError);
+      }
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           userId: authUserId,
-          message: "Customer account linked successfully (user already exists)" 
+          message: "Customer account linked and password reset email sent" 
         }),
         {
           status: 200,
