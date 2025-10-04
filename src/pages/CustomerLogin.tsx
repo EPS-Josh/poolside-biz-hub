@@ -123,10 +123,15 @@ const CustomerLogin = () => {
       } else {
         toast({
           title: "Password Updated!",
-          description: "Your password has been successfully updated. You can now log in.",
+          description: "Your password has been successfully updated. Redirecting to client portal...",
         });
-        setIsPasswordReset(false);
+        // Clear the hash and redirect to client portal
         window.location.hash = '';
+        setIsPasswordReset(false);
+        // Force navigation to client portal after password reset
+        setTimeout(() => {
+          navigate('/client-portal');
+        }, 1500);
       }
     } catch (error: any) {
       toast({
