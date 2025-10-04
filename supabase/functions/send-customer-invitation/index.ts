@@ -221,14 +221,19 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    const emailResponse = await resend.emails.send({
-      from: `${companyName} <onboarding@resend.dev>`,
-      to: [email],
-      subject: `Welcome to ${companyName} Client Portal`,
-      html: htmlContent,
-    });
+      const emailResponse = await resend.emails.send({
+        from: `${companyName} <onboarding@resend.dev>`,
+        to: [email],
+        subject: `Welcome to ${companyName} Client Portal`,
+        html: htmlContent,
+      });
 
-    console.log("Invitation email sent successfully:", emailResponse);
+      if (emailResponse.error) {
+        console.error("Error sending invitation email:", emailResponse.error);
+        throw new Error(`Failed to send email: ${emailResponse.error.message}`);
+      }
+
+      console.log("Invitation email sent successfully:", emailResponse);
 
       return new Response(
         JSON.stringify({ 
@@ -356,6 +361,11 @@ const handler = async (req: Request): Promise<Response> => {
         subject: `${companyName} Client Portal Access Granted`,
         html: htmlContent,
       });
+
+      if (emailResponse.error) {
+        console.error("Error sending portal access email:", emailResponse.error);
+        throw new Error(`Failed to send email: ${emailResponse.error.message}`);
+      }
 
       console.log("Portal access notification sent successfully:", emailResponse);
 
