@@ -26,6 +26,21 @@ const CustomerLogin = () => {
     // Check if this is a password reset flow
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get('type');
+    const error = hashParams.get('error');
+    const errorDescription = hashParams.get('error_description');
+    
+    // Handle expired or invalid links
+    if (error === 'access_denied' && errorDescription?.includes('expired')) {
+      toast({
+        title: "Reset Link Expired",
+        description: "This password reset link has expired. Please request a new one.",
+        variant: "destructive",
+      });
+      setShowForgotPassword(true);
+      // Clear the error from URL
+      window.location.hash = '';
+      return;
+    }
     
     if (type === 'recovery') {
       // User clicked password reset link - show password reset form
@@ -37,7 +52,7 @@ const CustomerLogin = () => {
     if (user && !loading) {
       navigate('/client-portal');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, toast]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
