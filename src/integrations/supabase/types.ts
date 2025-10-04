@@ -480,6 +480,7 @@ export type Database = {
           city: string | null
           company: string | null
           created_at: string
+          customer_user_id: string | null
           email: string | null
           first_name: string
           geocoded_at: string | null
@@ -515,6 +516,7 @@ export type Database = {
           city?: string | null
           company?: string | null
           created_at?: string
+          customer_user_id?: string | null
           email?: string | null
           first_name: string
           geocoded_at?: string | null
@@ -550,6 +552,7 @@ export type Database = {
           city?: string | null
           company?: string | null
           created_at?: string
+          customer_user_id?: string | null
           email?: string | null
           first_name?: string
           geocoded_at?: string | null

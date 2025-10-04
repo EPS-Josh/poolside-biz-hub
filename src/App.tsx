@@ -25,6 +25,12 @@ import { Employees } from "./pages/Employees";
 import CustomerMapPage from "./pages/CustomerMap";
 import PropertyVerification from "./pages/PropertyVerification";
 import ServiceRecords from "./pages/ServiceRecords";
+import ClientPortal from "./pages/ClientPortal";
+import ClientPortalAppointments from "./pages/ClientPortalAppointments";
+import ClientPortalServiceHistory from "./pages/ClientPortalServiceHistory";
+import ClientPortalPhotos from "./pages/ClientPortalPhotos";
+import ClientPortalProfile from "./pages/ClientPortalProfile";
+import ClientPortalRequestService from "./pages/ClientPortalRequestService";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +71,13 @@ const App = () => (
           <Route path="/parts-diagrams/:category" element={<PartsDiagrams />} />
           <Route path="/eula" element={<EULA />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            {/* Client Portal Routes */}
+            <Route path="/client-portal" element={<ClientPortal />} />
+            <Route path="/client-portal/appointments" element={<ClientPortalAppointments />} />
+            <Route path="/client-portal/service-history" element={<ClientPortalServiceHistory />} />
+            <Route path="/client-portal/photos" element={<ClientPortalPhotos />} />
+            <Route path="/client-portal/profile" element={<ClientPortalProfile />} />
+            <Route path="/client-portal/request-service" element={<ClientPortalRequestService />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
