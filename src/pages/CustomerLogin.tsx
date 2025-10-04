@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,7 @@ const CustomerLogin = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const { user, loading, signIn } = useAuth();
+  const { roles, loading: rolesLoading } = useUserRoles();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,11 +50,21 @@ const CustomerLogin = () => {
       return; // Don't redirect, let them reset password first
     }
     
-    // Normal login flow - redirect authenticated users
-    if (user && !loading) {
-      navigate('/client-portal');
+    // Normal login flow - redirect authenticated users to client portal ONLY if they're a customer
+    if (user && !loading && !rolesLoading) {
+      if (roles.includes('customer')) {
+        navigate('/client-portal');
+      } else if (roles.length > 0) {
+        // This is a business user, redirect them to business login
+        toast({
+          title: "Wrong Login Page",
+          description: "Business users should use the Staff Login page.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+      }
     }
-  }, [user, loading, navigate, toast]);
+  }, [user, loading, rolesLoading, roles, navigate, toast]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,15 +135,12 @@ const CustomerLogin = () => {
       } else {
         toast({
           title: "Password Updated!",
-          description: "Your password has been successfully updated. Redirecting to client portal...",
+          description: "Your password has been successfully updated.",
         });
-        // Clear the hash and redirect to client portal
+        // Clear the hash and reset form state
         window.location.hash = '';
         setIsPasswordReset(false);
-        // Force navigation to client portal after password reset
-        setTimeout(() => {
-          navigate('/client-portal');
-        }, 1500);
+        // User will be redirected by the useEffect checking roles
       }
     } catch (error: any) {
       toast({
