@@ -1372,6 +1372,13 @@ export type Database = {
           zip_code: string
         }[]
       }
+      get_customer_verification_fields: {
+        Args: { customer_id: string }
+        Returns: {
+          owner_verified_at: string
+          owner_verified_by: string
+        }[]
+      }
       get_user_roles: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
