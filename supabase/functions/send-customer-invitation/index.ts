@@ -41,31 +41,52 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Creating invitation for customer:', customerId, email);
 
-    // Create a temporary password
-    const tempPassword = crypto.randomUUID().slice(0, 12);
+    // Check if user already exists
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
 
-    // Create auth user account
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: `${firstName} ${lastName}`,
-        is_customer: true,
-      },
-    });
+    let authUserId: string;
+    let tempPassword: string | null = null;
 
-    if (authError) {
-      console.error('Error creating auth user:', authError);
-      throw new Error(`Failed to create user account: ${authError.message}`);
+    if (existingUser) {
+      console.log('User already exists:', existingUser.id);
+      authUserId = existingUser.id;
+      
+      // Update user metadata
+      await supabase.auth.admin.updateUserById(existingUser.id, {
+        user_metadata: {
+          full_name: `${firstName} ${lastName}`,
+          is_customer: true,
+        },
+      });
+    } else {
+      // Create a temporary password
+      tempPassword = crypto.randomUUID().slice(0, 12);
+
+      // Create auth user account
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: `${firstName} ${lastName}`,
+          is_customer: true,
+        },
+      });
+
+      if (authError) {
+        console.error('Error creating auth user:', authError);
+        throw new Error(`Failed to create user account: ${authError.message}`);
+      }
+
+      console.log('Auth user created:', authData.user.id);
+      authUserId = authData.user.id;
     }
-
-    console.log('Auth user created:', authData.user.id);
 
     // Link the auth user to the customer record
     const { error: updateError } = await supabase
       .from('customers')
-      .update({ customer_user_id: authData.user.id })
+      .update({ customer_user_id: authUserId })
       .eq('id', customerId);
 
     if (updateError) {
@@ -73,24 +94,35 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to link customer account: ${updateError.message}`);
     }
 
-    // Assign customer role
-    const { error: roleError } = await supabase
+    // Assign customer role (only if doesn't exist)
+    const { data: existingRole } = await supabase
       .from('user_roles')
-      .insert({
-        user_id: authData.user.id,
-        role: 'customer',
-      });
+      .select('*')
+      .eq('user_id', authUserId)
+      .eq('role', 'customer')
+      .single();
 
-    if (roleError) {
-      console.error('Error assigning customer role:', roleError);
+    if (!existingRole) {
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authUserId,
+          role: 'customer',
+        });
+
+      if (roleError) {
+        console.error('Error assigning customer role:', roleError);
+      }
     }
 
     console.log('Customer account linked successfully');
 
-    // Send invitation email
-    const loginUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/customer-login`;
-    
-    const htmlContent = `
+    // Only send email with password if it's a new user
+    if (tempPassword) {
+      // Send invitation email with temporary password
+      const loginUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/customer-login`;
+      
+      const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -198,21 +230,40 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Invitation email sent successfully:", emailResponse);
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        userId: authData.user.id,
-        emailId: emailResponse.data?.id,
-        message: "Customer invitation sent successfully" 
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders,
-        },
-      }
-    );
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          userId: authUserId,
+          emailId: emailResponse.data?.id,
+          message: "Customer invitation sent successfully" 
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    } else {
+      // User already exists, just notify about portal access
+      console.log("User already exists, account linked without sending email");
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          userId: authUserId,
+          message: "Customer account linked successfully (user already exists)" 
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders,
+          },
+        }
+      );
+    }
   } catch (error: any) {
     console.error("Error in send-customer-invitation function:", error);
     
