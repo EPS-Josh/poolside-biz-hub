@@ -16,6 +16,8 @@ const CustomerLogin = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordReset, setIsPasswordReset] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const { user, loading, signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -119,6 +121,42 @@ const CustomerLogin = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/customer-login`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        toast({
+          title: "Password Reset Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Check Your Email",
+          description: "We've sent you a password reset link. Please check your email.",
+        });
+        setShowForgotPassword(false);
+        setResetEmail('');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Password Reset Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -144,11 +182,13 @@ const CustomerLogin = () => {
         <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
-              {isPasswordReset ? 'Set New Password' : 'Client Portal Login'}
+              {isPasswordReset ? 'Set New Password' : showForgotPassword ? 'Reset Password' : 'Client Portal Login'}
             </CardTitle>
             <CardDescription className="text-center">
               {isPasswordReset 
                 ? 'Please enter your new password' 
+                : showForgotPassword
+                ? 'Enter your email to receive a password reset link'
                 : 'Enter your credentials to access your account'}
             </CardDescription>
           </CardHeader>
@@ -194,6 +234,44 @@ const CustomerLogin = () => {
                   )}
                 </Button>
               </form>
+            ) : showForgotPassword ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetEmail">Email</Label>
+                  <Input
+                    id="resetEmail"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending Reset Link...
+                    </>
+                  ) : (
+                    'Send Reset Link'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setShowForgotPassword(false)}
+                  disabled={isLoading}
+                >
+                  Back to Login
+                </Button>
+              </form>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -234,9 +312,18 @@ const CustomerLogin = () => {
                     'Sign In'
                   )}
                 </Button>
+                <div className="mt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
               </form>
             )}
-            {!isPasswordReset && (
+            {!isPasswordReset && !showForgotPassword && (
               <div className="mt-4 text-center">
                 <button
                   onClick={() => navigate('/auth')}
