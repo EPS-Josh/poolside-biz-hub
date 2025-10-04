@@ -246,22 +246,125 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     } else {
-      // User already exists, send password reset email
-      console.log("User already exists, sending password reset email");
+      // User already exists, send portal access notification
+      console.log("User already exists, sending portal access notification");
       
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/customer-login`,
+      const loginUrl = `${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '')}/customer-login`;
+      
+      const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>${companyName} Client Portal Access</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .header {
+              background-color: #f8f9fa;
+              padding: 30px 20px;
+              border-radius: 8px 8px 0 0;
+              border-bottom: 3px solid #007bff;
+              text-align: center;
+            }
+            .content {
+              background-color: #ffffff;
+              padding: 30px 20px;
+              border-radius: 0 0 8px 8px;
+              border: 1px solid #e9ecef;
+              border-top: none;
+            }
+            .info-box {
+              background-color: #f8f9fa;
+              padding: 20px;
+              border-radius: 8px;
+              margin: 20px 0;
+              border-left: 4px solid #007bff;
+            }
+            .button {
+              display: inline-block;
+              padding: 12px 30px;
+              background-color: #007bff;
+              color: white;
+              text-decoration: none;
+              border-radius: 6px;
+              margin: 20px 0;
+              font-weight: bold;
+            }
+            .footer {
+              margin-top: 20px;
+              padding-top: 20px;
+              border-top: 1px solid #e9ecef;
+              font-size: 12px;
+              color: #6c757d;
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1 style="margin: 0; color: #007bff;">Client Portal Access Granted</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${firstName},</p>
+            
+            <p>Good news! You now have access to your client portal at ${companyName}. Through the portal, you can:</p>
+            
+            <ul>
+              <li>View your service history</li>
+              <li>Schedule appointments</li>
+              <li>Access your property photos and documents</li>
+              <li>Request new services</li>
+              <li>Update your contact information</li>
+            </ul>
+            
+            <div class="info-box">
+              <h3 style="margin-top: 0;">Login Information</h3>
+              <p>Use your existing account credentials to log in:</p>
+              <p><strong>Email:</strong> ${email}</p>
+              <p style="font-size: 14px; color: #6c757d; margin-bottom: 0;">
+                <em>If you don't remember your password, use the "Forgot Password" option on the login page.</em>
+              </p>
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="${loginUrl}" class="button">Access Client Portal</a>
+            </div>
+            
+            <p style="font-size: 14px; color: #6c757d;">
+              If you have any questions or need assistance, please don't hesitate to contact us.
+            </p>
+          </div>
+          <div class="footer">
+            <p>This email was sent from ${companyName}</p>
+            <p>If you received this email in error, please contact us.</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+      const emailResponse = await resend.emails.send({
+        from: `${companyName} <onboarding@resend.dev>`,
+        to: [email],
+        subject: `${companyName} Client Portal Access Granted`,
+        html: htmlContent,
       });
 
-      if (resetError) {
-        console.error('Error sending password reset:', resetError);
-      }
+      console.log("Portal access notification sent successfully:", emailResponse);
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           userId: authUserId,
-          message: "Customer account linked and password reset email sent" 
+          emailId: emailResponse.data?.id,
+          message: "Portal access granted and notification sent" 
         }),
         {
           status: 200,
