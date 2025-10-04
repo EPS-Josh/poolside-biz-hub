@@ -14,12 +14,16 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('Auth.tsx useEffect - user:', user?.email, 'loading:', loading, 'rolesLoading:', rolesLoading, 'roles:', roles);
     if (user && !loading && !rolesLoading) {
+      console.log('Auth.tsx: Checking roles for redirect...', roles);
       // Check if user is a customer - redirect to client portal
       if (roles.includes('customer')) {
+        console.log('Auth.tsx: Customer detected, redirecting to client-portal');
         navigate('/client-portal');
       } else {
         // Business user - redirect to menu
+        console.log('Auth.tsx: Business user detected, redirecting to menu');
         navigate('/menu');
       }
     }

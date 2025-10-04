@@ -25,6 +25,8 @@ const CustomerLogin = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('CustomerLogin useEffect - user:', user?.email, 'loading:', loading, 'rolesLoading:', rolesLoading, 'roles:', roles, 'isPasswordReset:', isPasswordReset);
+    
     // Check if this is a password reset flow
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const type = hashParams.get('type');
@@ -46,16 +48,20 @@ const CustomerLogin = () => {
     
     if (type === 'recovery') {
       // User clicked password reset link - show password reset form
+      console.log('CustomerLogin: Recovery type detected, showing password reset form');
       setIsPasswordReset(true);
       return; // Don't redirect, let them reset password first
     }
     
     // Normal login flow - redirect authenticated users to client portal ONLY if they're a customer
     if (user && !loading && !rolesLoading) {
+      console.log('CustomerLogin: User authenticated, checking roles...', roles);
       if (roles.includes('customer')) {
+        console.log('CustomerLogin: Customer role found, redirecting to client portal');
         navigate('/client-portal');
       } else if (roles.length > 0) {
         // This is a business user, redirect them to business login
+        console.log('CustomerLogin: Business role found, redirecting to auth page');
         toast({
           title: "Wrong Login Page",
           description: "Business users should use the Staff Login page.",
@@ -64,7 +70,7 @@ const CustomerLogin = () => {
         navigate('/auth');
       }
     }
-  }, [user, loading, rolesLoading, roles, navigate, toast]);
+  }, [user, loading, rolesLoading, roles, navigate, toast, isPasswordReset]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
