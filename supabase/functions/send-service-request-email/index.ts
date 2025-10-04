@@ -62,7 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send notification email to business - now with multiple recipients
     const businessEmailResponse = await resend.emails.send({
-      from: "Pool Service <onboarding@resend.dev>",
+      from: "Pool Service <noreply@finestpoolsandspas.com>",
       to: [
         "info@finestpoolsandspas.com",
         "lance@finestpoolsandspas.com" // Updated recipient
@@ -83,9 +83,14 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
+    if (businessEmailResponse.error) {
+      console.error("Error sending business notification email:", businessEmailResponse.error);
+      throw new Error(`Failed to send business notification: ${businessEmailResponse.error.message}`);
+    }
+
     // Send confirmation email to customer
     const customerEmailResponse = await resend.emails.send({
-      from: "Finest Pools & Spas <onboarding@resend.dev>",
+      from: "Finest Pools & Spas <noreply@finestpoolsandspas.com>",
       to: [requestData.email],
       subject: "We Received Your Pool Service Request!",
       html: `
@@ -107,6 +112,11 @@ const handler = async (req: Request): Promise<Response> => {
         <p><small>Request ID: ${serviceRequest.id}</small></p>
       `,
     });
+
+    if (customerEmailResponse.error) {
+      console.error("Error sending customer confirmation email:", customerEmailResponse.error);
+      throw new Error(`Failed to send customer confirmation: ${customerEmailResponse.error.message}`);
+    }
 
     console.log("Business email sent:", businessEmailResponse);
     console.log("Customer email sent:", customerEmailResponse);
