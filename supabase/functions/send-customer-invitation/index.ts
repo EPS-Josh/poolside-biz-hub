@@ -227,7 +227,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
       const emailResponse = await resend.emails.send({
-        from: `${companyName} <noreply@finestpoolsandspas.com>`,
+        from: `${companyName} <portal@finestpoolsandspas.com>`,
         to: [email],
         subject: `Welcome to ${companyName} Client Portal`,
         html: htmlContent,
@@ -361,7 +361,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
       const emailResponse = await resend.emails.send({
-        from: `${companyName} <noreply@finestpoolsandspas.com>`,
+        from: `${companyName} <portal@finestpoolsandspas.com>`,
         to: [email],
         subject: `${companyName} Client Portal Access Granted`,
         html: htmlContent,
