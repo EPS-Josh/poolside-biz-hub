@@ -50,7 +50,11 @@ const Splash = () => {
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
                 <ThemeToggle />
-                <Button variant="outline" className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/customer-login')}
+                  className="flex items-center space-x-2"
+                >
                   <span>Client Portal</span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
