@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Building, Mail, Phone, Pencil, MapPin } from 'lucide-react';
+import { Building, Mail, Phone, Pencil, MapPin, Shield } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -27,6 +27,7 @@ interface Customer {
   created_at: string;
   pima_county_resident?: boolean;
   verification_status?: string;
+  customer_user_id?: string;
 }
 
 interface CustomerTableProps {
@@ -64,6 +65,12 @@ export const CustomerTable = ({ customers, onCustomerClick, onEditCustomer }: Cu
                   <Badge variant="secondary" className="gap-1 text-xs">
                     <MapPin className="h-3 w-3" />
                     Non-Pima
+                  </Badge>
+                )}
+                {customer.customer_user_id && (
+                  <Badge variant="default" className="gap-1 text-xs">
+                    <Shield className="h-3 w-3" />
+                    Portal
                   </Badge>
                 )}
               </div>

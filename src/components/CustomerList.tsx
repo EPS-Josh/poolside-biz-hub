@@ -33,6 +33,7 @@ interface Customer {
   zip_code?: string;
   notes?: string;
   created_at: string;
+  customer_user_id?: string;
 }
 
 export const CustomerList = () => {

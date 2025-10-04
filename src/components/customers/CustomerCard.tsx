@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building, Mail, Phone, Pencil, MapPin } from 'lucide-react';
+import { Building, Mail, Phone, Pencil, MapPin, Shield } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -20,6 +20,7 @@ interface Customer {
   created_at: string;
   pima_county_resident?: boolean;
   verification_status?: string;
+  customer_user_id?: string;
 }
 
 interface CustomerCardProps {
@@ -41,6 +42,12 @@ export const CustomerCard = ({ customer, onCustomerClick, onEditCustomer }: Cust
               <Badge variant="secondary" className="gap-1 text-xs">
                 <MapPin className="h-3 w-3" />
                 Non-Pima
+              </Badge>
+            )}
+            {customer.customer_user_id && (
+              <Badge variant="default" className="gap-1 text-xs">
+                <Shield className="h-3 w-3" />
+                Portal
               </Badge>
             )}
           </div>
