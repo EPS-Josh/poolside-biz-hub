@@ -27,4 +27,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-customer-invitation]
-verify_jwt = false
+verify_jwt = true
+
+[functions.send-customer-email]
+verify_jwt = true
