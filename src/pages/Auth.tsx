@@ -15,23 +15,29 @@ const Auth = () => {
 
   useEffect(() => {
     console.log('Auth.tsx useEffect - user:', user?.email, 'loading:', loading, 'rolesLoading:', rolesLoading, 'roles:', roles);
-    if (user && !loading && !rolesLoading) {
-      console.log('Auth.tsx: Checking roles for redirect...', roles);
-      
-      // If user has no roles, something is wrong - don't redirect
-      if (roles.length === 0) {
-        console.log('Auth.tsx: No roles found for user');
-        return;
-      }
+    
+    // Wait until everything is loaded
+    if (loading || rolesLoading) {
+      console.log('Auth.tsx: Still loading, waiting...');
+      return;
+    }
+    
+    // If user is authenticated
+    if (user) {
+      console.log('Auth.tsx: User authenticated, checking roles...', roles);
       
       // Check if user is a customer - redirect to client portal
       if (roles.includes('customer')) {
         console.log('Auth.tsx: Customer detected, redirecting to client-portal');
         navigate('/client-portal');
-      } else {
-        // Business user - redirect to menu
+      } else if (roles.length > 0) {
+        // Business user with roles - redirect to menu
         console.log('Auth.tsx: Business user detected, redirecting to menu');
         navigate('/menu');
+      } else {
+        // User authenticated but no roles - this shouldn't happen normally
+        // Just stay on auth page - they might be a new user
+        console.log('Auth.tsx: User authenticated but no roles assigned');
       }
     }
   }, [user, loading, rolesLoading, roles, navigate]);
