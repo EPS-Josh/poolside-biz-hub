@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown, LineChart, ClipboardList } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown, LineChart, ClipboardList, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -81,6 +82,27 @@ const ClientPortalServiceHistory = () => {
       setCustomerReadings(data || []);
     } catch (error) {
       console.error('Error fetching customer readings:', error);
+    }
+  };
+
+  const handleDeleteReading = async (readingId: string) => {
+    if (!confirm('Are you sure you want to delete this reading? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('customer_readings')
+        .delete()
+        .eq('id', readingId);
+
+      if (error) throw error;
+
+      toast.success('Reading deleted successfully');
+      fetchCustomerReadings();
+    } catch (error: any) {
+      console.error('Error deleting reading:', error);
+      toast.error('Failed to delete reading: ' + error.message);
     }
   };
 
@@ -615,9 +637,20 @@ const ClientPortalServiceHistory = () => {
                       <CardHeader>
                         <CardTitle className="text-lg flex items-center justify-between">
                           <span>Reading</span>
-                          <Badge variant="outline">
-                            {format(new Date(reading.reading_date), 'MMM d, yyyy')} at {reading.reading_time}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {format(new Date(reading.reading_date), 'MMM d, yyyy')} at {reading.reading_time}
+                            </Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteReading(reading.id)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Delete reading"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
