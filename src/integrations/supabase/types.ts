@@ -369,6 +369,57 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_profile_history: {
+        Row: {
+          change_source: string | null
+          changed_at: string
+          changed_by: string | null
+          created_at: string
+          customer_id: string
+          field_changed: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+        }
+        Insert: {
+          change_source?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          customer_id: string
+          field_changed: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Update: {
+          change_source?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          customer_id?: string
+          field_changed?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_profile_history_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_service_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_profile_history_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_scanned_documents: {
         Row: {
           created_at: string

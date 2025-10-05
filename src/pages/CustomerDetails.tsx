@@ -9,6 +9,7 @@ import { CustomerPlansDrawings } from '@/components/CustomerPlansDrawings';
 import { CustomerScannedDocuments } from '@/components/CustomerScannedDocuments';
 import { ServiceHistory } from '@/components/ServiceHistory';
 import { CustomerAccountManager } from '@/components/customers/CustomerAccountManager';
+import { CustomerProfileHistory } from '@/components/CustomerProfileHistory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -283,6 +284,11 @@ const CustomerDetails = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Profile Change History */}
+            <div className="mb-6">
+              <CustomerProfileHistory customerId={customer.id} />
+            </div>
 
             {/* Service History */}
             <div className="mb-6">
