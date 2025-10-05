@@ -39,21 +39,26 @@ const ClientPortalRequestService = () => {
       const validated = requestSchema.parse(formData);
       setSubmitting(true);
 
-      const { error } = await supabase
-        .from('service_requests')
-        .insert({
-          first_name: customer.first_name,
-          last_name: customer.last_name,
+      // Call the edge function to save to database and send emails
+      const { data: result, error } = await supabase.functions.invoke('send-service-request-email', {
+        body: {
+          firstName: customer.first_name,
+          lastName: customer.last_name,
           email: customer.email,
-          phone: customer.phone,
-          address: customer.address,
-          service_type: validated.service_type,
-          preferred_contact_method: validated.preferred_contact_method,
-          message: validated.message || null,
-          status: 'new',
-        });
+          phone: customer.phone || '',
+          address: `${customer.address}, ${customer.city}, ${customer.state} ${customer.zip_code}`,
+          serviceType: validated.service_type,
+          preferredContactMethod: validated.preferred_contact_method,
+          message: validated.message || '',
+        }
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error submitting service request:', error);
+        throw error;
+      }
+
+      console.log('Service request submitted successfully:', result);
 
       toast({
         title: 'Success',
