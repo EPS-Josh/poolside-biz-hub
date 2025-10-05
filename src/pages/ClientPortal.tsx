@@ -8,19 +8,19 @@ import { useEffect } from 'react';
 
 const ClientPortal = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const { customer, loading } = useCustomerData();
 
   useEffect(() => {
     // Only redirect to auth if we're certain the user is not authenticated
-    // Don't redirect during loading states
-    if (!user && !loading) {
+    // Wait for BOTH auth and customer data to finish loading
+    if (!user && !authLoading && !loading) {
       console.log('ClientPortal: No user found, redirecting to customer-login');
       navigate('/customer-login');
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, loading, navigate]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
