@@ -137,91 +137,229 @@ const handler = async (req: Request): Promise<Response> => {
           <title>Welcome to ${companyName} Client Portal</title>
           <style>
             body {
-              font-family: Arial, sans-serif;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
               line-height: 1.6;
               color: #333;
+              margin: 0;
+              padding: 0;
+              background-color: #f0f9ff;
+            }
+            .email-container {
               max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
+              margin: 40px auto;
+              background-color: #ffffff;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
             .header {
-              background-color: #f8f9fa;
-              padding: 30px 20px;
-              border-radius: 8px 8px 0 0;
-              border-bottom: 3px solid #007bff;
+              background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+              padding: 40px 30px;
               text-align: center;
             }
-            .content {
-              background-color: #ffffff;
-              padding: 30px 20px;
-              border-radius: 0 0 8px 8px;
-              border: 1px solid #e9ecef;
-              border-top: none;
+            .logo {
+              max-width: 280px;
+              height: auto;
+              margin-bottom: 20px;
             }
-            .credentials {
-              background-color: #f8f9fa;
-              padding: 20px;
+            .header-text {
+              color: #ffffff;
+              font-size: 24px;
+              font-weight: 600;
+              margin: 0;
+            }
+            .content {
+              padding: 40px 30px;
+            }
+            .greeting {
+              font-size: 18px;
+              color: #1f2937;
+              margin-bottom: 20px;
+              font-weight: 500;
+            }
+            .message {
+              color: #4b5563;
+              font-size: 15px;
+              margin-bottom: 20px;
+              line-height: 1.6;
+            }
+            .features-list {
+              background-color: #f8fafc;
+              border-left: 4px solid #0891b2;
+              padding: 20px 24px;
+              margin: 24px 0;
               border-radius: 8px;
-              margin: 20px 0;
-              border-left: 4px solid #007bff;
+            }
+            .features-list ul {
+              margin: 0;
+              padding-left: 20px;
+              color: #4b5563;
+            }
+            .features-list li {
+              margin: 8px 0;
+            }
+            .credentials-box {
+              background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+              border: 2px solid #0891b2;
+              padding: 24px;
+              border-radius: 8px;
+              margin: 30px 0;
+            }
+            .credentials-title {
+              color: #0c4a6e;
+              font-size: 18px;
+              font-weight: 600;
+              margin: 0 0 16px 0;
+            }
+            .credential-item {
+              margin: 12px 0;
+              font-size: 15px;
+            }
+            .credential-label {
+              color: #0c4a6e;
+              font-weight: 600;
+              display: inline-block;
+              min-width: 140px;
+            }
+            .credential-value {
+              color: #1e293b;
+              font-family: 'Courier New', monospace;
+              background-color: #ffffff;
+              padding: 6px 12px;
+              border-radius: 4px;
+              display: inline-block;
+              margin-left: 8px;
+            }
+            .security-note {
+              background-color: #fef3c7;
+              border-left: 4px solid #f59e0b;
+              padding: 16px;
+              margin: 24px 0;
+              border-radius: 4px;
+              font-size: 14px;
+              color: #92400e;
+            }
+            .button-container {
+              text-align: center;
+              margin: 32px 0;
             }
             .button {
               display: inline-block;
-              padding: 12px 30px;
-              background-color: #007bff;
-              color: white;
+              padding: 16px 40px;
+              background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+              color: #ffffff !important;
               text-decoration: none;
-              border-radius: 6px;
-              margin: 20px 0;
-              font-weight: bold;
+              border-radius: 8px;
+              font-weight: 600;
+              font-size: 16px;
+              box-shadow: 0 4px 6px rgba(8, 145, 178, 0.3);
+              transition: transform 0.2s;
+            }
+            .button:hover {
+              transform: translateY(-2px);
+            }
+            .support-text {
+              font-size: 14px;
+              color: #6b7280;
+              text-align: center;
+              margin-top: 24px;
             }
             .footer {
-              margin-top: 20px;
-              padding-top: 20px;
-              border-top: 1px solid #e9ecef;
-              font-size: 12px;
-              color: #6c757d;
+              background-color: #1e293b;
+              padding: 30px;
               text-align: center;
+            }
+            .footer-text {
+              color: #94a3b8;
+              font-size: 13px;
+              margin: 8px 0;
+            }
+            .footer-logo {
+              max-width: 200px;
+              height: auto;
+              margin-bottom: 16px;
+              opacity: 0.8;
+            }
+            .divider {
+              height: 1px;
+              background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+              margin: 24px 0;
             }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1 style="margin: 0; color: #007bff;">Welcome to Our Client Portal</h1>
-          </div>
-          <div class="content">
-            <p>Hi ${firstName},</p>
+          <div class="email-container">
+            <div class="header">
+              <img 
+                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
+                alt="${companyName} Logo" 
+                class="logo"
+              />
+              <p class="header-text">Welcome to Your Client Portal</p>
+            </div>
             
-            <p>You've been invited to access your client portal at ${companyName}. Through the portal, you can:</p>
-            
-            <ul>
-              <li>View your service history</li>
-              <li>Schedule appointments</li>
-              <li>Access your property photos and documents</li>
-              <li>Request new services</li>
-              <li>Update your contact information</li>
-            </ul>
-            
-            <div class="credentials">
-              <h3 style="margin-top: 0;">Your Login Credentials</h3>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Temporary Password:</strong> ${tempPassword}</p>
-              <p style="font-size: 14px; color: #6c757d; margin-bottom: 0;">
-                <em>Please change your password after your first login.</em>
+            <div class="content">
+              <p class="greeting">Hello ${firstName},</p>
+              
+              <p class="message">
+                Welcome to ${companyName}! We're excited to have you on board. Your client portal account has been created, 
+                giving you 24/7 access to manage your pool service needs.
+              </p>
+              
+              <div class="features-list">
+                <strong style="color: #0c4a6e; display: block; margin-bottom: 12px;">What you can do in your portal:</strong>
+                <ul>
+                  <li>📅 View and manage your service appointments</li>
+                  <li>📋 Access your complete service history</li>
+                  <li>📸 View photos and documents from your property</li>
+                  <li>🔧 Request new services or repairs</li>
+                  <li>👤 Update your contact information</li>
+                </ul>
+              </div>
+              
+              <div class="credentials-box">
+                <h3 class="credentials-title">🔐 Your Login Credentials</h3>
+                <div class="credential-item">
+                  <span class="credential-label">Email:</span>
+                  <span class="credential-value">${email}</span>
+                </div>
+                <div class="credential-item">
+                  <span class="credential-label">Temporary Password:</span>
+                  <span class="credential-value">${tempPassword}</span>
+                </div>
+              </div>
+              
+              <div class="security-note">
+                <strong>⚠️ Important Security Notice:</strong><br/>
+                For your security, you will be required to change this temporary password on your first login. 
+                Please choose a strong password that you haven't used elsewhere.
+              </div>
+              
+              <div class="button-container">
+                <a href="${loginUrl}" class="button">Access Your Client Portal</a>
+              </div>
+              
+              <div class="divider"></div>
+              
+              <p class="support-text">
+                Need help? Contact us at <strong>(520) 728-3002</strong> or 
+                <strong>info@finestpoolsandspas.com</strong>
               </p>
             </div>
             
-            <div style="text-align: center;">
-              <a href="${loginUrl}" class="button">Access Client Portal</a>
+            <div class="footer">
+              <img 
+                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
+                alt="${companyName} Logo" 
+                class="footer-logo"
+              />
+              <p class="footer-text">© 2025 ${companyName}</p>
+              <p class="footer-text">Keeping your pool perfect, one service at a time.</p>
+              <p class="footer-text" style="margin-top: 16px;">
+                PO Box 40144, Tucson, AZ 85717<br/>
+                Serving the Greater Tucson Area
+              </p>
             </div>
-            
-            <p style="font-size: 14px; color: #6c757d;">
-              If you have any questions or need assistance, please don't hesitate to contact us.
-            </p>
-          </div>
-          <div class="footer">
-            <p>This email was sent from ${companyName}</p>
-            <p>If you received this email in error, please contact us.</p>
           </div>
         </body>
       </html>
@@ -271,91 +409,221 @@ const handler = async (req: Request): Promise<Response> => {
           <title>${companyName} Client Portal Access</title>
           <style>
             body {
-              font-family: Arial, sans-serif;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
               line-height: 1.6;
               color: #333;
+              margin: 0;
+              padding: 0;
+              background-color: #f0f9ff;
+            }
+            .email-container {
               max-width: 600px;
-              margin: 0 auto;
-              padding: 20px;
+              margin: 40px auto;
+              background-color: #ffffff;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             }
             .header {
-              background-color: #f8f9fa;
-              padding: 30px 20px;
-              border-radius: 8px 8px 0 0;
-              border-bottom: 3px solid #007bff;
+              background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+              padding: 40px 30px;
               text-align: center;
             }
+            .logo {
+              max-width: 280px;
+              height: auto;
+              margin-bottom: 20px;
+            }
+            .header-text {
+              color: #ffffff;
+              font-size: 24px;
+              font-weight: 600;
+              margin: 0;
+            }
             .content {
-              background-color: #ffffff;
-              padding: 30px 20px;
-              border-radius: 0 0 8px 8px;
-              border: 1px solid #e9ecef;
-              border-top: none;
+              padding: 40px 30px;
+            }
+            .greeting {
+              font-size: 18px;
+              color: #1f2937;
+              margin-bottom: 20px;
+              font-weight: 500;
+            }
+            .message {
+              color: #4b5563;
+              font-size: 15px;
+              margin-bottom: 20px;
+              line-height: 1.6;
+            }
+            .features-list {
+              background-color: #f8fafc;
+              border-left: 4px solid #0891b2;
+              padding: 20px 24px;
+              margin: 24px 0;
+              border-radius: 8px;
+            }
+            .features-list ul {
+              margin: 0;
+              padding-left: 20px;
+              color: #4b5563;
+            }
+            .features-list li {
+              margin: 8px 0;
             }
             .info-box {
-              background-color: #f8f9fa;
-              padding: 20px;
+              background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+              border: 2px solid #0891b2;
+              padding: 24px;
               border-radius: 8px;
-              margin: 20px 0;
-              border-left: 4px solid #007bff;
+              margin: 30px 0;
+            }
+            .info-title {
+              color: #0c4a6e;
+              font-size: 18px;
+              font-weight: 600;
+              margin: 0 0 16px 0;
+            }
+            .info-text {
+              color: #4b5563;
+              font-size: 15px;
+              margin: 12px 0;
+            }
+            .email-highlight {
+              color: #0c4a6e;
+              font-weight: 600;
+              background-color: #ffffff;
+              padding: 6px 12px;
+              border-radius: 4px;
+              display: inline-block;
+              margin-left: 8px;
+            }
+            .button-container {
+              text-align: center;
+              margin: 32px 0;
             }
             .button {
               display: inline-block;
-              padding: 12px 30px;
-              background-color: #007bff;
-              color: white;
+              padding: 16px 40px;
+              background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+              color: #ffffff !important;
               text-decoration: none;
-              border-radius: 6px;
-              margin: 20px 0;
-              font-weight: bold;
+              border-radius: 8px;
+              font-weight: 600;
+              font-size: 16px;
+              box-shadow: 0 4px 6px rgba(8, 145, 178, 0.3);
+              transition: transform 0.2s;
+            }
+            .button:hover {
+              transform: translateY(-2px);
+            }
+            .help-note {
+              background-color: #f8fafc;
+              border-left: 4px solid #8b5cf6;
+              padding: 16px;
+              margin: 24px 0;
+              border-radius: 4px;
+              font-size: 14px;
+              color: #4b5563;
+            }
+            .support-text {
+              font-size: 14px;
+              color: #6b7280;
+              text-align: center;
+              margin-top: 24px;
             }
             .footer {
-              margin-top: 20px;
-              padding-top: 20px;
-              border-top: 1px solid #e9ecef;
-              font-size: 12px;
-              color: #6c757d;
+              background-color: #1e293b;
+              padding: 30px;
               text-align: center;
+            }
+            .footer-text {
+              color: #94a3b8;
+              font-size: 13px;
+              margin: 8px 0;
+            }
+            .footer-logo {
+              max-width: 200px;
+              height: auto;
+              margin-bottom: 16px;
+              opacity: 0.8;
+            }
+            .divider {
+              height: 1px;
+              background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+              margin: 24px 0;
             }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1 style="margin: 0; color: #007bff;">Client Portal Access Granted</h1>
-          </div>
-          <div class="content">
-            <p>Hi ${firstName},</p>
+          <div class="email-container">
+            <div class="header">
+              <img 
+                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
+                alt="${companyName} Logo" 
+                class="logo"
+              />
+              <p class="header-text">Client Portal Access Granted</p>
+            </div>
             
-            <p>Good news! You now have access to your client portal at ${companyName}. Through the portal, you can:</p>
-            
-            <ul>
-              <li>View your service history</li>
-              <li>Schedule appointments</li>
-              <li>Access your property photos and documents</li>
-              <li>Request new services</li>
-              <li>Update your contact information</li>
-            </ul>
-            
-            <div class="info-box">
-              <h3 style="margin-top: 0;">Login Information</h3>
-              <p>Use your existing account credentials to log in:</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p style="font-size: 14px; color: #6c757d; margin-bottom: 0;">
-                <em>If you don't remember your password, use the "Forgot Password" option on the login page.</em>
+            <div class="content">
+              <p class="greeting">Hello ${firstName},</p>
+              
+              <p class="message">
+                Great news! You now have access to your client portal at ${companyName}. 
+                Your portal gives you 24/7 access to all your pool service information and makes managing your account easier than ever.
+              </p>
+              
+              <div class="features-list">
+                <strong style="color: #0c4a6e; display: block; margin-bottom: 12px;">What you can do in your portal:</strong>
+                <ul>
+                  <li>📅 View and manage your service appointments</li>
+                  <li>📋 Access your complete service history</li>
+                  <li>📸 View photos and documents from your property</li>
+                  <li>🔧 Request new services or repairs</li>
+                  <li>👤 Update your contact information</li>
+                </ul>
+              </div>
+              
+              <div class="info-box">
+                <h3 class="info-title">🔐 Login Information</h3>
+                <p class="info-text">
+                  Use your existing account credentials to log in:
+                </p>
+                <p class="info-text">
+                  <strong>Email:</strong><span class="email-highlight">${email}</span>
+                </p>
+              </div>
+              
+              <div class="help-note">
+                <strong>💡 Forgot your password?</strong><br/>
+                No problem! Use the "Forgot Password" option on the login page to reset it.
+              </div>
+              
+              <div class="button-container">
+                <a href="${loginUrl}" class="button">Access Your Client Portal</a>
+              </div>
+              
+              <div class="divider"></div>
+              
+              <p class="support-text">
+                Need help? Contact us at <strong>(520) 728-3002</strong> or 
+                <strong>info@finestpoolsandspas.com</strong>
               </p>
             </div>
             
-            <div style="text-align: center;">
-              <a href="${loginUrl}" class="button">Access Client Portal</a>
+            <div class="footer">
+              <img 
+                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
+                alt="${companyName} Logo" 
+                class="footer-logo"
+              />
+              <p class="footer-text">© 2025 ${companyName}</p>
+              <p class="footer-text">Keeping your pool perfect, one service at a time.</p>
+              <p class="footer-text" style="margin-top: 16px;">
+                PO Box 40144, Tucson, AZ 85717<br/>
+                Serving the Greater Tucson Area
+              </p>
             </div>
-            
-            <p style="font-size: 14px; color: #6c757d;">
-              If you have any questions or need assistance, please don't hesitate to contact us.
-            </p>
-          </div>
-          <div class="footer">
-            <p>This email was sent from ${companyName}</p>
-            <p>If you received this email in error, please contact us.</p>
           </div>
         </body>
       </html>
