@@ -17,6 +17,13 @@ const Auth = () => {
     console.log('Auth.tsx useEffect - user:', user?.email, 'loading:', loading, 'rolesLoading:', rolesLoading, 'roles:', roles);
     if (user && !loading && !rolesLoading) {
       console.log('Auth.tsx: Checking roles for redirect...', roles);
+      
+      // If user has no roles, something is wrong - don't redirect
+      if (roles.length === 0) {
+        console.log('Auth.tsx: No roles found for user');
+        return;
+      }
+      
       // Check if user is a customer - redirect to client portal
       if (roles.includes('customer')) {
         console.log('Auth.tsx: Customer detected, redirecting to client-portal');
