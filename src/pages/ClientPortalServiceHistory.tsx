@@ -394,22 +394,39 @@ const ClientPortalServiceHistory = () => {
   const prepareChartData = () => {
     const readingKeys = ['total_hardness', 'total_chlorine_bromine', 'free_chlorine', 'ph', 'total_alkalinity', 'cyanuric_acid'];
     
+    // Map snake_case to possible camelCase variations
+    const fieldVariations: { [key: string]: string[] } = {
+      total_hardness: ['total_hardness', 'totalHardness'],
+      total_chlorine_bromine: ['total_chlorine_bromine', 'chlorine'],
+      free_chlorine: ['free_chlorine', 'chlorine'],
+      ph: ['ph'],
+      total_alkalinity: ['total_alkalinity', 'alkalinity'],
+      cyanuric_acid: ['cyanuric_acid', 'cyanuricAcid']
+    };
+    
     return readingKeys.map(key => {
-      // Handle field name variations (service records use 'alkalinity', customer readings use 'total_alkalinity')
-      const serviceKey = key === 'total_alkalinity' ? 'alkalinity' : key;
+      const possibleKeys = fieldVariations[key] || [key];
       
       // Combine service records and customer readings
       const serviceData = serviceRecords
-        .filter(record => record.before_readings?.[serviceKey] || record.after_readings?.[serviceKey])
-        .map(record => ({
-          date: new Date(record.service_date).getTime(),
-          displayDate: format(new Date(record.service_date), 'MMM d'),
-          fullDate: format(new Date(record.service_date), 'MMM d, yyyy'),
-          before: parseFloat(record.before_readings?.[serviceKey]) || null,
-          after: parseFloat(record.after_readings?.[serviceKey]) || null,
-          customer: null,
-          source: 'service'
-        }));
+        .filter(record => {
+          // Check if any of the possible field name variations exist
+          return possibleKeys.some(k => record.before_readings?.[k] || record.after_readings?.[k]);
+        })
+        .map(record => {
+          // Find the first matching key variant
+          const matchingKey = possibleKeys.find(k => record.before_readings?.[k] || record.after_readings?.[k]) || possibleKeys[0];
+          
+          return {
+            date: new Date(record.service_date).getTime(),
+            displayDate: format(new Date(record.service_date), 'MMM d'),
+            fullDate: format(new Date(record.service_date), 'MMM d, yyyy'),
+            before: parseFloat(record.before_readings?.[matchingKey]) || null,
+            after: parseFloat(record.after_readings?.[matchingKey]) || null,
+            customer: null,
+            source: 'service'
+          };
+        });
 
       const customerData = customerReadings
         .filter(reading => reading.readings?.[key])
