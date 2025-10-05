@@ -395,15 +395,18 @@ const ClientPortalServiceHistory = () => {
     const readingKeys = ['total_hardness', 'total_chlorine_bromine', 'free_chlorine', 'ph', 'total_alkalinity', 'cyanuric_acid'];
     
     return readingKeys.map(key => {
+      // Handle field name variations (service records use 'alkalinity', customer readings use 'total_alkalinity')
+      const serviceKey = key === 'total_alkalinity' ? 'alkalinity' : key;
+      
       // Combine service records and customer readings
       const serviceData = serviceRecords
-        .filter(record => record.before_readings?.[key] || record.after_readings?.[key])
+        .filter(record => record.before_readings?.[serviceKey] || record.after_readings?.[serviceKey])
         .map(record => ({
           date: new Date(record.service_date).getTime(),
           displayDate: format(new Date(record.service_date), 'MMM d'),
           fullDate: format(new Date(record.service_date), 'MMM d, yyyy'),
-          before: parseFloat(record.before_readings?.[key]) || null,
-          after: parseFloat(record.after_readings?.[key]) || null,
+          before: parseFloat(record.before_readings?.[serviceKey]) || null,
+          after: parseFloat(record.after_readings?.[serviceKey]) || null,
           customer: null,
           source: 'service'
         }));
