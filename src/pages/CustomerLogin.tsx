@@ -88,11 +88,22 @@ const CustomerLogin = () => {
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "Welcome!",
-          description: "You've successfully logged in to the client portal.",
-        });
-        navigate('/client-portal');
+        // Check if user needs to change password
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        
+        if (currentUser?.user_metadata?.requires_password_change) {
+          toast({
+            title: "Password Change Required",
+            description: "Please set a new password to continue.",
+          });
+          setIsPasswordReset(true);
+        } else {
+          toast({
+            title: "Welcome!",
+            description: "You've successfully logged in to the client portal.",
+          });
+          navigate('/client-portal');
+        }
       }
     } catch (error: any) {
       toast({
@@ -130,7 +141,10 @@ const CustomerLogin = () => {
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
+        data: {
+          requires_password_change: false,
+        }
       });
 
       if (error) {

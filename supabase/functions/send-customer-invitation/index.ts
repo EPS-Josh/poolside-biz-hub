@@ -76,6 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
         user_metadata: {
           full_name: `${firstName} ${lastName}`,
           is_customer: true,
+          requires_password_change: true,
         },
       });
 
