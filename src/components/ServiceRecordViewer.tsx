@@ -234,6 +234,12 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                               <span className="font-medium">{record.before_readings.total_hardness}</span>
                             </div>
                           )}
+                          {record.before_readings.chlorine && (
+                            <div className="flex justify-between">
+                              <span>Chlorine:</span>
+                              <span className="font-medium">{record.before_readings.chlorine}</span>
+                            </div>
+                          )}
                           {record.before_readings.total_chlorine_bromine && (
                             <div className="flex justify-between">
                               <span>Total Chlorine / Bromine:</span>
@@ -275,6 +281,12 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                             <div className="flex justify-between">
                               <span>Total Hardness:</span>
                               <span className="font-medium">{record.after_readings.total_hardness}</span>
+                            </div>
+                          )}
+                          {record.after_readings.chlorine && (
+                            <div className="flex justify-between">
+                              <span>Chlorine:</span>
+                              <span className="font-medium">{record.after_readings.chlorine}</span>
                             </div>
                           )}
                           {record.after_readings.total_chlorine_bromine && (
