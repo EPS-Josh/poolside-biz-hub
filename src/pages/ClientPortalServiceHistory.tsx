@@ -5,8 +5,9 @@ import { useCustomerData } from '@/hooks/useCustomerData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileText, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
+import jsPDF from 'jspdf';
 
 interface ServiceRecord {
   id: string;
@@ -52,6 +53,128 @@ const ClientPortalServiceHistory = () => {
     }
   };
 
+  const formatReadingLabel = (key: string): string => {
+    const labels: { [key: string]: string } = {
+      total_hardness: 'Total Hardness',
+      total_chlorine_bromine: 'Total Chlorine / Bromine',
+      free_chlorine: 'Free Chlorine',
+      ph: 'pH',
+      total_alkalinity: 'Total Alkalinity',
+      cyanuric_acid: 'Cyanuric Acid'
+    };
+    return labels[key] || key.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  };
+
+  const downloadCSV = (record: ServiceRecord) => {
+    const rows = [];
+    
+    // Header
+    rows.push(['Service Record - ' + format(new Date(record.service_date), 'MMMM d, yyyy')]);
+    rows.push(['Service Type:', record.service_type]);
+    rows.push(['Technician:', record.technician_name || 'N/A']);
+    rows.push([]);
+    
+    // Readings
+    rows.push(['Reading', 'Before', 'After']);
+    
+    const allKeys = new Set([
+      ...(record.before_readings ? Object.keys(record.before_readings) : []),
+      ...(record.after_readings ? Object.keys(record.after_readings) : [])
+    ]);
+    
+    allKeys.forEach(key => {
+      const beforeValue = record.before_readings?.[key] || '';
+      const afterValue = record.after_readings?.[key] || '';
+      rows.push([formatReadingLabel(key), beforeValue, afterValue]);
+    });
+
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `service-record-${format(new Date(record.service_date), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const downloadPDF = (record: ServiceRecord) => {
+    const doc = new jsPDF();
+    let y = 20;
+    
+    // Title
+    doc.setFontSize(18);
+    doc.text('Service Record', 20, y);
+    y += 10;
+    
+    // Date
+    doc.setFontSize(12);
+    doc.text(format(new Date(record.service_date), 'MMMM d, yyyy'), 20, y);
+    y += 10;
+    
+    // Service details
+    doc.setFontSize(10);
+    doc.text(`Service Type: ${record.service_type}`, 20, y);
+    y += 7;
+    if (record.technician_name) {
+      doc.text(`Technician: ${record.technician_name}`, 20, y);
+      y += 7;
+    }
+    y += 5;
+    
+    // Before Readings
+    if (record.before_readings && Object.keys(record.before_readings).length > 0) {
+      doc.setFontSize(12);
+      doc.text('Before Readings:', 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      
+      Object.entries(record.before_readings).forEach(([key, value]) => {
+        doc.text(`${formatReadingLabel(key)}: ${value}`, 25, y);
+        y += 6;
+      });
+      y += 5;
+    }
+    
+    // After Readings
+    if (record.after_readings && Object.keys(record.after_readings).length > 0) {
+      doc.setFontSize(12);
+      doc.text('After Readings:', 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      
+      Object.entries(record.after_readings).forEach(([key, value]) => {
+        doc.text(`${formatReadingLabel(key)}: ${value}`, 25, y);
+        y += 6;
+      });
+      y += 5;
+    }
+    
+    // Work performed
+    if (record.work_performed) {
+      doc.setFontSize(12);
+      doc.text('Work Performed:', 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      const lines = doc.splitTextToSize(record.work_performed, 170);
+      doc.text(lines, 25, y);
+      y += lines.length * 6;
+      y += 5;
+    }
+    
+    // Chemicals added
+    if (record.chemicals_added) {
+      doc.setFontSize(12);
+      doc.text('Chemicals Added:', 20, y);
+      y += 7;
+      doc.setFontSize(10);
+      const lines = doc.splitTextToSize(record.chemicals_added, 170);
+      doc.text(lines, 25, y);
+    }
+    
+    doc.save(`service-record-${format(new Date(record.service_date), 'yyyy-MM-dd')}.pdf`);
+  };
+
   if (customerLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -94,16 +217,36 @@ const ClientPortalServiceHistory = () => {
               <Card key={record.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-lg">{record.service_type}</CardTitle>
                       <CardDescription className="flex items-center mt-2">
                         <Calendar className="h-4 w-4 mr-1" />
                         {format(new Date(record.service_date), 'MMMM d, yyyy')}
                       </CardDescription>
                     </div>
-                    {record.service_status && (
-                      <Badge>{record.service_status}</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {record.service_status && (
+                        <Badge>{record.service_status}</Badge>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadCSV(record)}
+                        title="Download as CSV"
+                      >
+                        <FileDown className="h-4 w-4 mr-1" />
+                        CSV
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadPDF(record)}
+                        title="Download as PDF"
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        PDF
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -136,7 +279,7 @@ const ClientPortalServiceHistory = () => {
                           <div className="bg-muted p-3 rounded-lg text-sm">
                             {Object.entries(record.before_readings).map(([key, value]) => (
                               <div key={key} className="flex justify-between">
-                                <span className="capitalize">{key}:</span>
+                                <span>{formatReadingLabel(key)}:</span>
                                 <span>{String(value)}</span>
                               </div>
                             ))}
@@ -149,7 +292,7 @@ const ClientPortalServiceHistory = () => {
                           <div className="bg-muted p-3 rounded-lg text-sm">
                             {Object.entries(record.after_readings).map(([key, value]) => (
                               <div key={key} className="flex justify-between">
-                                <span className="capitalize">{key}:</span>
+                                <span>{formatReadingLabel(key)}:</span>
                                 <span>{String(value)}</span>
                               </div>
                             ))}
