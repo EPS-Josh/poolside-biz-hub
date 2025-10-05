@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomerData } from '@/hooks/useCustomerData';
 import { Button } from '@/components/ui/button';
@@ -22,10 +22,21 @@ const ClientPortalProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    email: customer?.email || '',
-    phone: customer?.phone || '',
-    company: customer?.company || '',
+    email: '',
+    phone: '',
+    company: '',
   });
+
+  // Update form data when customer data loads
+  useEffect(() => {
+    if (customer) {
+      setFormData({
+        email: customer.email || '',
+        phone: customer.phone || '',
+        company: customer.company || '',
+      });
+    }
+  }, [customer]);
 
   const handleSave = async () => {
     try {
