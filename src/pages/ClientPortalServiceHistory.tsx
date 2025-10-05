@@ -175,6 +175,169 @@ const ClientPortalServiceHistory = () => {
     doc.save(`service-record-${format(new Date(record.service_date), 'yyyy-MM-dd')}.pdf`);
   };
 
+  const downloadAllCSV = () => {
+    const rows = [];
+    
+    // Header
+    rows.push(['Service History - All Records']);
+    rows.push([]);
+    
+    serviceRecords.forEach((record, index) => {
+      if (index > 0) rows.push([]);
+      
+      rows.push([`Service Date: ${format(new Date(record.service_date), 'MMMM d, yyyy')}`]);
+      rows.push([`Service Type: ${record.service_type}`]);
+      rows.push([`Technician: ${record.technician_name || 'N/A'}`]);
+      rows.push([]);
+      
+      rows.push(['Reading', 'Before', 'After']);
+      
+      const allKeys = new Set([
+        ...(record.before_readings ? Object.keys(record.before_readings) : []),
+        ...(record.after_readings ? Object.keys(record.after_readings) : [])
+      ]);
+      
+      allKeys.forEach(key => {
+        const beforeValue = record.before_readings?.[key] || '';
+        const afterValue = record.after_readings?.[key] || '';
+        rows.push([formatReadingLabel(key), beforeValue, afterValue]);
+      });
+    });
+
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `all-service-records-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const downloadAllPDF = () => {
+    const doc = new jsPDF();
+    
+    // Title page
+    doc.setFontSize(20);
+    doc.text('Service History', 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Total Records: ${serviceRecords.length}`, 20, 35);
+    doc.text(`Generated: ${format(new Date(), 'MMMM d, yyyy')}`, 20, 42);
+    
+    serviceRecords.forEach((record, index) => {
+      if (index > 0) {
+        doc.addPage();
+      } else {
+        doc.addPage();
+      }
+      
+      let y = 20;
+      
+      // Service record header
+      doc.setFontSize(16);
+      doc.text(`Service Record ${index + 1}`, 20, y);
+      y += 10;
+      
+      doc.setFontSize(12);
+      doc.text(format(new Date(record.service_date), 'MMMM d, yyyy'), 20, y);
+      y += 10;
+      
+      doc.setFontSize(10);
+      doc.text(`Service Type: ${record.service_type}`, 20, y);
+      y += 7;
+      if (record.technician_name) {
+        doc.text(`Technician: ${record.technician_name}`, 20, y);
+        y += 7;
+      }
+      y += 5;
+      
+      // Before Readings
+      if (record.before_readings && Object.keys(record.before_readings).length > 0) {
+        doc.setFontSize(12);
+        doc.text('Before Readings:', 20, y);
+        y += 7;
+        doc.setFontSize(10);
+        
+        Object.entries(record.before_readings).forEach(([key, value]) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(`${formatReadingLabel(key)}: ${value}`, 25, y);
+          y += 6;
+        });
+        y += 5;
+      }
+      
+      // After Readings
+      if (record.after_readings && Object.keys(record.after_readings).length > 0) {
+        if (y > 250) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.setFontSize(12);
+        doc.text('After Readings:', 20, y);
+        y += 7;
+        doc.setFontSize(10);
+        
+        Object.entries(record.after_readings).forEach(([key, value]) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(`${formatReadingLabel(key)}: ${value}`, 25, y);
+          y += 6;
+        });
+        y += 5;
+      }
+      
+      // Work performed
+      if (record.work_performed) {
+        if (y > 230) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.setFontSize(12);
+        doc.text('Work Performed:', 20, y);
+        y += 7;
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(record.work_performed, 170);
+        lines.forEach((line: string) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(line, 25, y);
+          y += 6;
+        });
+        y += 5;
+      }
+      
+      // Chemicals added
+      if (record.chemicals_added) {
+        if (y > 230) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.setFontSize(12);
+        doc.text('Chemicals Added:', 20, y);
+        y += 7;
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(record.chemicals_added, 170);
+        lines.forEach((line: string) => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(line, 25, y);
+          y += 6;
+        });
+      }
+    });
+    
+    doc.save(`all-service-records-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+  };
+
   if (customerLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -195,8 +358,32 @@ const ClientPortalServiceHistory = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Portal
           </Button>
-          <h1 className="text-2xl font-bold">Service History</h1>
-          <p className="text-muted-foreground">Your complete service record history</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold">Service History</h1>
+              <p className="text-muted-foreground">Your complete service record history</p>
+            </div>
+            {serviceRecords.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={downloadAllCSV}
+                  title="Download all records as CSV"
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export All as CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={downloadAllPDF}
+                  title="Download all records as PDF"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export All as PDF
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
