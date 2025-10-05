@@ -291,7 +291,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div class="email-container">
             <div class="header">
               <img 
-                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
+                src="${baseUrl}/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
                 alt="${companyName} Logo" 
                 class="logo"
               />
@@ -349,7 +349,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div class="footer">
               <img 
-                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
+                src="${baseUrl}/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
                 alt="${companyName} Logo" 
                 class="footer-logo"
               />
@@ -558,7 +558,7 @@ const handler = async (req: Request): Promise<Response> => {
           <div class="email-container">
             <div class="header">
               <img 
-                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
+                src="${baseUrl}/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
                 alt="${companyName} Logo" 
                 class="logo"
               />
@@ -613,7 +613,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div class="footer">
               <img 
-                src="https://fsqztictdjcguzchlcdf.supabase.co/storage/v1/object/public/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
+                src="${baseUrl}/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
                 alt="${companyName} Logo" 
                 class="footer-logo"
               />
