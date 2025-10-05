@@ -228,22 +228,40 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                       <div className="space-y-2">
                         <h5 className="font-semibold text-muted-foreground">Before Service</h5>
                         <div className="space-y-1">
+                          {record.before_readings.total_hardness && (
+                            <div className="flex justify-between">
+                              <span>Total Hardness:</span>
+                              <span className="font-medium">{record.before_readings.total_hardness}</span>
+                            </div>
+                          )}
+                          {record.before_readings.total_chlorine_bromine && (
+                            <div className="flex justify-between">
+                              <span>Total Chlorine / Bromine:</span>
+                              <span className="font-medium">{record.before_readings.total_chlorine_bromine}</span>
+                            </div>
+                          )}
+                          {record.before_readings.free_chlorine && (
+                            <div className="flex justify-between">
+                              <span>Free Chlorine:</span>
+                              <span className="font-medium">{record.before_readings.free_chlorine}</span>
+                            </div>
+                          )}
                           {record.before_readings.ph && (
                             <div className="flex justify-between">
                               <span>pH:</span>
                               <span className="font-medium">{record.before_readings.ph}</span>
                             </div>
                           )}
-                          {record.before_readings.chlorine && (
+                          {record.before_readings.total_alkalinity && (
                             <div className="flex justify-between">
-                              <span>Chlorine:</span>
-                              <span className="font-medium">{record.before_readings.chlorine}</span>
+                              <span>Total Alkalinity:</span>
+                              <span className="font-medium">{record.before_readings.total_alkalinity}</span>
                             </div>
                           )}
-                          {record.before_readings.alkalinity && (
+                          {record.before_readings.cyanuric_acid && (
                             <div className="flex justify-between">
-                              <span>Alkalinity:</span>
-                              <span className="font-medium">{record.before_readings.alkalinity}</span>
+                              <span>Cyanuric Acid:</span>
+                              <span className="font-medium">{record.before_readings.cyanuric_acid}</span>
                             </div>
                           )}
                         </div>
@@ -253,22 +271,40 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                       <div className="space-y-2">
                         <h5 className="font-semibold text-muted-foreground">After Service</h5>
                         <div className="space-y-1">
+                          {record.after_readings.total_hardness && (
+                            <div className="flex justify-between">
+                              <span>Total Hardness:</span>
+                              <span className="font-medium">{record.after_readings.total_hardness}</span>
+                            </div>
+                          )}
+                          {record.after_readings.total_chlorine_bromine && (
+                            <div className="flex justify-between">
+                              <span>Total Chlorine / Bromine:</span>
+                              <span className="font-medium">{record.after_readings.total_chlorine_bromine}</span>
+                            </div>
+                          )}
+                          {record.after_readings.free_chlorine && (
+                            <div className="flex justify-between">
+                              <span>Free Chlorine:</span>
+                              <span className="font-medium">{record.after_readings.free_chlorine}</span>
+                            </div>
+                          )}
                           {record.after_readings.ph && (
                             <div className="flex justify-between">
                               <span>pH:</span>
                               <span className="font-medium">{record.after_readings.ph}</span>
                             </div>
                           )}
-                          {record.after_readings.chlorine && (
+                          {record.after_readings.total_alkalinity && (
                             <div className="flex justify-between">
-                              <span>Chlorine:</span>
-                              <span className="font-medium">{record.after_readings.chlorine}</span>
+                              <span>Total Alkalinity:</span>
+                              <span className="font-medium">{record.after_readings.total_alkalinity}</span>
                             </div>
                           )}
-                          {record.after_readings.alkalinity && (
+                          {record.after_readings.cyanuric_acid && (
                             <div className="flex justify-between">
-                              <span>Alkalinity:</span>
-                              <span className="font-medium">{record.after_readings.alkalinity}</span>
+                              <span>Cyanuric Acid:</span>
+                              <span className="font-medium">{record.after_readings.cyanuric_acid}</span>
                             </div>
                           )}
                         </div>

@@ -302,9 +302,12 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
                                   <div>
                                     <h5 className="font-medium text-gray-600 mb-1">Before</h5>
                                     <div className="space-y-1">
+                                      {record.before_readings.total_hardness && <div>Total Hardness: {record.before_readings.total_hardness}</div>}
+                                      {record.before_readings.total_chlorine_bromine && <div>Total Chlorine / Bromine: {record.before_readings.total_chlorine_bromine}</div>}
+                                      {record.before_readings.free_chlorine && <div>Free Chlorine: {record.before_readings.free_chlorine}</div>}
                                       {record.before_readings.ph && <div>pH: {record.before_readings.ph}</div>}
-                                      {record.before_readings.chlorine && <div>Chlorine: {record.before_readings.chlorine}</div>}
-                                      {record.before_readings.alkalinity && <div>Alkalinity: {record.before_readings.alkalinity}</div>}
+                                      {record.before_readings.total_alkalinity && <div>Total Alkalinity: {record.before_readings.total_alkalinity}</div>}
+                                      {record.before_readings.cyanuric_acid && <div>Cyanuric Acid: {record.before_readings.cyanuric_acid}</div>}
                                     </div>
                                   </div>
                                 )}
@@ -312,9 +315,12 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
                                   <div>
                                     <h5 className="font-medium text-gray-600 mb-1">After</h5>
                                     <div className="space-y-1">
+                                      {record.after_readings.total_hardness && <div>Total Hardness: {record.after_readings.total_hardness}</div>}
+                                      {record.after_readings.total_chlorine_bromine && <div>Total Chlorine / Bromine: {record.after_readings.total_chlorine_bromine}</div>}
+                                      {record.after_readings.free_chlorine && <div>Free Chlorine: {record.after_readings.free_chlorine}</div>}
                                       {record.after_readings.ph && <div>pH: {record.after_readings.ph}</div>}
-                                      {record.after_readings.chlorine && <div>Chlorine: {record.after_readings.chlorine}</div>}
-                                      {record.after_readings.alkalinity && <div>Alkalinity: {record.after_readings.alkalinity}</div>}
+                                      {record.after_readings.total_alkalinity && <div>Total Alkalinity: {record.after_readings.total_alkalinity}</div>}
+                                      {record.after_readings.cyanuric_acid && <div>Cyanuric Acid: {record.after_readings.cyanuric_acid}</div>}
                                     </div>
                                   </div>
                                 )}
