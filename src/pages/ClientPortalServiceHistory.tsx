@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown, LineChart, ClipboardList, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
@@ -38,6 +40,9 @@ interface CustomerReading {
 const ClientPortalServiceHistory = () => {
   const navigate = useNavigate();
   const { customer, loading: customerLoading } = useCustomerData();
+  const [showBefore, setShowBefore] = useState(true);
+  const [showAfter, setShowAfter] = useState(true);
+  const [showCustomer, setShowCustomer] = useState(true);
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [customerReadings, setCustomerReadings] = useState<CustomerReading[]>([]);
   const [loading, setLoading] = useState(true);
@@ -717,6 +722,50 @@ const ClientPortalServiceHistory = () => {
                         <CardDescription>
                           Technician readings (before/after service) and your submitted readings
                         </CardDescription>
+                        <div className="flex gap-6 mt-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`before-${chart.key}`}
+                              checked={showBefore}
+                              onCheckedChange={(checked) => setShowBefore(checked === true)}
+                            />
+                            <Label 
+                              htmlFor={`before-${chart.key}`}
+                              className="text-sm font-normal cursor-pointer flex items-center gap-2"
+                            >
+                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
+                              Before Service
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`after-${chart.key}`}
+                              checked={showAfter}
+                              onCheckedChange={(checked) => setShowAfter(checked === true)}
+                            />
+                            <Label 
+                              htmlFor={`after-${chart.key}`}
+                              className="text-sm font-normal cursor-pointer flex items-center gap-2"
+                            >
+                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
+                              After Service
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`customer-${chart.key}`}
+                              checked={showCustomer}
+                              onCheckedChange={(checked) => setShowCustomer(checked === true)}
+                            />
+                            <Label 
+                              htmlFor={`customer-${chart.key}`}
+                              className="text-sm font-normal cursor-pointer flex items-center gap-2"
+                            >
+                              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#10b981' }} />
+                              Your Readings
+                            </Label>
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
@@ -736,33 +785,39 @@ const ClientPortalServiceHistory = () => {
                               }}
                             />
                             <Legend />
-                            <Line 
-                              type="monotone" 
-                              dataKey="before" 
-                              stroke="hsl(var(--destructive))" 
-                              name="Before Service"
-                              strokeWidth={2}
-                              dot={{ r: 4 }}
-                              connectNulls
-                            />
-                            <Line 
-                              type="monotone" 
-                              dataKey="after" 
-                              stroke="hsl(var(--primary))" 
-                              name="After Service"
-                              strokeWidth={2}
-                              dot={{ r: 4 }}
-                              connectNulls
-                            />
-                            <Line 
-                              type="monotone" 
-                              dataKey="customer" 
-                              stroke="#10b981" 
-                              name="Your Readings"
-                              strokeWidth={3}
-                              dot={{ r: 5, fill: "#10b981" }}
-                              connectNulls
-                            />
+                            {showBefore && (
+                              <Line 
+                                type="monotone" 
+                                dataKey="before" 
+                                stroke="hsl(var(--destructive))" 
+                                name="Before Service"
+                                strokeWidth={2}
+                                dot={{ r: 4 }}
+                                connectNulls
+                              />
+                            )}
+                            {showAfter && (
+                              <Line 
+                                type="monotone" 
+                                dataKey="after" 
+                                stroke="hsl(var(--primary))" 
+                                name="After Service"
+                                strokeWidth={2}
+                                dot={{ r: 4 }}
+                                connectNulls
+                              />
+                            )}
+                            {showCustomer && (
+                              <Line 
+                                type="monotone" 
+                                dataKey="customer" 
+                                stroke="#10b981" 
+                                name="Your Readings"
+                                strokeWidth={3}
+                                dot={{ r: 5, fill: "#10b981" }}
+                                connectNulls
+                              />
+                            )}
                           </RechartsLineChart>
                         </ResponsiveContainer>
                       </CardContent>
