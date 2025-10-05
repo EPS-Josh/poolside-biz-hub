@@ -68,18 +68,20 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
     service_status: 'completed',
     invoicing_status: 'ready_for_qb',
     before_readings: {
+      total_hardness: '',
+      total_chlorine_bromine: '',
+      free_chlorine: '',
       ph: '',
-      chlorine: '',
-      alkalinity: '',
-      cyanuric_acid: '',
-      calcium_hardness: ''
+      total_alkalinity: '',
+      cyanuric_acid: ''
     },
     after_readings: {
+      total_hardness: '',
+      total_chlorine_bromine: '',
+      free_chlorine: '',
       ph: '',
-      chlorine: '',
-      alkalinity: '',
-      cyanuric_acid: '',
-      calcium_hardness: ''
+      total_alkalinity: '',
+      cyanuric_acid: ''
     }
   });
 
@@ -100,18 +102,20 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
         service_status: record.service_status,
         invoicing_status: record.invoicing_status || 'ready_for_qb',
         before_readings: {
+          total_hardness: record.before_readings?.total_hardness || '',
+          total_chlorine_bromine: record.before_readings?.total_chlorine_bromine || '',
+          free_chlorine: record.before_readings?.free_chlorine || '',
           ph: record.before_readings?.ph || '',
-          chlorine: record.before_readings?.chlorine || '',
-          alkalinity: record.before_readings?.alkalinity || '',
-          cyanuric_acid: record.before_readings?.cyanuric_acid || '',
-          calcium_hardness: record.before_readings?.calcium_hardness || ''
+          total_alkalinity: record.before_readings?.total_alkalinity || '',
+          cyanuric_acid: record.before_readings?.cyanuric_acid || ''
         },
         after_readings: {
+          total_hardness: record.after_readings?.total_hardness || '',
+          total_chlorine_bromine: record.after_readings?.total_chlorine_bromine || '',
+          free_chlorine: record.after_readings?.free_chlorine || '',
           ph: record.after_readings?.ph || '',
-          chlorine: record.after_readings?.chlorine || '',
-          alkalinity: record.after_readings?.alkalinity || '',
-          cyanuric_acid: record.after_readings?.cyanuric_acid || '',
-          calcium_hardness: record.after_readings?.calcium_hardness || ''
+          total_alkalinity: record.after_readings?.total_alkalinity || '',
+          cyanuric_acid: record.after_readings?.cyanuric_acid || ''
         }
       });
       
@@ -286,6 +290,33 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
+                    <Label htmlFor="before_total_hardness">Total Hardness</Label>
+                    <Input
+                      id="before_total_hardness"
+                      value={formData.before_readings.total_hardness}
+                      onChange={(e) => updateReadings('before_readings', 'total_hardness', e.target.value)}
+                      placeholder="200"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="before_total_chlorine_bromine">Total Chlorine / Bromine</Label>
+                    <Input
+                      id="before_total_chlorine_bromine"
+                      value={formData.before_readings.total_chlorine_bromine}
+                      onChange={(e) => updateReadings('before_readings', 'total_chlorine_bromine', e.target.value)}
+                      placeholder="3.0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="before_free_chlorine">Free Chlorine</Label>
+                    <Input
+                      id="before_free_chlorine"
+                      value={formData.before_readings.free_chlorine}
+                      onChange={(e) => updateReadings('before_readings', 'free_chlorine', e.target.value)}
+                      placeholder="1.5"
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="before_ph">pH</Label>
                     <Input
                       id="before_ph"
@@ -295,20 +326,11 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
                     />
                   </div>
                   <div>
-                    <Label htmlFor="before_chlorine">Chlorine</Label>
+                    <Label htmlFor="before_total_alkalinity">Total Alkalinity</Label>
                     <Input
-                      id="before_chlorine"
-                      value={formData.before_readings.chlorine}
-                      onChange={(e) => updateReadings('before_readings', 'chlorine', e.target.value)}
-                      placeholder="1.5"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="before_alkalinity">Alkalinity</Label>
-                    <Input
-                      id="before_alkalinity"
-                      value={formData.before_readings.alkalinity}
-                      onChange={(e) => updateReadings('before_readings', 'alkalinity', e.target.value)}
+                      id="before_total_alkalinity"
+                      value={formData.before_readings.total_alkalinity}
+                      onChange={(e) => updateReadings('before_readings', 'total_alkalinity', e.target.value)}
                       placeholder="120"
                     />
                   </div>
@@ -332,6 +354,33 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div>
+                    <Label htmlFor="after_total_hardness">Total Hardness</Label>
+                    <Input
+                      id="after_total_hardness"
+                      value={formData.after_readings.total_hardness}
+                      onChange={(e) => updateReadings('after_readings', 'total_hardness', e.target.value)}
+                      placeholder="200"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="after_total_chlorine_bromine">Total Chlorine / Bromine</Label>
+                    <Input
+                      id="after_total_chlorine_bromine"
+                      value={formData.after_readings.total_chlorine_bromine}
+                      onChange={(e) => updateReadings('after_readings', 'total_chlorine_bromine', e.target.value)}
+                      placeholder="3.0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="after_free_chlorine">Free Chlorine</Label>
+                    <Input
+                      id="after_free_chlorine"
+                      value={formData.after_readings.free_chlorine}
+                      onChange={(e) => updateReadings('after_readings', 'free_chlorine', e.target.value)}
+                      placeholder="2.0"
+                    />
+                  </div>
+                  <div>
                     <Label htmlFor="after_ph">pH</Label>
                     <Input
                       id="after_ph"
@@ -341,20 +390,11 @@ export const EditServiceRecordForm = ({ record, open, onOpenChange, onSuccess }:
                     />
                   </div>
                   <div>
-                    <Label htmlFor="after_chlorine">Chlorine</Label>
+                    <Label htmlFor="after_total_alkalinity">Total Alkalinity</Label>
                     <Input
-                      id="after_chlorine"
-                      value={formData.after_readings.chlorine}
-                      onChange={(e) => updateReadings('after_readings', 'chlorine', e.target.value)}
-                      placeholder="2.0"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="after_alkalinity">Alkalinity</Label>
-                    <Input
-                      id="after_alkalinity"
-                      value={formData.after_readings.alkalinity}
-                      onChange={(e) => updateReadings('after_readings', 'alkalinity', e.target.value)}
+                      id="after_total_alkalinity"
+                      value={formData.after_readings.total_alkalinity}
+                      onChange={(e) => updateReadings('after_readings', 'total_alkalinity', e.target.value)}
                       placeholder="125"
                     />
                   </div>
