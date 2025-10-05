@@ -737,10 +737,10 @@ const ClientPortalServiceHistory = () => {
                             <Line 
                               type="monotone" 
                               dataKey="customer" 
-                              stroke="hsl(var(--accent))" 
+                              stroke="#10b981" 
                               name="Your Readings"
-                              strokeWidth={2}
-                              dot={{ r: 4 }}
+                              strokeWidth={3}
+                              dot={{ r: 5, fill: "#10b981" }}
                               connectNulls
                             />
                           </RechartsLineChart>
