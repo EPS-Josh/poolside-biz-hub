@@ -373,20 +373,40 @@ const ClientPortalServiceHistory = () => {
     const readingKeys = ['total_hardness', 'total_chlorine_bromine', 'free_chlorine', 'ph', 'total_alkalinity', 'cyanuric_acid'];
     
     return readingKeys.map(key => {
-      const data = serviceRecords
+      // Combine service records and customer readings
+      const serviceData = serviceRecords
         .filter(record => record.before_readings?.[key] || record.after_readings?.[key])
         .map(record => ({
-          date: format(new Date(record.service_date), 'MMM d'),
+          date: new Date(record.service_date).getTime(),
+          displayDate: format(new Date(record.service_date), 'MMM d'),
           fullDate: format(new Date(record.service_date), 'MMM d, yyyy'),
           before: parseFloat(record.before_readings?.[key]) || null,
           after: parseFloat(record.after_readings?.[key]) || null,
-        }))
-        .reverse(); // Show oldest to newest
+          customer: null,
+          source: 'service'
+        }));
+
+      const customerData = customerReadings
+        .filter(reading => reading.readings?.[key])
+        .map(reading => ({
+          date: new Date(reading.reading_date).getTime(),
+          displayDate: format(new Date(reading.reading_date), 'MMM d'),
+          fullDate: format(new Date(reading.reading_date), 'MMM d, yyyy'),
+          before: null,
+          after: null,
+          customer: parseFloat(reading.readings?.[key]) || null,
+          source: 'customer'
+        }));
+
+      // Combine and sort by date
+      const allData = [...serviceData, ...customerData]
+        .sort((a, b) => a.date - b.date)
+        .map(({ date, ...rest }) => rest); // Remove timestamp, keep displayDate
       
       return {
         key,
         label: formatReadingLabel(key),
-        data
+        data: allData
       };
     }).filter(chart => chart.data.length > 0);
   };
@@ -642,7 +662,7 @@ const ClientPortalServiceHistory = () => {
                       <CardHeader>
                         <CardTitle>{chart.label} Over Time</CardTitle>
                         <CardDescription>
-                          Before and after readings comparison
+                          Technician readings (before/after service) and your submitted readings
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -650,7 +670,7 @@ const ClientPortalServiceHistory = () => {
                           <RechartsLineChart data={chart.data}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis 
-                              dataKey="date" 
+                              dataKey="displayDate" 
                               tick={{ fontSize: 12 }}
                             />
                             <YAxis tick={{ fontSize: 12 }} />
@@ -667,17 +687,28 @@ const ClientPortalServiceHistory = () => {
                               type="monotone" 
                               dataKey="before" 
                               stroke="hsl(var(--destructive))" 
-                              name="Before"
+                              name="Before Service"
                               strokeWidth={2}
                               dot={{ r: 4 }}
+                              connectNulls
                             />
                             <Line 
                               type="monotone" 
                               dataKey="after" 
                               stroke="hsl(var(--primary))" 
-                              name="After"
+                              name="After Service"
                               strokeWidth={2}
                               dot={{ r: 4 }}
+                              connectNulls
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="customer" 
+                              stroke="hsl(var(--accent))" 
+                              name="Your Readings"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                              connectNulls
                             />
                           </RechartsLineChart>
                         </ResponsiveContainer>
