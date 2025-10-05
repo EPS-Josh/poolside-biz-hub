@@ -9,10 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown, LineChart, ClipboardList, Trash2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
-import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 import { CustomerReadingForm } from '@/components/CustomerReadingForm';
 
 interface ServiceRecord {
@@ -43,6 +46,8 @@ const ClientPortalServiceHistory = () => {
   const [showBefore, setShowBefore] = useState(true);
   const [showAfter, setShowAfter] = useState(true);
   const [showCustomer, setShowCustomer] = useState(true);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
   const [customerReadings, setCustomerReadings] = useState<CustomerReading[]>([]);
   const [loading, setLoading] = useState(true);
@@ -446,19 +451,41 @@ const ClientPortalServiceHistory = () => {
         }));
 
       // Combine and sort by date
-      const allData = [...serviceData, ...customerData]
-        .sort((a, b) => a.date - b.date)
-        .map(({ date, ...rest }) => rest); // Remove timestamp, keep displayDate
+      let allData = [...serviceData, ...customerData]
+        .sort((a, b) => a.date - b.date);
+      
+      // Filter by date range if set
+      if (startDate || endDate) {
+        allData = allData.filter(item => {
+          const itemDate = new Date(item.date);
+          if (startDate && endDate) {
+            return itemDate >= startDate && itemDate <= endDate;
+          } else if (startDate) {
+            return itemDate >= startDate;
+          } else if (endDate) {
+            return itemDate <= endDate;
+          }
+          return true;
+        });
+      }
+      
+      // Remove timestamp, keep displayDate
+      const processedData = allData.map(({ date, ...rest }) => rest);
       
       return {
         key,
         label: formatReadingLabel(key),
-        data: allData
+        data: processedData
       };
     }).filter(chart => chart.data.length > 0);
   };
 
   const chartData = prepareChartData();
+
+  const handleResetDateRange = () => {
+    setStartDate(undefined);
+    setEndDate(undefined);
+  };
 
   if (customerLoading || loading) {
     return (
@@ -715,6 +742,80 @@ const ClientPortalServiceHistory = () => {
                 </Card>
               ) : (
                 <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Filter Date Range</CardTitle>
+                      <CardDescription>
+                        Select a date range to zoom into specific periods, or leave blank to show all data
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-4 items-end">
+                        <div className="flex-1 min-w-[200px]">
+                          <Label htmlFor="start-date" className="mb-2 block">Start Date</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                id="start-date"
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !startDate && "text-muted-foreground"
+                                )}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {startDate ? format(startDate, 'PPP') : <span>Pick a date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={startDate}
+                                onSelect={setStartDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="flex-1 min-w-[200px]">
+                          <Label htmlFor="end-date" className="mb-2 block">End Date</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                id="end-date"
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !endDate && "text-muted-foreground"
+                                )}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {endDate ? format(endDate, 'PPP') : <span>Pick a date</span>}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={endDate}
+                                onSelect={setEndDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        {(startDate || endDate) && (
+                          <Button 
+                            variant="outline" 
+                            onClick={handleResetDateRange}
+                            className="min-w-[120px]"
+                          >
+                            Reset Range
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
                   {chartData.map(chart => (
                     <Card key={chart.key}>
                       <CardHeader>
@@ -818,6 +919,12 @@ const ClientPortalServiceHistory = () => {
                                 connectNulls
                               />
                             )}
+                            <Brush 
+                              dataKey="displayDate" 
+                              height={30} 
+                              stroke="hsl(var(--primary))"
+                              fill="hsl(var(--muted))"
+                            />
                           </RechartsLineChart>
                         </ResponsiveContainer>
                       </CardContent>
