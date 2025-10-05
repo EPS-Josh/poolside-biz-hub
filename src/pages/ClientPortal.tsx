@@ -12,8 +12,11 @@ const ClientPortal = () => {
   const { customer, loading } = useCustomerData();
 
   useEffect(() => {
+    // Only redirect to auth if we're certain the user is not authenticated
+    // Don't redirect during loading states
     if (!user && !loading) {
-      navigate('/auth');
+      console.log('ClientPortal: No user found, redirecting to customer-login');
+      navigate('/customer-login');
     }
   }, [user, loading, navigate]);
 

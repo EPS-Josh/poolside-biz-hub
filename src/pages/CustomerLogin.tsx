@@ -58,7 +58,7 @@ const CustomerLogin = () => {
       console.log('CustomerLogin: User authenticated, checking roles...', roles);
       if (roles.includes('customer')) {
         console.log('CustomerLogin: Customer role found, redirecting to client portal');
-        navigate('/client-portal');
+        navigate('/client-portal', { replace: true });
       } else if (roles.length > 0) {
         // This is a business user, redirect them to business login
         console.log('CustomerLogin: Business role found, redirecting to auth page');
@@ -67,7 +67,7 @@ const CustomerLogin = () => {
           description: "Business users should use the Staff Login page.",
           variant: "destructive",
         });
-        navigate('/auth');
+        navigate('/auth', { replace: true });
       }
     }
   }, [user, loading, rolesLoading, roles, navigate, toast, isPasswordReset]);

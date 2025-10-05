@@ -22,18 +22,19 @@ const Auth = () => {
       return;
     }
     
-    // If user is authenticated
+    // Only redirect if user is authenticated
+    // The auth page itself shouldn't show for authenticated users
     if (user) {
       console.log('Auth.tsx: User authenticated, checking roles...', roles);
       
       // Check if user is a customer - redirect to client portal
       if (roles.includes('customer')) {
         console.log('Auth.tsx: Customer detected, redirecting to client-portal');
-        navigate('/client-portal');
+        navigate('/client-portal', { replace: true });
       } else if (roles.length > 0) {
         // Business user with roles - redirect to menu
         console.log('Auth.tsx: Business user detected, redirecting to menu');
-        navigate('/menu');
+        navigate('/menu', { replace: true });
       } else {
         // User authenticated but no roles - this shouldn't happen normally
         // Just stay on auth page - they might be a new user
