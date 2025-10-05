@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown, LineChart } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown, LineChart, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { CustomerReadingForm } from '@/components/CustomerReadingForm';
 
 interface ServiceRecord {
   id: string;
@@ -24,15 +25,26 @@ interface ServiceRecord {
   customer_notes?: string;
 }
 
+interface CustomerReading {
+  id: string;
+  reading_date: string;
+  reading_time: string;
+  readings: any;
+  notes?: string;
+  created_at: string;
+}
+
 const ClientPortalServiceHistory = () => {
   const navigate = useNavigate();
   const { customer, loading: customerLoading } = useCustomerData();
   const [serviceRecords, setServiceRecords] = useState<ServiceRecord[]>([]);
+  const [customerReadings, setCustomerReadings] = useState<CustomerReading[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (customer) {
       fetchServiceRecords();
+      fetchCustomerReadings();
     }
   }, [customer]);
 
@@ -52,6 +64,23 @@ const ClientPortalServiceHistory = () => {
       console.error('Error fetching service records:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCustomerReadings = async () => {
+    if (!customer) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('customer_readings')
+        .select('*')
+        .eq('customer_id', customer.id)
+        .order('reading_date', { ascending: false });
+
+      if (error) throw error;
+      setCustomerReadings(data || []);
+    } catch (error) {
+      console.error('Error fetching customer readings:', error);
     }
   };
 
@@ -431,6 +460,10 @@ const ClientPortalServiceHistory = () => {
                 <FileText className="h-4 w-4 mr-2" />
                 Service Records
               </TabsTrigger>
+              <TabsTrigger value="my-readings">
+                <ClipboardList className="h-4 w-4 mr-2" />
+                My Readings
+              </TabsTrigger>
               <TabsTrigger value="charts">
                 <LineChart className="h-4 w-4 mr-2" />
                 Reading Trends
@@ -536,6 +569,59 @@ const ClientPortalServiceHistory = () => {
                   </CardContent>
                 </Card>
               ))}
+            </TabsContent>
+            
+            <TabsContent value="my-readings" className="space-y-6">
+              <CustomerReadingForm 
+                customerId={customer!.id} 
+                onSuccess={fetchCustomerReadings}
+              />
+              
+              {customerReadings.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <ClipboardList className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-lg font-medium">No readings submitted yet</p>
+                    <p className="text-muted-foreground mt-2">
+                      Submit your first reading using the form above.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Your Submitted Readings</h3>
+                  {customerReadings.map((reading) => (
+                    <Card key={reading.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg flex items-center justify-between">
+                          <span>Reading</span>
+                          <Badge variant="outline">
+                            {format(new Date(reading.reading_date), 'MMM d, yyyy')} at {reading.reading_time}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="bg-muted p-4 rounded-lg space-y-2">
+                          {Object.entries(reading.readings).map(([key, value]) => (
+                            value && (
+                              <div key={key} className="flex justify-between text-sm">
+                                <span className="font-medium">{formatReadingLabel(key)}:</span>
+                                <span>{String(value)}</span>
+                              </div>
+                            )
+                          ))}
+                        </div>
+                        {reading.notes && (
+                          <div className="mt-4">
+                            <p className="text-sm font-medium">Notes</p>
+                            <p className="text-sm text-muted-foreground mt-1">{reading.notes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="charts" className="space-y-6">

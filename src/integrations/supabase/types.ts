@@ -420,6 +420,39 @@ export type Database = {
           },
         ]
       }
+      customer_readings: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          reading_date: string
+          reading_time: string
+          readings: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          reading_date: string
+          reading_time: string
+          readings: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          reading_date?: string
+          reading_time?: string
+          readings?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_scanned_documents: {
         Row: {
           created_at: string
