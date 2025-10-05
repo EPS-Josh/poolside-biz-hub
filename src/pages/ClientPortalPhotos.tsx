@@ -68,6 +68,11 @@ const ClientPortalPhotos = () => {
   };
 
   const getPublicUrl = (path: string) => {
+    // If path is already a full URL, return it directly
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Otherwise, construct the URL from the bucket
     const { data } = supabase.storage
       .from('customer-photos')
       .getPublicUrl(path);
@@ -75,6 +80,11 @@ const ClientPortalPhotos = () => {
   };
 
   const getDocumentUrl = (path: string) => {
+    // If path is already a full URL, return it directly
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Otherwise, construct the URL from the bucket
     const { data } = supabase.storage
       .from('customer-plans-drawings')
       .getPublicUrl(path);
