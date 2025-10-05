@@ -54,7 +54,8 @@ const CustomerLogin = () => {
     }
     
     // Normal login flow - redirect authenticated users to client portal ONLY if they're a customer
-    if (user && !loading && !rolesLoading) {
+    // BUT don't redirect if they're in the middle of password reset
+    if (user && !loading && !rolesLoading && !isPasswordReset) {
       console.log('CustomerLogin: User authenticated, checking roles...', roles);
       if (roles.includes('customer')) {
         console.log('CustomerLogin: Customer role found, redirecting to client portal');
