@@ -5,9 +5,11 @@ import { useCustomerData } from '@/hooks/useCustomerData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, FileText, Calendar, Loader2, Download, FileDown, LineChart } from 'lucide-react';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ServiceRecord {
   id: string;
@@ -338,6 +340,30 @@ const ClientPortalServiceHistory = () => {
     doc.save(`all-service-records-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
   };
 
+  const prepareChartData = () => {
+    const readingKeys = ['total_hardness', 'total_chlorine_bromine', 'free_chlorine', 'ph', 'total_alkalinity', 'cyanuric_acid'];
+    
+    return readingKeys.map(key => {
+      const data = serviceRecords
+        .filter(record => record.before_readings?.[key] || record.after_readings?.[key])
+        .map(record => ({
+          date: format(new Date(record.service_date), 'MMM d'),
+          fullDate: format(new Date(record.service_date), 'MMM d, yyyy'),
+          before: parseFloat(record.before_readings?.[key]) || null,
+          after: parseFloat(record.after_readings?.[key]) || null,
+        }))
+        .reverse(); // Show oldest to newest
+      
+      return {
+        key,
+        label: formatReadingLabel(key),
+        data
+      };
+    }).filter(chart => chart.data.length > 0);
+  };
+
+  const chartData = prepareChartData();
+
   if (customerLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -399,106 +425,183 @@ const ClientPortalServiceHistory = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {serviceRecords.map((record) => (
-              <Card key={record.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{record.service_type}</CardTitle>
-                      <CardDescription className="flex items-center mt-2">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {format(new Date(record.service_date), 'MMMM d, yyyy')}
-                      </CardDescription>
+          <Tabs defaultValue="records" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="records">
+                <FileText className="h-4 w-4 mr-2" />
+                Service Records
+              </TabsTrigger>
+              <TabsTrigger value="charts">
+                <LineChart className="h-4 w-4 mr-2" />
+                Reading Trends
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="records" className="space-y-4">
+              {serviceRecords.map((record) => (
+                <Card key={record.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{record.service_type}</CardTitle>
+                        <CardDescription className="flex items-center mt-2">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          {format(new Date(record.service_date), 'MMMM d, yyyy')}
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {record.service_status && (
+                          <Badge>{record.service_status}</Badge>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadCSV(record)}
+                          title="Download as CSV"
+                        >
+                          <FileDown className="h-4 w-4 mr-1" />
+                          CSV
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadPDF(record)}
+                          title="Download as PDF"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          PDF
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {record.service_status && (
-                        <Badge>{record.service_status}</Badge>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadCSV(record)}
-                        title="Download as CSV"
-                      >
-                        <FileDown className="h-4 w-4 mr-1" />
-                        CSV
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadPDF(record)}
-                        title="Download as PDF"
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        PDF
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {record.technician_name && (
-                    <div>
-                      <p className="text-sm font-medium">Technician</p>
-                      <p className="text-sm text-muted-foreground">{record.technician_name}</p>
-                    </div>
-                  )}
-                  
-                  {record.work_performed && (
-                    <div>
-                      <p className="text-sm font-medium">Work Performed</p>
-                      <p className="text-sm text-muted-foreground">{record.work_performed}</p>
-                    </div>
-                  )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {record.technician_name && (
+                      <div>
+                        <p className="text-sm font-medium">Technician</p>
+                        <p className="text-sm text-muted-foreground">{record.technician_name}</p>
+                      </div>
+                    )}
+                    
+                    {record.work_performed && (
+                      <div>
+                        <p className="text-sm font-medium">Work Performed</p>
+                        <p className="text-sm text-muted-foreground">{record.work_performed}</p>
+                      </div>
+                    )}
 
-                  {record.chemicals_added && (
-                    <div>
-                      <p className="text-sm font-medium">Chemicals Added</p>
-                      <p className="text-sm text-muted-foreground">{record.chemicals_added}</p>
-                    </div>
-                  )}
+                    {record.chemicals_added && (
+                      <div>
+                        <p className="text-sm font-medium">Chemicals Added</p>
+                        <p className="text-sm text-muted-foreground">{record.chemicals_added}</p>
+                      </div>
+                    )}
 
-                  {(record.before_readings || record.after_readings) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {record.before_readings && (
-                        <div>
-                          <p className="text-sm font-medium mb-2">Before Readings</p>
-                          <div className="bg-muted p-3 rounded-lg text-sm">
-                            {Object.entries(record.before_readings).map(([key, value]) => (
-                              <div key={key} className="flex justify-between">
-                                <span>{formatReadingLabel(key)}:</span>
-                                <span>{String(value)}</span>
-                              </div>
-                            ))}
+                    {(record.before_readings || record.after_readings) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {record.before_readings && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">Before Readings</p>
+                            <div className="bg-muted p-3 rounded-lg text-sm">
+                              {Object.entries(record.before_readings).map(([key, value]) => (
+                                <div key={key} className="flex justify-between">
+                                  <span>{formatReadingLabel(key)}:</span>
+                                  <span>{String(value)}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {record.after_readings && (
-                        <div>
-                          <p className="text-sm font-medium mb-2">After Readings</p>
-                          <div className="bg-muted p-3 rounded-lg text-sm">
-                            {Object.entries(record.after_readings).map(([key, value]) => (
-                              <div key={key} className="flex justify-between">
-                                <span>{formatReadingLabel(key)}:</span>
-                                <span>{String(value)}</span>
-                              </div>
-                            ))}
+                        )}
+                        {record.after_readings && (
+                          <div>
+                            <p className="text-sm font-medium mb-2">After Readings</p>
+                            <div className="bg-muted p-3 rounded-lg text-sm">
+                              {Object.entries(record.after_readings).map(([key, value]) => (
+                                <div key={key} className="flex justify-between">
+                                  <span>{formatReadingLabel(key)}:</span>
+                                  <span>{String(value)}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    )}
 
-                  {record.customer_notes && (
-                    <div>
-                      <p className="text-sm font-medium">Notes</p>
-                      <p className="text-sm text-muted-foreground">{record.customer_notes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    {record.customer_notes && (
+                      <div>
+                        <p className="text-sm font-medium">Notes</p>
+                        <p className="text-sm text-muted-foreground">{record.customer_notes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </TabsContent>
+            
+            <TabsContent value="charts" className="space-y-6">
+              {chartData.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <LineChart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-lg font-medium">No reading data available</p>
+                    <p className="text-muted-foreground mt-2">
+                      Charts will appear here once you have service records with readings.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  {chartData.map(chart => (
+                    <Card key={chart.key}>
+                      <CardHeader>
+                        <CardTitle>{chart.label} Over Time</CardTitle>
+                        <CardDescription>
+                          Before and after readings comparison
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <RechartsLineChart data={chart.data}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis 
+                              dataKey="date" 
+                              tick={{ fontSize: 12 }}
+                            />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip 
+                              labelFormatter={(label, payload) => {
+                                if (payload && payload[0]) {
+                                  return payload[0].payload.fullDate;
+                                }
+                                return label;
+                              }}
+                            />
+                            <Legend />
+                            <Line 
+                              type="monotone" 
+                              dataKey="before" 
+                              stroke="hsl(var(--destructive))" 
+                              name="Before"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="after" 
+                              stroke="hsl(var(--primary))" 
+                              name="After"
+                              strokeWidth={2}
+                              dot={{ r: 4 }}
+                            />
+                          </RechartsLineChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </main>
     </div>
