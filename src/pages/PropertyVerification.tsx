@@ -191,47 +191,44 @@ export default function PropertyVerification() {
     try {
       console.log('Searching database for address:', address);
       
-      // Search both Mail2 and Mail3 fields using OR condition
+      // Use optimized database function for faster search
       const { data, error } = await supabase
-        .from('pima_assessor_records')
-        .select('*')
-        .or(`Mail2.ilike.%${address}%,Mail3.ilike.%${address}%`)
-        .limit(1)
-        .maybeSingle();
+        .rpc('search_assessor_by_address', { search_address: address });
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+      if (error) {
         console.error('Database error:', error);
         throw error;
       }
 
-      if (data) {
-        console.log('Found assessor record:', data);
+      if (data && data.length > 0) {
+        const record = data[0];
+        console.log('Found assessor record:', record);
         
         // Combine mailing address fields (using uppercase column names from actual DB)
-        const mailingAddress = [(data as any).Mail1, (data as any).Mail2, (data as any).Mail3, (data as any).Mail4, (data as any).Mail5]
+        const mailingAddress = [record.Mail1, record.Mail2, record.Mail3, record.Mail4, record.Mail5]
           .filter(Boolean)
           .join(' ');
         
         // Combine zip fields (using uppercase column names)
-        const zipCode = data.Zip4 ? `${data.Zip}-${data.Zip4}` : data.Zip;
+        const zipCode = record.Zip4 ? `${record.Zip}-${record.Zip4}` : record.Zip;
         
         // Determine property address - use Mail3 if Mail2 contains "ATTN:"
-        let propertyAddress = (data as any).Mail2 || '';
+        let propertyAddress = record.Mail2 || '';
         if (propertyAddress.toUpperCase().includes('ATTN:')) {
-          propertyAddress = (data as any).Mail3 || '';
+          propertyAddress = record.Mail3 || '';
         }
         
         return {
-          id: data.id,
-          parcelNumber: data.Parcel || 'Unknown',
-          ownerName: data.Mail1 || 'Unknown',
+          id: record.id,
+          parcelNumber: record.Parcel || 'Unknown',
+          ownerName: record.Mail1 || 'Unknown',
           mailingAddress: mailingAddress || '',
           propertyAddress: propertyAddress,
           assessedValue: 'Unknown',
-          lastUpdated: data.updated_at ? new Date(data.updated_at).toLocaleDateString() : 'Unknown',
-          updatedOwnerName: data.updated_owner_name,
-          isOwnerUpdated: data.is_owner_updated,
-          ownerUpdatedAt: data.owner_updated_at ? new Date(data.owner_updated_at).toLocaleDateString() : undefined
+          lastUpdated: record.updated_at ? new Date(record.updated_at).toLocaleDateString() : 'Unknown',
+          updatedOwnerName: record.updated_owner_name,
+          isOwnerUpdated: record.is_owner_updated,
+          ownerUpdatedAt: record.owner_updated_at ? new Date(record.owner_updated_at).toLocaleDateString() : undefined
         };
       }
 

@@ -1411,6 +1411,24 @@ export type Database = {
         }
         Returns: undefined
       }
+      search_assessor_by_address: {
+        Args: { search_address: string }
+        Returns: {
+          id: string
+          is_owner_updated: boolean
+          Mail1: string
+          Mail2: string
+          Mail3: string
+          Mail4: string
+          Mail5: string
+          owner_updated_at: string
+          Parcel: string
+          updated_at: string
+          updated_owner_name: string
+          Zip: string
+          Zip4: string
+        }[]
+      }
       set_limit: {
         Args: { "": number }
         Returns: number
