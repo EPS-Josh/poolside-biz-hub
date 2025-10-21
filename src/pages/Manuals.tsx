@@ -457,10 +457,8 @@ const Manuals = () => {
               </div>
             )}
 
-            {/* Only show upload button and manuals list when inside a category */}
-            {decodedCategory && (
-              <>
-              <div className="mb-6">
+            {/* Upload Manual Button - Always visible */}
+            <div className="mb-6">
               <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -562,6 +560,9 @@ const Manuals = () => {
               </Dialog>
             </div>
 
+            {/* Only show manuals list when inside a category */}
+            {decodedCategory && (
+            <>
             {loading ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">Loading manuals...</p>
