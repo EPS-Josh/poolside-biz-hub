@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings, Eye, Edit } from 'lucide-react';
+import { BookOpen, Upload, FileText, Download, Trash2, Plus, ArrowLeft, Home, Settings, Eye, Edit, FolderOpen, Folders } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Manual {
@@ -30,6 +30,7 @@ const Manuals = () => {
   const decodedCategory = category ? decodeURIComponent(category) : null;
   const [manuals, setManuals] = useState<Manual[]>([]);
   const [tsbCategories, setTsbCategories] = useState<string[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -93,9 +94,29 @@ const Manuals = () => {
     }
   };
 
+  const fetchCategoryCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('manuals')
+        .select('category');
+
+      if (error) throw error;
+      
+      const counts: Record<string, number> = {};
+      data.forEach((manual) => {
+        const cat = manual.category || 'Uncategorized';
+        counts[cat] = (counts[cat] || 0) + 1;
+      });
+      setCategoryCounts(counts);
+    } catch (error) {
+      console.error('Error fetching category counts:', error);
+    }
+  };
+
   useEffect(() => {
     fetchManuals();
     fetchTsbCategories();
+    fetchCategoryCounts();
   }, []);
 
   const handleFileUpload = async (e: React.FormEvent) => {
@@ -151,6 +172,7 @@ const Manuals = () => {
       setIsUploadDialogOpen(false);
       setUploadData({ title: '', manufacturer: '', model: '', category: '', file: null });
       fetchManuals();
+      fetchCategoryCounts();
     } catch (error) {
       console.error('Error uploading manual:', error);
       toast({
@@ -247,6 +269,7 @@ const Manuals = () => {
       });
 
       fetchManuals();
+      fetchCategoryCounts();
     } catch (error) {
       console.error('Error deleting manual:', error);
       toast({
@@ -287,6 +310,7 @@ const Manuals = () => {
       setIsEditDialogOpen(false);
       setEditingManual(null);
       fetchManuals();
+      fetchCategoryCounts();
     } catch (error) {
       console.error('Error updating manual:', error);
       toast({
@@ -387,6 +411,39 @@ const Manuals = () => {
                 </Button>
               </div>
             </div>
+
+            {/* Category Cards - Only show when not filtering by category */}
+            {!decodedCategory && Object.keys(categoryCounts).length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center space-x-2">
+                  <Folders className="h-5 w-5" />
+                  <span>Browse by Category</span>
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {Object.entries(categoryCounts).map(([categoryName, count]) => (
+                    <Card 
+                      key={categoryName}
+                      className="cursor-pointer hover:shadow-lg transition-all hover:scale-105 group"
+                      onClick={() => navigate(`/manuals/${encodeURIComponent(categoryName)}`)}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <FolderOpen className="h-8 w-8 text-primary group-hover:text-primary/80 transition-colors" />
+                          <Badge variant="secondary" className="text-xs">
+                            {count} {count === 1 ? 'manual' : 'manuals'}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors">
+                          {categoryName}
+                        </CardTitle>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="mb-6">
               <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
