@@ -457,7 +457,10 @@ const Manuals = () => {
               </div>
             )}
 
-            <div className="mb-6">
+            {/* Only show upload button and manuals list when inside a category */}
+            {decodedCategory && (
+              <>
+              <div className="mb-6">
               <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -558,6 +561,7 @@ const Manuals = () => {
                 </DialogContent>
               </Dialog>
             </div>
+
             {loading ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">Loading manuals...</p>
@@ -615,27 +619,27 @@ const Manuals = () => {
                             placeholder="e.g., SuperFlo VS"
                           />
                         </div>
-                         
-                         <div>
-                           <Label htmlFor="category">Category</Label>
-                           <Select
-                             value={uploadData.category}
-                             onValueChange={(value) => setUploadData({ ...uploadData, category: value === 'none' ? '' : value })}
-                           >
-                             <SelectTrigger>
-                               <SelectValue placeholder={decodedCategory ? `Default: ${decodedCategory}` : "Select category (optional)"} />
-                             </SelectTrigger>
-                             <SelectContent>
-                               <SelectItem value="none">No Category</SelectItem>
-                               {tsbCategories.map((category) => (
-                                 <SelectItem key={category} value={category}>
-                                   {category}
-                                 </SelectItem>
-                               ))}
-                             </SelectContent>
-                           </Select>
-                         </div>
-                         
+                        
+                        <div>
+                          <Label htmlFor="category">Category</Label>
+                          <Select
+                            value={uploadData.category}
+                            onValueChange={(value) => setUploadData({ ...uploadData, category: value === 'none' ? '' : value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={decodedCategory ? `Default: ${decodedCategory}` : "Select category (optional)"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No Category</SelectItem>
+                              {tsbCategories.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
                         <div>
                           <Label htmlFor="file">File *</Label>
                           <Input
@@ -740,6 +744,8 @@ const Manuals = () => {
                   </Card>
                 ))}
               </div>
+            )}
+            </>
             )}
 
             {/* Edit Manual Dialog */}
