@@ -117,7 +117,7 @@ const Manuals = () => {
     fetchManuals();
     fetchTsbCategories();
     fetchCategoryCounts();
-  }, []);
+  }, [decodedCategory]);
 
   const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -360,15 +360,27 @@ const Manuals = () => {
             {/* Header with Navigation */}
             <div className="mb-8">
               <div className="flex items-center space-x-4 mb-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/tsbs')}
-                  className="flex items-center space-x-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Back to TSBs</span>
-                </Button>
+                {decodedCategory ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/manuals')}
+                    className="flex items-center space-x-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back to All Manuals</span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/tsbs')}
+                    className="flex items-center space-x-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back to TSBs</span>
+                  </Button>
+                )}
               </div>
               
               <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center space-x-3">
