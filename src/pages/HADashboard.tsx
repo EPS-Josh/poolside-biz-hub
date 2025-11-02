@@ -27,6 +27,7 @@ interface Appointment {
 const HADashboard = () => {
   const [showTomorrow, setShowTomorrow] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isEmbedded, setIsEmbedded] = useState(false);
   
   const phoenixToday = getCurrentPhoenixDate();
   const phoenixTomorrow = addDays(phoenixToday, 1);
@@ -54,6 +55,7 @@ const HADashboard = () => {
         if (userId) {
           console.log('Using user_id from URL:', userId);
           setUserId(userId);
+          setIsEmbedded(true); // Mark as embedded when using URL param
           return;
         }
         
@@ -62,9 +64,11 @@ const HADashboard = () => {
         const { data: { user } } = await supabase.auth.getUser();
         console.log('Authenticated user:', user?.id);
         setUserId(user?.id || null);
+        setIsEmbedded(false);
       } catch (error) {
         console.error('Error getting user ID:', error);
         setUserId(null);
+        setIsEmbedded(false);
       }
     };
     getUserId();
@@ -93,7 +97,7 @@ const HADashboard = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold">Service Appointments</h1>
           <div className="flex items-center gap-4">
-            {userId && (
+            {userId && !isEmbedded && (
               <div className="text-sm text-muted-foreground">
                 User ID: <code className="bg-muted px-2 py-1 rounded">{userId}</code>
               </div>
