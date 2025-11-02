@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MapPin, User } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { getCurrentPhoenixDate, formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
 
 interface Appointment {
   id: string;
@@ -25,9 +26,12 @@ interface Appointment {
 
 const HADashboard = () => {
   const [showTomorrow, setShowTomorrow] = useState(false);
-  const today = format(new Date(), 'yyyy-MM-dd');
-  const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
+  const phoenixToday = getCurrentPhoenixDate();
+  const phoenixTomorrow = addDays(phoenixToday, 1);
+  const today = formatPhoenixDateForDatabase(phoenixToday);
+  const tomorrow = formatPhoenixDateForDatabase(phoenixTomorrow);
   const displayDate = showTomorrow ? tomorrow : today;
+  const displayDateObj = showTomorrow ? phoenixTomorrow : phoenixToday;
 
   const { data, isLoading } = useQuery({
     queryKey: ['ha-appointments', displayDate],
@@ -64,7 +68,7 @@ const HADashboard = () => {
               {showTomorrow ? 'Tomorrow' : 'Today'}'s Schedule
             </CardTitle>
             <CardDescription>
-              {format(showTomorrow ? addDays(new Date(), 1) : new Date(), 'EEEE, MMMM d, yyyy')}
+              {format(displayDateObj, 'EEEE, MMMM d, yyyy')}
             </CardDescription>
           </CardHeader>
           <CardContent>
