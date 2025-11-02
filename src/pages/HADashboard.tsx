@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +26,8 @@ interface Appointment {
 
 const HADashboard = () => {
   const [showTomorrow, setShowTomorrow] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  
   const phoenixToday = getCurrentPhoenixDate();
   const phoenixTomorrow = addDays(phoenixToday, 1);
   const today = formatPhoenixDateForDatabase(phoenixToday);
@@ -33,16 +35,37 @@ const HADashboard = () => {
   const displayDate = showTomorrow ? tomorrow : today;
   const displayDateObj = showTomorrow ? phoenixTomorrow : phoenixToday;
 
+  useEffect(() => {
+    const getUserId = async () => {
+      // First check URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlUserId = urlParams.get('user_id');
+      
+      if (urlUserId) {
+        setUserId(urlUserId);
+        return;
+      }
+      
+      // Fall back to authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUserId();
+  }, []);
+
   const { data, isLoading } = useQuery({
-    queryKey: ['ha-appointments', displayDate],
+    queryKey: ['ha-appointments', displayDate, userId],
     queryFn: async () => {
+      if (!userId) return { appointments: [] };
+      
       const { data, error } = await supabase.functions.invoke('ha-appointments', {
-        body: { date: displayDate }
+        body: { date: displayDate, user_id: userId }
       });
       
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: !!userId
   });
 
   const appointments: Appointment[] = data?.appointments || [];
@@ -52,14 +75,21 @@ const HADashboard = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-bold">Service Appointments</h1>
-          <Button 
-            variant={showTomorrow ? "default" : "outline"}
-            onClick={() => setShowTomorrow(!showTomorrow)}
-            className="gap-2"
-          >
-            <Calendar className="h-4 w-4" />
-            {showTomorrow ? 'Show Today' : 'Show Tomorrow'}
-          </Button>
+          <div className="flex items-center gap-4">
+            {userId && (
+              <div className="text-sm text-muted-foreground">
+                User ID: <code className="bg-muted px-2 py-1 rounded">{userId}</code>
+              </div>
+            )}
+            <Button 
+              variant={showTomorrow ? "default" : "outline"}
+              onClick={() => setShowTomorrow(!showTomorrow)}
+              className="gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              {showTomorrow ? 'Show Today' : 'Show Tomorrow'}
+            </Button>
+          </div>
         </div>
 
         <Card>

@@ -12,20 +12,20 @@ serve(async (req) => {
   }
 
   try {
-    // Get the authorization header from the request
-    const authHeader = req.headers.get('Authorization');
-    
+    // Use service role key to bypass RLS for this public endpoint
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: authHeader ? { Authorization: authHeader } : {},
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { date } = await req.json();
+    const { date, user_id } = await req.json();
+    
+    if (!user_id) {
+      return new Response(
+        JSON.stringify({ error: 'user_id is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     console.log('Fetching appointments for date:', date);
 
@@ -43,6 +43,7 @@ serve(async (req) => {
         )
       `)
       .eq('appointment_date', date)
+      .eq('user_id', user_id)
       .order('appointment_time');
 
     if (error) {
