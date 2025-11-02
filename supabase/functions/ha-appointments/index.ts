@@ -12,9 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    // Get the authorization header from the request
+    const authHeader = req.headers.get('Authorization');
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: authHeader ? { Authorization: authHeader } : {},
+        },
+      }
     );
 
     const { date } = await req.json();
