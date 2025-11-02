@@ -20,14 +20,17 @@ serve(async (req) => {
 
     const { date, user_id } = await req.json();
     
+    console.log('Request received:', { date, user_id });
+    
     if (!user_id) {
+      console.error('Missing user_id in request');
       return new Response(
         JSON.stringify({ error: 'user_id is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log('Fetching appointments for date:', date);
+    console.log(`Fetching appointments for user ${user_id} on date: ${date}`);
 
     const { data: appointments, error } = await supabase
       .from('appointments')
@@ -51,7 +54,7 @@ serve(async (req) => {
       throw error;
     }
 
-    console.log(`Found ${appointments?.length || 0} appointments for ${date}`);
+    console.log(`Found ${appointments?.length || 0} appointments for user ${user_id} on ${date}`);
 
     return new Response(
       JSON.stringify({ appointments: appointments || [] }),
