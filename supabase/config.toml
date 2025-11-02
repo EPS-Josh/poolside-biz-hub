@@ -31,3 +31,6 @@ verify_jwt = true
 
 [functions.send-customer-email]
 verify_jwt = true
+
+[functions.ha-appointments]
+verify_jwt = false

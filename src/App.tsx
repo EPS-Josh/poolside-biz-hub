@@ -32,6 +32,7 @@ import ClientPortalPhotos from "./pages/ClientPortalPhotos";
 import ClientPortalProfile from "./pages/ClientPortalProfile";
 import ClientPortalRequestService from "./pages/ClientPortalRequestService";
 import CustomerLogin from "./pages/CustomerLogin";
+import HADashboard from "./pages/HADashboard";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="/client-portal/photos" element={<ClientPortalPhotos />} />
             <Route path="/client-portal/profile" element={<ClientPortalProfile />} />
             <Route path="/client-portal/request-service" element={<ClientPortalRequestService />} />
+            <Route path="/ha-dashboard" element={<HADashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
