@@ -37,18 +37,35 @@ const HADashboard = () => {
 
   useEffect(() => {
     const getUserId = async () => {
-      // First check URL parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlUserId = urlParams.get('user_id');
-      
-      if (urlUserId) {
-        setUserId(urlUserId);
-        return;
+      try {
+        // Check multiple sources for user_id
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get('user_id');
+        
+        // Also check hash parameters (in case HA uses hash routing)
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const hashUserId = hashParams.get('user_id');
+        
+        const userId = urlUserId || hashUserId;
+        
+        console.log('HA Dashboard - URL:', window.location.href);
+        console.log('HA Dashboard - user_id from URL:', userId);
+        
+        if (userId) {
+          console.log('Using user_id from URL:', userId);
+          setUserId(userId);
+          return;
+        }
+        
+        // Fall back to authenticated user
+        console.log('No URL user_id, checking authentication...');
+        const { data: { user } } = await supabase.auth.getUser();
+        console.log('Authenticated user:', user?.id);
+        setUserId(user?.id || null);
+      } catch (error) {
+        console.error('Error getting user ID:', error);
+        setUserId(null);
       }
-      
-      // Fall back to authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id || null);
     };
     getUserId();
   }, []);
