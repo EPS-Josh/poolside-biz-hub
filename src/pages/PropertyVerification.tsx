@@ -549,7 +549,7 @@ export default function PropertyVerification() {
       }
     }
 
-    // Check address match with normalization
+    // Check address match with normalization and fallback for partial matches
     if (customer.address && assessorRecord.propertyAddress) {
       const customerAddress = normalizeAddress(customer.address);
       const assessorAddress = normalizeAddress(assessorRecord.propertyAddress);
@@ -558,13 +558,37 @@ export default function PropertyVerification() {
       const customerHouseNumber = customerAddress.split(' ')[0];
       const assessorHouseNumber = assessorAddress.split(' ')[0];
       
-      // Check if house numbers match and if any significant part of the street name matches
+      // Check if house numbers match
       const houseNumberMatch = customerHouseNumber === assessorHouseNumber;
-      const streetMatch = customerAddress.split(' ').slice(1).some(part => 
+      
+      // Get street parts (everything after house number)
+      const customerStreetParts = customerAddress.split(' ').slice(1);
+      const assessorStreetParts = assessorAddress.split(' ').slice(1);
+      
+      // Helper to strip directional prefixes
+      const stripDirectionals = (parts: string[]) => {
+        const directionals = ['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'NORTH', 'SOUTH', 'EAST', 'WEST'];
+        return parts.filter(part => !directionals.includes(part));
+      };
+      
+      // Try multiple matching strategies (most lenient to most strict)
+      let addressMatches = false;
+      
+      // Strategy 1: Check if any significant street part matches
+      const streetMatch = customerStreetParts.some(part => 
         part.length > 2 && assessorAddress.includes(part)
       );
       
-      if (!houseNumberMatch || !streetMatch) {
+      // Strategy 2: Strip directionals and compare core street names
+      const customerCoreStreet = stripDirectionals(customerStreetParts).join(' ');
+      const assessorCoreStreet = stripDirectionals(assessorStreetParts).join(' ');
+      const coreStreetMatch = customerCoreStreet && assessorCoreStreet && 
+        (customerCoreStreet.includes(assessorCoreStreet) || assessorCoreStreet.includes(customerCoreStreet));
+      
+      // Match if house numbers match AND either street strategy works
+      addressMatches = houseNumberMatch && (streetMatch || coreStreetMatch);
+      
+      if (!addressMatches) {
         issues.push(`Address mismatch: Customer "${customer.address}" vs Assessor "${assessorRecord.propertyAddress}"`);
       }
     }
