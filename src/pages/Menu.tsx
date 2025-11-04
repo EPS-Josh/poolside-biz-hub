@@ -16,7 +16,8 @@ import {
   Building, 
   Calendar,
   FileText,
-  ClipboardList
+  ClipboardList,
+  Bell
 } from 'lucide-react';
 
 
@@ -81,6 +82,13 @@ const Menu = () => {
           icon: ClipboardList,
           color: "bg-blue-600",
           action: () => navigate('/service-records'),
+        },
+        {
+          title: "Follow-ups Needed",
+          description: "Manage service records requiring follow-up",
+          icon: Bell,
+          color: "bg-yellow-500",
+          action: () => navigate('/follow-ups'),
         },
         {
           title: "TSB's",

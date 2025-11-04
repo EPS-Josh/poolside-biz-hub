@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ServiceSelect } from '@/components/calendar/ServiceSelect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +57,9 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
     total_time_minutes: '',
     service_status: 'completed',
     invoicing_status: 'ready_for_qb',
+    needs_follow_up: false,
+    follow_up_notes: '',
+    follow_up_date: '',
     before_readings: {
       total_hardness: '',
       total_chlorine_bromine: '',
@@ -128,7 +132,10 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
           before_readings: formData.before_readings,
           after_readings: formData.after_readings,
           parts_used: partsUsed.length > 0 ? JSON.parse(JSON.stringify(partsUsed)) : null,
-          invoicing_status: formData.invoicing_status
+          invoicing_status: formData.invoicing_status,
+          needs_follow_up: formData.needs_follow_up,
+          follow_up_notes: formData.follow_up_notes || null,
+          follow_up_date: formData.follow_up_date || null
         });
 
       if (error) throw error;
@@ -154,6 +161,9 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
         total_time_minutes: '',
         service_status: 'completed',
         invoicing_status: 'ready_for_qb',
+        needs_follow_up: false,
+        follow_up_notes: '',
+        follow_up_date: '',
         before_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' },
         after_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' }
       });
@@ -424,8 +434,42 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
                 placeholder="Internal technician notes..."
                 rows={2}
               />
+              <div className="flex items-center space-x-2 mt-3">
+                <Checkbox
+                  id="needs_follow_up"
+                  checked={formData.needs_follow_up}
+                  onCheckedChange={(checked) => updateFormData('needs_follow_up', checked)}
+                />
+                <Label htmlFor="needs_follow_up" className="text-sm font-medium cursor-pointer">
+                  Follow-up needed
+                </Label>
+              </div>
             </div>
           </div>
+
+          {formData.needs_follow_up && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/50">
+              <div>
+                <Label htmlFor="follow_up_date">Follow-up Date</Label>
+                <Input
+                  id="follow_up_date"
+                  type="date"
+                  value={formData.follow_up_date}
+                  onChange={(e) => updateFormData('follow_up_date', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="follow_up_notes">Follow-up Notes</Label>
+                <Textarea
+                  id="follow_up_notes"
+                  value={formData.follow_up_notes}
+                  onChange={(e) => updateFormData('follow_up_notes', e.target.value)}
+                  placeholder="Specific follow-up instructions..."
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>

@@ -25,6 +25,7 @@ import { Employees } from "./pages/Employees";
 import CustomerMapPage from "./pages/CustomerMap";
 import PropertyVerification from "./pages/PropertyVerification";
 import ServiceRecords from "./pages/ServiceRecords";
+import FollowUps from "./pages/FollowUps";
 import ClientPortal from "./pages/ClientPortal";
 import ClientPortalAppointments from "./pages/ClientPortalAppointments";
 import ClientPortalServiceHistory from "./pages/ClientPortalServiceHistory";
@@ -67,6 +68,7 @@ const App = () => (
             } />
             <Route path="/tsbs" element={<TSBs />} />
             <Route path="/service-records" element={<ServiceRecords />} />
+            <Route path="/follow-ups" element={<FollowUps />} />
           <Route path="/manuals" element={<Manuals />} />
           <Route path="/manuals/:category" element={<Manuals />} />
           <Route path="/parts-diagrams" element={<PartsDiagrams />} />

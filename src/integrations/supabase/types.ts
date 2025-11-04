@@ -94,7 +94,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           resource_id: string | null
@@ -106,7 +106,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -118,7 +118,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           resource_id?: string | null
@@ -1101,8 +1101,13 @@ export type Database = {
           customer_id: string
           customer_notes: string | null
           equipment_serviced: string | null
+          follow_up_completed: boolean | null
+          follow_up_completed_at: string | null
+          follow_up_date: string | null
+          follow_up_notes: string | null
           id: string
           invoicing_status: string
+          needs_follow_up: boolean | null
           next_service_date: string | null
           parts_used: Json | null
           photos_taken: string[] | null
@@ -1125,8 +1130,13 @@ export type Database = {
           customer_id: string
           customer_notes?: string | null
           equipment_serviced?: string | null
+          follow_up_completed?: boolean | null
+          follow_up_completed_at?: string | null
+          follow_up_date?: string | null
+          follow_up_notes?: string | null
           id?: string
           invoicing_status?: string
+          needs_follow_up?: boolean | null
           next_service_date?: string | null
           parts_used?: Json | null
           photos_taken?: string[] | null
@@ -1149,8 +1159,13 @@ export type Database = {
           customer_id?: string
           customer_notes?: string | null
           equipment_serviced?: string | null
+          follow_up_completed?: boolean | null
+          follow_up_completed_at?: string | null
+          follow_up_date?: string | null
+          follow_up_notes?: string | null
           id?: string
           invoicing_status?: string
+          needs_follow_up?: boolean | null
           next_service_date?: string | null
           parts_used?: Json | null
           photos_taken?: string[] | null
@@ -1333,14 +1348,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_expired_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      get_current_user_context: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      cleanup_expired_tokens: { Args: never; Returns: undefined }
+      get_current_user_context: { Args: never; Returns: Json }
       get_customer_service_data: {
         Args: { customer_filter_id?: string; limit_results?: number }
         Returns: {
@@ -1379,10 +1388,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
       log_sensitive_data_access: {
         Args: {
           access_type: string
