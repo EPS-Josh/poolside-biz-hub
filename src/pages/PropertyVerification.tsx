@@ -599,9 +599,13 @@ export default function PropertyVerification() {
       }
 
       // Step 2: fallback to last name match if address not found
+      console.log('Address search failed, trying last name search for customer:', customer.first_name, customer.last_name);
       const lastName = normalizeName(customer.last_name || '');
+      console.log('Normalized last name:', lastName);
+      
       if (!lastName) {
         // No last name to search by, but still offer manual options
+        console.log('No last name available, showing dialog for manual search');
         setAssessorOptions([]);
         setPendingCustomer(customer);
         setShowSelectAssessorDialog(true);
@@ -616,9 +620,13 @@ export default function PropertyVerification() {
       }
 
       // Step 3: last name candidates (Mail1 or updated_owner_name)
+      console.log('Searching for candidates by last name:', lastName);
       const initialRows = await findAssessorCandidatesByLastName(lastName);
+      console.log('Found', initialRows.length, 'candidate records');
+      
       if (initialRows.length === 0) {
         // No candidates found, but offer manual search options
+        console.log('No candidates found, showing dialog for manual search or non-Pima County flag');
         setAssessorOptions([]);
         setPendingCustomer(customer);
         setShowSelectAssessorDialog(true);
