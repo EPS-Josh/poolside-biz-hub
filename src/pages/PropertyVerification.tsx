@@ -273,10 +273,11 @@ export default function PropertyVerification() {
   // Step 1: find candidates where owner name contains the last name (avoid street-line false matches)
   const findAssessorCandidatesByLastName = async (lastName: string) => {
     try {
+      const upperLastName = lastName.toUpperCase();
       const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .or(`"Mail1".ilike.${lastName}%,updated_owner_name.ilike.${lastName}%`)
+        .or(`"Mail1".ilike.${upperLastName}%,updated_owner_name.ilike.${upperLastName}%`)
         .limit(50)
         
       if (error) {
