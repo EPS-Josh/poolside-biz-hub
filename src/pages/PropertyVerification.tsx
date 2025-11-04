@@ -277,6 +277,7 @@ export default function PropertyVerification() {
         .from('pima_assessor_records')
         .select('*')
         .or(`"Mail1".ilike.%${lastName}%,updated_owner_name.ilike.%${lastName}%`)
+        .limit(50)
         
       if (error) {
         console.error('Error querying assessor records:', error);
