@@ -276,7 +276,7 @@ export default function PropertyVerification() {
       const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .or(`"Mail1".ilike.%${lastName}%,updated_owner_name.ilike.%${lastName}%`)
+        .or(`"Mail1".ilike.${lastName}%,updated_owner_name.ilike.${lastName}%`)
         .limit(50)
         
       if (error) {
