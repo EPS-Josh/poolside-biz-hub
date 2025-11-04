@@ -272,13 +272,22 @@ export default function PropertyVerification() {
 
   // Step 1: find candidates where owner name contains the last name (avoid street-line false matches)
   const findAssessorCandidatesByLastName = async (lastName: string) => {
-    const { data, error } = await supabase
-      .from('pima_assessor_records')
-      .select('*')
-      .or(`Mail1.ilike.%${lastName}%,updated_owner_name.ilike.%${lastName}%`)
-      
-    if (error) throw error;
-    return (data || []) as any[];
+    try {
+      const { data, error } = await supabase
+        .from('pima_assessor_records')
+        .select('*')
+        .or(`"Mail1".ilike.%${lastName}%,updated_owner_name.ilike.%${lastName}%`)
+        
+      if (error) {
+        console.error('Error querying assessor records:', error);
+        throw error;
+      }
+      console.log('Query returned', (data || []).length, 'records');
+      return (data || []) as any[];
+    } catch (error) {
+      console.error('Exception in findAssessorCandidatesByLastName:', error);
+      throw error;
+    }
   };
 
   // Global assessor search helpers
