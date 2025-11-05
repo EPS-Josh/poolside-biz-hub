@@ -637,22 +637,28 @@ export default function PropertyVerification() {
       const customerHouseNumber = extractHouseNumber(customer.address);
       if (customerHouseNumber) {
         console.log('Trying house number search for:', customerHouseNumber);
+        console.log('Customer full address:', customer.address);
+        console.log('Customer normalized address:', normalizeAddress(customer.address));
         try {
+          const queryPattern = `${customerHouseNumber} %`;
+          console.log('Query pattern:', queryPattern);
           const { data: houseRecords, error } = await supabase
             .from('pima_assessor_records')
             .select('*')
-            .or(`"Mail2".ilike.${customerHouseNumber} %,"Mail3".ilike.${customerHouseNumber} %`)
+            .or(`"Mail2".ilike.${queryPattern},"Mail3".ilike.${queryPattern}`)
             .limit(100);
           
           if (error) {
             console.error('House number search error:', error);
           } else if (houseRecords && houseRecords.length > 0) {
             console.log('Found', houseRecords.length, 'records by house number');
+            console.log('Sample assessor addresses:', houseRecords.slice(0, 3).map(r => ({ Mail2: r.Mail2, Mail3: r.Mail3 })));
             
             // Strip directionals helper
             const stripDirectionals = (text: string) => {
               const directionals = ['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'NORTH', 'SOUTH', 'EAST', 'WEST'];
-              return text.split(' ').filter(part => !directionals.includes(part)).join(' ');
+              const result = text.split(' ').filter(part => !directionals.includes(part)).join(' ');
+              return result;
             };
             
             // Get customer street parts (everything after house number, normalized)
@@ -664,7 +670,7 @@ export default function PropertyVerification() {
             console.log('Customer street (no directionals):', customerStreetNoDirectionals);
             
             // Find records with matching street name (ignoring directionals)
-            const matchingRecords = houseRecords.filter(r => {
+            const matchingRecords = houseRecords.filter((r, idx) => {
               const addr2Normalized = normalizeAddress(r.Mail2 || '');
               const addr3Normalized = normalizeAddress(r.Mail3 || '');
               
@@ -673,6 +679,15 @@ export default function PropertyVerification() {
               
               const addr2NoDirectionals = stripDirectionals(addr2Parts);
               const addr3NoDirectionals = stripDirectionals(addr3Parts);
+              
+              // Log first 3 comparisons only
+              if (idx < 3) {
+                console.log('Comparing:', { 
+                  customer: customerStreetNoDirectionals, 
+                  addr2: addr2NoDirectionals,
+                  addr3: addr3NoDirectionals
+                });
+              }
               
               // Check if street names match (allow partial match for shortened names)
               const streetMatch = 
