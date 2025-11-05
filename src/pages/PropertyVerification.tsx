@@ -641,10 +641,12 @@ export default function PropertyVerification() {
           const { data: houseRecords, error } = await supabase
             .from('pima_assessor_records')
             .select('*')
-            .or(`"Mail2".ilike.${customerHouseNumber}%,"Mail3".ilike.${customerHouseNumber}%`)
+            .or(`"Mail2".ilike.${customerHouseNumber} %,"Mail3".ilike.${customerHouseNumber} %`)
             .limit(100);
           
-          if (!error && houseRecords && houseRecords.length > 0) {
+          if (error) {
+            console.error('House number search error:', error);
+          } else if (houseRecords && houseRecords.length > 0) {
             console.log('Found', houseRecords.length, 'records by house number');
             
             // Strip directionals helper
@@ -653,16 +655,38 @@ export default function PropertyVerification() {
               return text.split(' ').filter(part => !directionals.includes(part)).join(' ');
             };
             
-            // Get customer street without directionals
-            const customerStreet = stripDirectionals(normalizeAddress(customer.address));
+            // Get customer street parts (everything after house number, normalized)
+            const normalizedCustomerAddr = normalizeAddress(customer.address);
+            const customerParts = normalizedCustomerAddr.split(' ');
+            const customerStreetParts = customerParts.slice(1).join(' '); // Skip house number
+            const customerStreetNoDirectionals = stripDirectionals(customerStreetParts);
+            
+            console.log('Customer street (no directionals):', customerStreetNoDirectionals);
             
             // Find records with matching street name (ignoring directionals)
             const matchingRecords = houseRecords.filter(r => {
-              const addr2 = stripDirectionals(normalizeAddress(r.Mail2 || ''));
-              const addr3 = stripDirectionals(normalizeAddress(r.Mail3 || ''));
-              return customerStreet && (addr2.includes(customerStreet.slice(customerStreet.indexOf(' '))) || 
-                                        addr3.includes(customerStreet.slice(customerStreet.indexOf(' '))));
+              const addr2Normalized = normalizeAddress(r.Mail2 || '');
+              const addr3Normalized = normalizeAddress(r.Mail3 || '');
+              
+              const addr2Parts = addr2Normalized.split(' ').slice(1).join(' '); // Skip house number
+              const addr3Parts = addr3Normalized.split(' ').slice(1).join(' ');
+              
+              const addr2NoDirectionals = stripDirectionals(addr2Parts);
+              const addr3NoDirectionals = stripDirectionals(addr3Parts);
+              
+              // Check if street names match (allow partial match for shortened names)
+              const streetMatch = 
+                (addr2NoDirectionals && customerStreetNoDirectionals && 
+                 (addr2NoDirectionals.includes(customerStreetNoDirectionals) || 
+                  customerStreetNoDirectionals.includes(addr2NoDirectionals))) ||
+                (addr3NoDirectionals && customerStreetNoDirectionals && 
+                 (addr3NoDirectionals.includes(customerStreetNoDirectionals) || 
+                  customerStreetNoDirectionals.includes(addr3NoDirectionals)));
+              
+              return streetMatch;
             });
+            
+            console.log('Matching records after street comparison:', matchingRecords.length);
             
             if (matchingRecords.length === 1) {
               const assessorRecord = mapDbRowToAssessorRecord(matchingRecords[0]);
@@ -676,11 +700,22 @@ export default function PropertyVerification() {
               setVerifyingCustomerId(null);
               return;
             } else if (matchingRecords.length > 1) {
-              console.log('Multiple matches found by house number, will show options');
+              console.log('Multiple matches found by house number, showing options');
+              const options = matchingRecords.map(mapDbRowToAssessorRecord);
+              setAssessorOptions(options);
+              setPendingCustomer(customer);
+              setShowSelectAssessorDialog(true);
+              setIsVerifying(false);
+              setVerifyingCustomerId(null);
+              return;
+            } else {
+              console.log('No street name matches after filtering');
             }
+          } else {
+            console.log('No records found with house number:', customerHouseNumber);
           }
         } catch (e) {
-          console.warn('House number search failed:', e);
+          console.error('House number search exception:', e);
         }
       }
 
