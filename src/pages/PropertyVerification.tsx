@@ -273,18 +273,23 @@ export default function PropertyVerification() {
   // Step 1: find candidates where owner name contains the last name (avoid street-line false matches)
   const findAssessorCandidatesByLastName = async (lastName: string) => {
     try {
-      // Use UPPER() with LIKE to leverage btree indexes with text_pattern_ops
+      // Trim and uppercase the search term
+      const searchTerm = lastName.trim().toUpperCase();
+      console.log('Searching for last name:', searchTerm);
+      
+      // Use UPPER() and TRIM() to handle case and whitespace issues
       const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .or(`"Mail1".ilike.${lastName}%,updated_owner_name.ilike.${lastName}%`)
-        .limit(50)
+        .or(`TRIM("Mail1")::text.ilike.${searchTerm}%,TRIM(updated_owner_name)::text.ilike.${searchTerm}%`)
+        .limit(50);
         
       if (error) {
         console.error('Error querying assessor records:', error);
         throw error;
       }
       console.log('Query returned', (data || []).length, 'records');
+      console.log('Sample Mail1 values:', (data || []).slice(0, 3).map(r => `"${r.Mail1}"`));
       return (data || []) as any[];
     } catch (error) {
       console.error('Exception in findAssessorCandidatesByLastName:', error);
@@ -304,7 +309,7 @@ export default function PropertyVerification() {
 
   const runGlobalAssessorSearch = async (page = 0) => {
     try {
-      const q = globalSearchQuery.trim();
+      const q = globalSearchQuery.trim().toUpperCase();
       setGlobalSearchLoading(true);
       if (!q) {
         setGlobalSearchResults([]);
@@ -313,12 +318,19 @@ export default function PropertyVerification() {
       }
       const from = page * GLOBAL_PAGE_SIZE;
       const to = from + GLOBAL_PAGE_SIZE - 1;
+      
+      console.log('Global search query:', q);
+      
+      // Use TRIM() to handle whitespace in database fields
       const { data, error } = await supabase
         .from('pima_assessor_records')
         .select('*')
-        .or(`Mail1.ilike.%${q}%,updated_owner_name.ilike.%${q}%,Mail2.ilike.%${q}%,Mail3.ilike.%${q}%,Parcel.ilike.%${q}%`)
+        .or(`TRIM("Mail1")::text.ilike.%${q}%,TRIM(updated_owner_name)::text.ilike.%${q}%,TRIM("Mail2")::text.ilike.%${q}%,TRIM("Mail3")::text.ilike.%${q}%,TRIM("Parcel")::text.ilike.%${q}%`)
         .range(from, to);
+        
       if (error) throw error;
+      
+      console.log('Global search found', (data || []).length, 'results');
       const options = (data || []).map(mapDbRowToAssessorRecord);
       setGlobalSearchResults(options);
       setGlobalSearchPage(page);
