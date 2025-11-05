@@ -1140,6 +1140,9 @@ export default function PropertyVerification() {
 
       // Remove this customer from verification results as update is complete
       setVerificationResults(prev => prev.filter(result => result.customer.id !== matchingCustomer.id));
+      
+      // Refresh customer list to hide verified/updated entries
+      fetchCustomers?.();
 
       setShowUpdateCustomerDialog(false);
       setCurrentAssessorRecord(null);
