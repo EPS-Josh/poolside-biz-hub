@@ -395,6 +395,38 @@ export default function PropertyVerification() {
     }
   };
 
+  const handleUndoSkip = async (customer: any) => {
+    if (!user?.id) return;
+
+    try {
+      await supabase
+        .from('customers')
+        .update({
+          pima_county_resident: true,
+          verification_status: 'pending',
+          non_pima_verified_by: null,
+          non_pima_verified_at: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customer.id);
+
+      // Refresh customer list to move customer back to main list
+      fetchCustomers?.();
+
+      toast({
+        title: 'Removed from skipped',
+        description: `${customer.first_name} ${customer.last_name} can now be verified again`,
+      });
+    } catch (error) {
+      console.error('Error undoing skip:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to undo skip',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleFlagNonPimaCounty = async () => {
     if (!pendingCustomer) return;
     
@@ -1798,6 +1830,13 @@ export default function PropertyVerification() {
                           </div>
                         </div>
                         <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleUndoSkip(customer)}
+                          >
+                            Undo Skip
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
