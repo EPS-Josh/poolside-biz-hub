@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +41,7 @@ interface Customer {
 export const CustomerList = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const { customers, loading, fetchCustomers } = useCustomers(searchTerm);
   const [showForm, setShowForm] = useState(false);
@@ -83,6 +86,31 @@ export const CustomerList = () => {
 
   const handleCustomerClick = (customerId: string) => {
     navigate(`/customer/${customerId}`);
+  };
+
+  const handleDeleteCustomer = async (customerId: string) => {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', customerId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Customer Deleted',
+        description: 'Customer has been successfully deleted',
+      });
+
+      fetchCustomers();
+    } catch (error: any) {
+      console.error('Error deleting customer:', error);
+      toast({
+        title: 'Delete Failed',
+        description: error.message || 'Failed to delete customer. You may need admin permissions.',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading) {
@@ -136,6 +164,7 @@ export const CustomerList = () => {
             customers={customers}
             onCustomerClick={handleCustomerClick}
             onEditCustomer={handleEditCustomer}
+            onDeleteCustomer={handleDeleteCustomer}
           />
         )}
       </CardContent>

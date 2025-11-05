@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,7 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Building, Mail, Phone, Pencil, MapPin, Shield } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Building, Mail, Phone, Pencil, MapPin, Shield, Trash2 } from 'lucide-react';
 
 interface Customer {
   id: string;
@@ -34,10 +44,29 @@ interface CustomerTableProps {
   customers: Customer[];
   onCustomerClick: (customerId: string) => void;
   onEditCustomer: (customer: Customer) => void;
+  onDeleteCustomer: (customerId: string) => void;
 }
 
-export const CustomerTable = ({ customers, onCustomerClick, onEditCustomer }: CustomerTableProps) => (
-  <div className="overflow-x-auto">
+export const CustomerTable = ({ customers, onCustomerClick, onEditCustomer, onDeleteCustomer }: CustomerTableProps) => {
+  const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
+  const [deleteCustomerName, setDeleteCustomerName] = useState<string>('');
+
+  const handleDeleteClick = (customer: Customer) => {
+    setDeleteCustomerId(customer.id);
+    setDeleteCustomerName(`${customer.first_name} ${customer.last_name}`);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteCustomerId) {
+      onDeleteCustomer(deleteCustomerId);
+      setDeleteCustomerId(null);
+      setDeleteCustomerName('');
+    }
+  };
+
+  return (
+    <>
+      <div className="overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow>
@@ -121,17 +150,46 @@ export const CustomerTable = ({ customers, onCustomerClick, onEditCustomer }: Cu
               </div>
             </TableCell>
             <TableCell>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEditCustomer(customer)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEditCustomer(customer)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteClick(customer)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
   </div>
-);
+
+  <AlertDialog open={!!deleteCustomerId} onOpenChange={(open) => !open && setDeleteCustomerId(null)}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+        <AlertDialogDescription>
+          Are you sure you want to delete <strong>{deleteCustomerName}</strong>? This action cannot be undone and will remove all associated service records, photos, and documents.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          Delete
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+</>
+  );
+};
