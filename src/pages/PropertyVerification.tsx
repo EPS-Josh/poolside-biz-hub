@@ -703,21 +703,32 @@ export default function PropertyVerification() {
         return;
       }
 
+      console.log('Last name search found', initialRows.length, 'candidate(s)');
+      
       if (initialRows.length === 1) {
+        // Single match - auto-verify even if addresses don't match (will show as issue)
         const assessorRecord = mapDbRowToAssessorRecord(initialRows[0]);
         const result = compareRecords(customer, assessorRecord);
         setVerificationResults(prev => {
           const filtered = prev.filter(r => r.customer.id !== customer.id);
           return [...filtered, result];
         });
-        toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
+        console.log('Auto-verified single last name match:', result);
+        toast({ 
+          title: 'Verification Complete', 
+          description: result.status === 'match' 
+            ? `Verified ${customer.first_name} ${customer.last_name}` 
+            : `Found match for ${customer.first_name} ${customer.last_name} with issues`
+        });
         setIsVerifying(false);
         setVerifyingCustomerId(null);
         return;
       }
 
-      // Step 2: disambiguate by house number from Mail2/3/4
+      // Multiple matches - try to narrow down by house number
       const customerHouse = extractHouseNumber(customer.address);
+      console.log('Customer house number:', customerHouse);
+      
       const filteredRows = initialRows.filter(r => {
         const h2 = extractHouseNumber(r.Mail2);
         const h3 = extractHouseNumber(r.Mail3);
@@ -725,14 +736,23 @@ export default function PropertyVerification() {
         return customerHouse && (customerHouse === h2 || customerHouse === h3 || customerHouse === h4);
       });
 
+      console.log('After house number filter:', filteredRows.length, 'candidates');
+
       if (filteredRows.length === 1) {
+        // Single match after house number filter
         const assessorRecord = mapDbRowToAssessorRecord(filteredRows[0]);
         const result = compareRecords(customer, assessorRecord);
         setVerificationResults(prev => {
           const filtered = prev.filter(r => r.customer.id !== customer.id);
           return [...filtered, result];
         });
-        toast({ title: 'Verification Complete', description: `Checked ${customer.first_name} ${customer.last_name}` });
+        console.log('Auto-verified after house number filter:', result);
+        toast({ 
+          title: 'Verification Complete', 
+          description: result.status === 'match' 
+            ? `Verified ${customer.first_name} ${customer.last_name}` 
+            : `Found match for ${customer.first_name} ${customer.last_name} with issues`
+        });
         setIsVerifying(false);
         setVerifyingCustomerId(null);
         return;
