@@ -619,7 +619,7 @@ export default function PropertyVerification() {
       try {
         byAddress = await searchAssessorRecords(customer.address);
       } catch (e) {
-        console.warn('Address search failed, falling back to last name:', e);
+        console.warn('Address search failed, falling back to house number search:', e);
       }
       if (byAddress) {
         const result = compareRecords(customer, byAddress);
@@ -633,7 +633,58 @@ export default function PropertyVerification() {
         return;
       }
 
-      // Step 2: fallback to last name match if address not found
+      // Step 2: try flexible house number search (handles missing directionals)
+      const customerHouseNumber = extractHouseNumber(customer.address);
+      if (customerHouseNumber) {
+        console.log('Trying house number search for:', customerHouseNumber);
+        try {
+          const { data: houseRecords, error } = await supabase
+            .from('pima_assessor_records')
+            .select('*')
+            .or(`"Mail2".ilike.${customerHouseNumber}%,"Mail3".ilike.${customerHouseNumber}%`)
+            .limit(100);
+          
+          if (!error && houseRecords && houseRecords.length > 0) {
+            console.log('Found', houseRecords.length, 'records by house number');
+            
+            // Strip directionals helper
+            const stripDirectionals = (text: string) => {
+              const directionals = ['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'NORTH', 'SOUTH', 'EAST', 'WEST'];
+              return text.split(' ').filter(part => !directionals.includes(part)).join(' ');
+            };
+            
+            // Get customer street without directionals
+            const customerStreet = stripDirectionals(normalizeAddress(customer.address));
+            
+            // Find records with matching street name (ignoring directionals)
+            const matchingRecords = houseRecords.filter(r => {
+              const addr2 = stripDirectionals(normalizeAddress(r.Mail2 || ''));
+              const addr3 = stripDirectionals(normalizeAddress(r.Mail3 || ''));
+              return customerStreet && (addr2.includes(customerStreet.slice(customerStreet.indexOf(' '))) || 
+                                        addr3.includes(customerStreet.slice(customerStreet.indexOf(' '))));
+            });
+            
+            if (matchingRecords.length === 1) {
+              const assessorRecord = mapDbRowToAssessorRecord(matchingRecords[0]);
+              const result = compareRecords(customer, assessorRecord);
+              setVerificationResults(prev => {
+                const filtered = prev.filter(r => r.customer.id !== customer.id);
+                return [...filtered, result];
+              });
+              toast({ title: 'Verification Complete', description: `Found via house number match for ${customer.first_name} ${customer.last_name}` });
+              setIsVerifying(false);
+              setVerifyingCustomerId(null);
+              return;
+            } else if (matchingRecords.length > 1) {
+              console.log('Multiple matches found by house number, will show options');
+            }
+          }
+        } catch (e) {
+          console.warn('House number search failed:', e);
+        }
+      }
+
+      // Step 3: fallback to last name match if address and house number not found
       console.log('Address search failed, trying last name search for customer:', customer.first_name, customer.last_name);
       const lastName = normalizeName(customer.last_name || '');
       console.log('Normalized last name:', lastName);
