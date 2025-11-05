@@ -661,13 +661,39 @@ export default function PropertyVerification() {
               return result;
             };
             
+            // Normalize street suffixes
+            const normalizeStreetSuffix = (text: string) => {
+              const suffixMap: Record<string, string> = {
+                'PL': 'PLACE', 'PLACE': 'PLACE',
+                'ST': 'STREET', 'STREET': 'STREET',
+                'AVE': 'AVENUE', 'AVENUE': 'AVENUE',
+                'DR': 'DRIVE', 'DRIVE': 'DRIVE',
+                'RD': 'ROAD', 'ROAD': 'ROAD',
+                'LN': 'LANE', 'LANE': 'LANE',
+                'CT': 'COURT', 'COURT': 'COURT',
+                'CIR': 'CIRCLE', 'CIRCLE': 'CIRCLE',
+                'WAY': 'WAY',
+                'BLVD': 'BOULEVARD', 'BOULEVARD': 'BOULEVARD',
+                'TRL': 'TRAIL', 'TRAIL': 'TRAIL',
+                'PKWY': 'PARKWAY', 'PARKWAY': 'PARKWAY'
+              };
+              
+              const parts = text.split(' ');
+              const lastPart = parts[parts.length - 1];
+              if (suffixMap[lastPart]) {
+                parts[parts.length - 1] = suffixMap[lastPart];
+              }
+              return parts.join(' ');
+            };
+            
             // Get customer street parts (everything after house number, normalized)
             const normalizedCustomerAddr = normalizeAddress(customer.address);
             const customerParts = normalizedCustomerAddr.split(' ');
             const customerStreetParts = customerParts.slice(1).join(' '); // Skip house number
             const customerStreetNoDirectionals = stripDirectionals(customerStreetParts);
+            const customerStreetNormalized = normalizeStreetSuffix(customerStreetNoDirectionals);
             
-            console.log('Customer street (no directionals):', customerStreetNoDirectionals);
+            console.log('Customer street (normalized):', customerStreetNormalized);
             
             // Find records with matching street name (ignoring directionals)
             const matchingRecords = houseRecords.filter((r, idx) => {
@@ -680,23 +706,26 @@ export default function PropertyVerification() {
               const addr2NoDirectionals = stripDirectionals(addr2Parts);
               const addr3NoDirectionals = stripDirectionals(addr3Parts);
               
+              const addr2NormalizedSuffix = normalizeStreetSuffix(addr2NoDirectionals);
+              const addr3NormalizedSuffix = normalizeStreetSuffix(addr3NoDirectionals);
+              
               // Log first 3 comparisons only
               if (idx < 3) {
                 console.log('Comparing:', { 
-                  customer: customerStreetNoDirectionals, 
-                  addr2: addr2NoDirectionals,
-                  addr3: addr3NoDirectionals
+                  customer: customerStreetNormalized, 
+                  addr2: addr2NormalizedSuffix,
+                  addr3: addr3NormalizedSuffix
                 });
               }
               
               // Check if street names match (allow partial match for shortened names)
               const streetMatch = 
-                (addr2NoDirectionals && customerStreetNoDirectionals && 
-                 (addr2NoDirectionals.includes(customerStreetNoDirectionals) || 
-                  customerStreetNoDirectionals.includes(addr2NoDirectionals))) ||
-                (addr3NoDirectionals && customerStreetNoDirectionals && 
-                 (addr3NoDirectionals.includes(customerStreetNoDirectionals) || 
-                  customerStreetNoDirectionals.includes(addr3NoDirectionals)));
+                (addr2NormalizedSuffix && customerStreetNormalized && 
+                 (addr2NormalizedSuffix.includes(customerStreetNormalized) || 
+                  customerStreetNormalized.includes(addr2NormalizedSuffix))) ||
+                (addr3NormalizedSuffix && customerStreetNormalized && 
+                 (addr3NormalizedSuffix.includes(customerStreetNormalized) || 
+                  customerStreetNormalized.includes(addr3NormalizedSuffix)));
               
               return streetMatch;
             });
