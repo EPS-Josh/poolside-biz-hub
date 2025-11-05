@@ -760,13 +760,18 @@ export default function PropertyVerification() {
       setIsVerifying(false);
       setVerifyingCustomerId(null);
     } catch (error) {
-      toast({
-        title: 'Verification Error',
-        description: 'Failed to verify property records',
-        variant: 'destructive'
-      });
+      console.error('Verification error:', error);
+      // Open manual search dialog on error
+      setAssessorOptions([]);
+      setPendingCustomer(customer);
+      setShowSelectAssessorDialog(true);
       setIsVerifying(false);
       setVerifyingCustomerId(null);
+      toast({
+        title: 'Verification Error',
+        description: 'Failed to verify property records. Please search manually or flag as non-Pima County.',
+        variant: 'destructive'
+      });
     }
   };
 
