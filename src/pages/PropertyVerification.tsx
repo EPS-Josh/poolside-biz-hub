@@ -1803,7 +1803,7 @@ export default function PropertyVerification() {
                             size="sm"
                             onClick={() => {
                               setShowSkippedRecords(false);
-                              navigate(`/customers/${customer.id}`);
+                              navigate(`/customer/${customer.id}`);
                             }}
                           >
                             View Details
