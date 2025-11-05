@@ -633,133 +633,31 @@ export default function PropertyVerification() {
         return;
       }
 
-      // Step 2: try flexible house number search (handles missing directionals)
-      const customerHouseNumber = extractHouseNumber(customer.address);
-      if (customerHouseNumber) {
-        console.log('Trying house number search for:', customerHouseNumber);
-        console.log('Customer full address:', customer.address);
-        console.log('Customer normalized address:', normalizeAddress(customer.address));
-        try {
-          const queryPattern = `${customerHouseNumber} %`;
-          console.log('Query pattern:', queryPattern);
-          const { data: houseRecords, error } = await supabase
-            .from('pima_assessor_records')
-            .select('*')
-            .or(`"Mail2".ilike.${queryPattern},"Mail3".ilike.${queryPattern}`)
-            .limit(100);
-          
-          if (error) {
-            console.error('House number search error:', error);
-          } else if (houseRecords && houseRecords.length > 0) {
-            console.log('Found', houseRecords.length, 'records by house number');
-            console.log('Sample assessor addresses:', houseRecords.slice(0, 3).map(r => ({ Mail2: r.Mail2, Mail3: r.Mail3 })));
-            
-            // Strip directionals helper
-            const stripDirectionals = (text: string) => {
-              const directionals = ['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'NORTH', 'SOUTH', 'EAST', 'WEST'];
-              const result = text.split(' ').filter(part => !directionals.includes(part)).join(' ');
-              return result;
-            };
-            
-            // Normalize street suffixes
-            const normalizeStreetSuffix = (text: string) => {
-              const suffixMap: Record<string, string> = {
-                'PL': 'PLACE', 'PLACE': 'PLACE',
-                'ST': 'STREET', 'STREET': 'STREET',
-                'AVE': 'AVENUE', 'AVENUE': 'AVENUE',
-                'DR': 'DRIVE', 'DRIVE': 'DRIVE',
-                'RD': 'ROAD', 'ROAD': 'ROAD',
-                'LN': 'LANE', 'LANE': 'LANE',
-                'CT': 'COURT', 'COURT': 'COURT',
-                'CIR': 'CIRCLE', 'CIRCLE': 'CIRCLE',
-                'WAY': 'WAY',
-                'BLVD': 'BOULEVARD', 'BOULEVARD': 'BOULEVARD',
-                'TRL': 'TRAIL', 'TRAIL': 'TRAIL',
-                'PKWY': 'PARKWAY', 'PARKWAY': 'PARKWAY'
-              };
-              
-              const parts = text.split(' ');
-              const lastPart = parts[parts.length - 1];
-              if (suffixMap[lastPart]) {
-                parts[parts.length - 1] = suffixMap[lastPart];
-              }
-              return parts.join(' ');
-            };
-            
-            // Get customer street parts (everything after house number, normalized)
-            const normalizedCustomerAddr = normalizeAddress(customer.address);
-            const customerParts = normalizedCustomerAddr.split(' ');
-            const customerStreetParts = customerParts.slice(1).join(' '); // Skip house number
-            const customerStreetNoDirectionals = stripDirectionals(customerStreetParts);
-            const customerStreetNormalized = normalizeStreetSuffix(customerStreetNoDirectionals);
-            
-            console.log('Customer street (normalized):', customerStreetNormalized);
-            
-            // Find records with matching street name (ignoring directionals)
-            const matchingRecords = houseRecords.filter((r, idx) => {
-              const addr2Normalized = normalizeAddress(r.Mail2 || '');
-              const addr3Normalized = normalizeAddress(r.Mail3 || '');
-              
-              const addr2Parts = addr2Normalized.split(' ').slice(1).join(' '); // Skip house number
-              const addr3Parts = addr3Normalized.split(' ').slice(1).join(' ');
-              
-              const addr2NoDirectionals = stripDirectionals(addr2Parts);
-              const addr3NoDirectionals = stripDirectionals(addr3Parts);
-              
-              const addr2NormalizedSuffix = normalizeStreetSuffix(addr2NoDirectionals);
-              const addr3NormalizedSuffix = normalizeStreetSuffix(addr3NoDirectionals);
-              
-              // Log first 3 comparisons only
-              if (idx < 3) {
-                console.log('Comparing:', { 
-                  customer: customerStreetNormalized, 
-                  addr2: addr2NormalizedSuffix,
-                  addr3: addr3NormalizedSuffix
-                });
-              }
-              
-              // Check if street names match (allow partial match for shortened names)
-              const streetMatch = 
-                (addr2NormalizedSuffix && customerStreetNormalized && 
-                 (addr2NormalizedSuffix.includes(customerStreetNormalized) || 
-                  customerStreetNormalized.includes(addr2NormalizedSuffix))) ||
-                (addr3NormalizedSuffix && customerStreetNormalized && 
-                 (addr3NormalizedSuffix.includes(customerStreetNormalized) || 
-                  customerStreetNormalized.includes(addr3NormalizedSuffix)));
-              
-              return streetMatch;
-            });
-            
-            console.log('Matching records after street comparison:', matchingRecords.length);
-            
-            if (matchingRecords.length === 1) {
-              const assessorRecord = mapDbRowToAssessorRecord(matchingRecords[0]);
-              const result = compareRecords(customer, assessorRecord);
+      // Step 2: try address with directionals prepended (handles missing directions)
+      const houseNumber = extractHouseNumber(customer.address);
+      if (houseNumber) {
+        const directionals = ['N', 'S', 'E', 'W'];
+        const streetPart = customer.address.replace(houseNumber, '').trim();
+        
+        for (const dir of directionals) {
+          try {
+            const addressWithDir = `${houseNumber} ${dir} ${streetPart}`;
+            console.log('Trying address with directional:', addressWithDir);
+            const result = await searchAssessorRecords(addressWithDir);
+            if (result) {
+              const comparison = compareRecords(customer, result);
               setVerificationResults(prev => {
                 const filtered = prev.filter(r => r.customer.id !== customer.id);
-                return [...filtered, result];
+                return [...filtered, comparison];
               });
-              toast({ title: 'Verification Complete', description: `Found via house number match for ${customer.first_name} ${customer.last_name}` });
+              toast({ title: 'Verification Complete', description: `Found via ${dir} directional` });
               setIsVerifying(false);
               setVerifyingCustomerId(null);
               return;
-            } else if (matchingRecords.length > 1) {
-              console.log('Multiple matches found by house number, showing options');
-              const options = matchingRecords.map(mapDbRowToAssessorRecord);
-              setAssessorOptions(options);
-              setPendingCustomer(customer);
-              setShowSelectAssessorDialog(true);
-              setIsVerifying(false);
-              setVerifyingCustomerId(null);
-              return;
-            } else {
-              console.log('No street name matches after filtering');
             }
-          } else {
-            console.log('No records found with house number:', customerHouseNumber);
+          } catch (e) {
+            // Continue to next directional
           }
-        } catch (e) {
-          console.error('House number search exception:', e);
         }
       }
 
