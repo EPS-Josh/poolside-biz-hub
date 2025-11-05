@@ -1310,6 +1310,7 @@ export default function PropertyVerification() {
                 title="Customers Verified"
                 value={customers.filter(c => c.owner_verified_at).length}
                 icon={UserCheck}
+                onClick={() => navigate('/customers/verified')}
               />
               <MetricsCard
                 title="Not Original Owner"
@@ -1458,55 +1459,6 @@ export default function PropertyVerification() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Verified Customers */}
-            {pimaCountyCustomers.filter(c => c.owner_verified_at).length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Verified Customers</CardTitle>
-                  <CardDescription>
-                    Customers that have been owner verified
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {pimaCountyCustomers.filter(c => c.owner_verified_at).map((customer) => (
-                      <div
-                        key={customer.id}
-                        className="flex items-center justify-between p-3 border rounded-lg bg-muted/30"
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium flex items-center gap-2">
-                            {customer.first_name} {customer.last_name}
-                            <Badge variant="outline" className="text-xs">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Verified
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {customer.address ? customer.address : 'No address on file'}
-                          </div>
-                          {customer.previous_first_name && (
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Previous owner: {customer.previous_first_name} {customer.previous_last_name}
-                            </div>
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUndoVerification(customer)}
-                          className="flex items-center gap-2"
-                        >
-                          <X className="h-3 w-3" />
-                          Undo Verification
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Verification Results */}

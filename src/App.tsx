@@ -24,6 +24,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { Employees } from "./pages/Employees";
 import CustomerMapPage from "./pages/CustomerMap";
 import PropertyVerification from "./pages/PropertyVerification";
+import VerifiedCustomers from "./pages/VerifiedCustomers";
 import ServiceRecords from "./pages/ServiceRecords";
 import FollowUps from "./pages/FollowUps";
 import ClientPortal from "./pages/ClientPortal";
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/map" element={<CustomerMapPage />} />
             <Route path="/customers/property-verification" element={<PropertyVerification />} />
+            <Route path="/customers/verified" element={<VerifiedCustomers />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/customer/:id" element={<CustomerDetails />} />
             <Route path="/company-data" element={
