@@ -1415,6 +1415,46 @@ export type Database = {
           Zip4: string
         }[]
       }
+      search_assessor_by_last_name: {
+        Args: { search_term: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_owner_updated: boolean
+          Mail1: string
+          Mail2: string
+          Mail3: string
+          Mail4: string
+          Mail5: string
+          owner_updated_at: string
+          owner_updated_by: string
+          Parcel: string
+          updated_at: string
+          updated_owner_name: string
+          Zip: string
+          Zip4: string
+        }[]
+      }
+      search_assessor_global: {
+        Args: { limit_val?: number; offset_val?: number; search_term: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_owner_updated: boolean
+          Mail1: string
+          Mail2: string
+          Mail3: string
+          Mail4: string
+          Mail5: string
+          owner_updated_at: string
+          owner_updated_by: string
+          Parcel: string
+          updated_at: string
+          updated_owner_name: string
+          Zip: string
+          Zip4: string
+        }[]
+      }
       validate_role_assignment: {
         Args: {
           role_to_assign: Database["public"]["Enums"]["app_role"]

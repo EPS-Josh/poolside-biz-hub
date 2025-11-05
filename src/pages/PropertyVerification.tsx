@@ -273,16 +273,12 @@ export default function PropertyVerification() {
   // Step 1: find candidates where owner name contains the last name (avoid street-line false matches)
   const findAssessorCandidatesByLastName = async (lastName: string) => {
     try {
-      // Trim and uppercase the search term
-      const searchTerm = lastName.trim().toUpperCase();
+      const searchTerm = lastName.trim();
       console.log('Searching for last name:', searchTerm);
       
-      // Use UPPER() and TRIM() to handle case and whitespace issues
+      // Use RPC function that properly handles TRIM and UPPER
       const { data, error } = await supabase
-        .from('pima_assessor_records')
-        .select('*')
-        .or(`TRIM("Mail1")::text.ilike.${searchTerm}%,TRIM(updated_owner_name)::text.ilike.${searchTerm}%`)
-        .limit(50);
+        .rpc('search_assessor_by_last_name', { search_term: searchTerm });
         
       if (error) {
         console.error('Error querying assessor records:', error);
@@ -309,24 +305,24 @@ export default function PropertyVerification() {
 
   const runGlobalAssessorSearch = async (page = 0) => {
     try {
-      const q = globalSearchQuery.trim().toUpperCase();
+      const q = globalSearchQuery.trim();
       setGlobalSearchLoading(true);
       if (!q) {
         setGlobalSearchResults([]);
         setGlobalSearchLoading(false);
         return;
       }
-      const from = page * GLOBAL_PAGE_SIZE;
-      const to = from + GLOBAL_PAGE_SIZE - 1;
+      const offset = page * GLOBAL_PAGE_SIZE;
       
       console.log('Global search query:', q);
       
-      // Use TRIM() to handle whitespace in database fields
+      // Use RPC function that properly handles TRIM and UPPER
       const { data, error } = await supabase
-        .from('pima_assessor_records')
-        .select('*')
-        .or(`TRIM("Mail1")::text.ilike.%${q}%,TRIM(updated_owner_name)::text.ilike.%${q}%,TRIM("Mail2")::text.ilike.%${q}%,TRIM("Mail3")::text.ilike.%${q}%,TRIM("Parcel")::text.ilike.%${q}%`)
-        .range(from, to);
+        .rpc('search_assessor_global', { 
+          search_term: q,
+          offset_val: offset,
+          limit_val: GLOBAL_PAGE_SIZE
+        });
         
       if (error) throw error;
       
