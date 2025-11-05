@@ -664,7 +664,7 @@ export default function PropertyVerification() {
       // Step 3: fallback to last name match if address and house number not found
       console.log('Address search failed, trying last name search for customer:', customer.first_name, customer.last_name);
       const lastName = normalizeName(customer.last_name || '');
-      console.log('Normalized last name:', lastName);
+      console.log('Normalized last name for search:', lastName);
       
       if (!lastName) {
         // No last name to search by, but still offer manual options
@@ -686,6 +686,7 @@ export default function PropertyVerification() {
       console.log('Searching for candidates by last name:', lastName);
       const initialRows = await findAssessorCandidatesByLastName(lastName);
       console.log('Found', initialRows.length, 'candidate records');
+      console.log('First few candidates:', initialRows.slice(0, 3).map(r => ({ Mail1: r.Mail1, Mail2: r.Mail2 })));
       
       if (initialRows.length === 0) {
         // No candidates found, but offer manual search options
