@@ -852,7 +852,7 @@ export default function PropertyVerification() {
     setIsVerifying(true);
     const results: VerificationResult[] = [];
 
-    for (const customer of customersWithAddresses.slice(0, 20)) { // Process 20 customers at a time
+    for (const customer of customersWithAddresses.slice(0, 50)) { // Process 50 customers at a time
       try {
         // Step 1: try address match first
         const byAddress = await searchAssessorRecords(customer.address);
