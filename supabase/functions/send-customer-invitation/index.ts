@@ -27,7 +27,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Verify authentication
+    // Use service role key for admin operations
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Get JWT from Authorization header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('Missing authorization header');
@@ -37,14 +43,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create authenticated client to verify user
-    const authClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: userError } = await authClient.auth.getUser();
+    // Extract the JWT token
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Verify the JWT and get user using service role
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
       console.error('Invalid authentication:', userError);
@@ -54,8 +57,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log('User authenticated:', user.id);
+
     // Check if user has admin or manager role
-    const { data: roles, error: rolesError } = await authClient
+    const { data: roles, error: rolesError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id);
@@ -81,13 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('User authorized:', user.id, userRoles);
 
-    // Use service role key for admin operations
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    const { 
+    const {
       customerId, 
       email, 
       firstName, 
