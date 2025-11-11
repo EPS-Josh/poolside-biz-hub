@@ -9,12 +9,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
-import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw } from 'lucide-react';
+import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
 import { useAppointmentServiceRecords } from '@/hooks/useAppointmentServiceRecords';
 import { CheckCircle } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type FilterType = 'all' | 'not-complete' | 'no-service-record' | 'in-progress' | 'confirmed';
 
@@ -29,6 +37,11 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
   const [creatingServiceRecord, setCreatingServiceRecord] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [accessInfoDialog, setAccessInfoDialog] = useState<{ 
+    isOpen: boolean; 
+    gateCode?: string; 
+    accessInstructions?: string; 
+  }>({ isOpen: false });
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['appointments', dateFilter?.toISOString()],
@@ -42,7 +55,11 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
             first_name,
             last_name,
             address,
-            city
+            city,
+            customer_service_details (
+              gate_code,
+              access_instructions
+            )
           )
         `)
         .order('appointment_date', { ascending: true })
@@ -256,6 +273,23 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
 
                 {/* Action buttons contained within card */}
                 <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-gray-100">
+                  {appointment.customers?.customer_service_details?.[0] && 
+                   (appointment.customers.customer_service_details[0].gate_code || 
+                    appointment.customers.customer_service_details[0].access_instructions) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAccessInfoDialog({
+                        isOpen: true,
+                        gateCode: appointment.customers.customer_service_details[0].gate_code,
+                        accessInstructions: appointment.customers.customer_service_details[0].access_instructions,
+                      })}
+                      className="flex items-center gap-1 text-xs"
+                    >
+                      <KeyRound className="h-3 w-3" />
+                      <span>Access Info</span>
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -311,6 +345,40 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
           onTriggerOpenChange={(open) => !open && setCreatingServiceRecord(null)}
         />
       )}
+
+      <AlertDialog open={accessInfoDialog.isOpen} onOpenChange={(open) => setAccessInfoDialog({ isOpen: open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Access Information
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-left">
+                {accessInfoDialog.gateCode && (
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">Gate Code:</p>
+                    <p className="text-base text-foreground bg-muted px-3 py-2 rounded font-mono">
+                      {accessInfoDialog.gateCode}
+                    </p>
+                  </div>
+                )}
+                {accessInfoDialog.accessInstructions && (
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">Access Instructions:</p>
+                    <p className="text-base text-foreground whitespace-pre-wrap">
+                      {accessInfoDialog.accessInstructions}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button onClick={() => setAccessInfoDialog({ isOpen: false })}>Close</Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
