@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { UserPlus, Mail, Trash2, Shield } from 'lucide-react';
 import {
   AlertDialog,
@@ -36,8 +37,24 @@ export const CustomerAccountManager = ({
   const [sending, setSending] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
+  const { session } = useAuth();
+
+  useEffect(() => {
+    if (!session) {
+      console.error('No active session found for sending invitation');
+    }
+  }, [session]);
 
   const handleSendInvitation = async () => {
+    if (!session) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to send invitations",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-customer-invitation', {
