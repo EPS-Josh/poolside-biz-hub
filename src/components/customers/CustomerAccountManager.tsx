@@ -57,6 +57,13 @@ export const CustomerAccountManager = ({
 
     setSending(true);
     try {
+      // Ensure we have a fresh session token
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !currentSession) {
+        throw new Error('Please log in again to continue');
+      }
+
       const { data, error } = await supabase.functions.invoke('send-customer-invitation', {
         body: {
           customerId,
