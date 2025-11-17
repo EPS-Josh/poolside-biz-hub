@@ -108,9 +108,13 @@ const CleaningForecast = () => {
     const hoursPerWeek = (servicesPerWeek * avgServiceTime) / 60;
     const availableHoursPerWeek = workingHoursPerDay * workingDaysPerWeek;
     
+    // Calculate based on current employees for utilization
+    const currentCapacity = currentEmployees * availableHoursPerWeek;
+    const utilizationRate = (hoursPerWeek / currentCapacity) * 100;
+    const capacityRemaining = currentCapacity - hoursPerWeek;
+    
+    // Calculate employees needed for staffing projection
     const employeesNeeded = Math.ceil(hoursPerWeek / availableHoursPerWeek);
-    const utilizationRate = (hoursPerWeek / (employeesNeeded * availableHoursPerWeek)) * 100;
-    const capacityRemaining = (employeesNeeded * availableHoursPerWeek) - hoursPerWeek;
 
     return {
       totalCustomers: totalWeekly + totalBiweekly,
