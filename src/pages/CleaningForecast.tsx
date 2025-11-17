@@ -22,7 +22,7 @@ const CleaningForecast = () => {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get appointments with Weekly Pool Cleaning from today forward
+      // Get appointments with Weekly and Bi-Weekly Pool Cleaning from today forward
       const { data: weeklyAppointments, error } = await supabase
         .from('appointments')
         .select(`
@@ -34,29 +34,45 @@ const CleaningForecast = () => {
             last_name
           )
         `)
-        .eq('service_type', 'Weekly Pool Cleaning')
+        .in('service_type', ['Weekly Pool Cleaning', 'Bi-Weekly Pool Cleaning'])
         .gte('appointment_date', today)
         .order('appointment_date');
 
       if (error) {
         console.error('Error fetching weekly appointments:', error);
-        return { totalCustomers: 0, upcomingAppointments: 0, customers: [] };
+        return { totalCustomers: 0, upcomingAppointments: 0, weeklyCustomers: [], biweeklyCustomers: [] };
       }
 
-      // Get unique customers with their next appointment
-      const customerMap = new Map();
+      // Separate customers by service type
+      const weeklyMap = new Map();
+      const biweeklyMap = new Map();
+      
       weeklyAppointments?.forEach(apt => {
-        if (apt.customer_id && apt.customers && !customerMap.has(apt.customer_id)) {
-          customerMap.set(apt.customer_id, {
+        if (apt.customer_id && apt.customers) {
+          const customerData = {
             id: apt.customer_id,
             firstName: apt.customers.first_name,
             lastName: apt.customers.last_name,
             nextAppointment: apt.appointment_date,
-          });
+          };
+          
+          if (apt.service_type === 'Weekly Pool Cleaning') {
+            if (!weeklyMap.has(apt.customer_id)) {
+              weeklyMap.set(apt.customer_id, customerData);
+            }
+          } else if (apt.service_type === 'Bi-Weekly Pool Cleaning') {
+            if (!biweeklyMap.has(apt.customer_id)) {
+              biweeklyMap.set(apt.customer_id, customerData);
+            }
+          }
         }
       });
 
-      const customers = Array.from(customerMap.values()).sort((a, b) => 
+      const weeklyCustomers = Array.from(weeklyMap.values()).sort((a, b) => 
+        a.lastName.localeCompare(b.lastName)
+      );
+      
+      const biweeklyCustomers = Array.from(biweeklyMap.values()).sort((a, b) => 
         a.lastName.localeCompare(b.lastName)
       );
 
@@ -67,18 +83,26 @@ const CleaningForecast = () => {
         .gte('appointment_date', today);
 
       return {
-        totalCustomers: customers.length,
+        totalCustomers: weeklyCustomers.length + biweeklyCustomers.length,
+        weeklyCount: weeklyCustomers.length,
+        biweeklyCount: biweeklyCustomers.length,
         upcomingAppointments: upcomingAppointments?.length || 0,
-        customers,
+        weeklyCustomers,
+        biweeklyCustomers,
       };
     },
   });
 
   const calculateForecast = () => {
-    const currentCustomers = currentStats?.totalCustomers || 0;
-    const totalCustomers = currentCustomers + newCustomers;
+    const currentWeekly = currentStats?.weeklyCount || 0;
+    const currentBiweekly = currentStats?.biweeklyCount || 0;
     
-    const servicesPerWeek = serviceFrequency === 'weekly' ? totalCustomers : totalCustomers / 2;
+    // Add new customers based on selected frequency
+    const totalWeekly = currentWeekly + (serviceFrequency === 'weekly' ? newCustomers : 0);
+    const totalBiweekly = currentBiweekly + (serviceFrequency === 'biweekly' ? newCustomers : 0);
+    
+    // Calculate services per week (bi-weekly customers = 0.5 per week)
+    const servicesPerWeek = totalWeekly + (totalBiweekly * 0.5);
     const hoursPerWeek = (servicesPerWeek * avgServiceTime) / 60;
     const availableHoursPerWeek = workingHoursPerDay * workingDaysPerWeek;
     
@@ -87,8 +111,10 @@ const CleaningForecast = () => {
     const capacityRemaining = (employeesNeeded * availableHoursPerWeek) - hoursPerWeek;
 
     return {
-      totalCustomers,
-      servicesPerWeek: Math.round(servicesPerWeek),
+      totalCustomers: totalWeekly + totalBiweekly,
+      totalWeekly,
+      totalBiweekly,
+      servicesPerWeek: Math.round(servicesPerWeek * 10) / 10, // one decimal
       hoursPerWeek: Math.round(hoursPerWeek),
       employeesNeeded,
       utilizationRate: Math.round(utilizationRate),
@@ -218,6 +244,16 @@ const CleaningForecast = () => {
                       <span className="text-lg font-bold">{forecast.totalCustomers}</span>
                     </div>
 
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg text-sm">
+                      <span className="font-medium">• Weekly Customers</span>
+                      <span className="font-bold">{forecast.totalWeekly}</span>
+                    </div>
+
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg text-sm">
+                      <span className="font-medium">• Bi-Weekly Customers</span>
+                      <span className="font-bold">{forecast.totalBiweekly}</span>
+                    </div>
+
                     <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
                       <span className="text-sm font-medium">Services Per Week</span>
                       <span className="text-lg font-bold">{forecast.servicesPerWeek}</span>
@@ -269,40 +305,79 @@ const CleaningForecast = () => {
             </div>
 
             {/* Current Customers List */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Current Weekly Cleaning Customers ({currentStats?.totalCustomers || 0})
-                </CardTitle>
-                <CardDescription>
-                  Active customers with upcoming weekly pool cleaning appointments
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {currentStats?.customers && currentStats.customers.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {currentStats.customers.map((customer: any) => (
-                      <div 
-                        key={customer.id} 
-                        className="p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
-                      >
-                        <div className="font-medium">
-                          {customer.firstName} {customer.lastName}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* Weekly Customers */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Weekly Customers ({currentStats?.weeklyCount || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    Customers with weekly pool cleaning service
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {currentStats?.weeklyCustomers && currentStats.weeklyCustomers.length > 0 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {currentStats.weeklyCustomers.map((customer: any) => (
+                        <div 
+                          key={customer.id} 
+                          className="p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+                        >
+                          <div className="font-medium">
+                            {customer.firstName} {customer.lastName}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Next: {new Date(customer.nextAppointment).toLocaleDateString()}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Next: {new Date(customer.nextAppointment).toLocaleDateString()}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      No weekly customers with upcoming appointments
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Bi-Weekly Customers */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Bi-Weekly Customers ({currentStats?.biweeklyCount || 0})
+                  </CardTitle>
+                  <CardDescription>
+                    Customers with bi-weekly pool cleaning service
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {currentStats?.biweeklyCustomers && currentStats.biweeklyCustomers.length > 0 ? (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {currentStats.biweeklyCustomers.map((customer: any) => (
+                        <div 
+                          key={customer.id} 
+                          className="p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+                        >
+                          <div className="font-medium">
+                            {customer.firstName} {customer.lastName}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Next: {new Date(customer.nextAppointment).toLocaleDateString()}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    No weekly cleaning customers with upcoming appointments
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-8">
+                      No bi-weekly customers with upcoming appointments
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </main>
       </div>
