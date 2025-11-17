@@ -20,11 +20,14 @@ const CleaningForecast = () => {
   const { data: currentStats } = useQuery({
     queryKey: ['cleaning-forecast-stats'],
     queryFn: async () => {
-      // Get appointments with Weekly Pool Cleaning service type
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get appointments with Weekly Pool Cleaning from today forward
       const { data: weeklyAppointments, error } = await supabase
         .from('appointments')
         .select('customer_id, service_type')
-        .eq('service_type', 'Weekly Pool Cleaning');
+        .eq('service_type', 'Weekly Pool Cleaning')
+        .gte('appointment_date', today);
 
       if (error) {
         console.error('Error fetching weekly appointments:', error);
@@ -42,7 +45,7 @@ const CleaningForecast = () => {
       const { data: upcomingAppointments } = await supabase
         .from('appointments')
         .select('id')
-        .gte('appointment_date', new Date().toISOString().split('T')[0]);
+        .gte('appointment_date', today);
 
       return {
         totalCustomers: uniqueCustomers.size || 0,
