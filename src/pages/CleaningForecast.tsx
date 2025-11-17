@@ -61,7 +61,7 @@ const CleaningForecast = () => {
         if (apt.customer_id && apt.customers) {
           // Only process if we haven't seen this customer yet (first appointment = current service type)
           if (!weeklyMap.has(apt.customer_id) && !biweeklyMap.has(apt.customer_id)) {
-            const weeklyRate = apt.customers.customer_service_details?.[0]?.weekly_rate || 0;
+            const weeklyRate = apt.customers.customer_service_details?.weekly_rate || 0;
             const customerData = {
               id: apt.customer_id,
               firstName: apt.customers.first_name,
