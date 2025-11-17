@@ -485,6 +485,7 @@ export type Database = {
           special_notes: string | null
           updated_at: string
           water_features: string | null
+          weekly_rate: number | null
         }
         Insert: {
           access_instructions?: string | null
@@ -502,6 +503,7 @@ export type Database = {
           special_notes?: string | null
           updated_at?: string
           water_features?: string | null
+          weekly_rate?: number | null
         }
         Update: {
           access_instructions?: string | null
@@ -519,6 +521,7 @@ export type Database = {
           special_notes?: string | null
           updated_at?: string
           water_features?: string | null
+          weekly_rate?: number | null
         }
         Relationships: [
           {
