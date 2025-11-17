@@ -25,20 +25,39 @@ const CleaningForecast = () => {
       // Get appointments with Weekly Pool Cleaning from today forward
       const { data: weeklyAppointments, error } = await supabase
         .from('appointments')
-        .select('customer_id, service_type')
+        .select(`
+          customer_id,
+          service_type,
+          appointment_date,
+          customers!customer_id (
+            first_name,
+            last_name
+          )
+        `)
         .eq('service_type', 'Weekly Pool Cleaning')
-        .gte('appointment_date', today);
+        .gte('appointment_date', today)
+        .order('appointment_date');
 
       if (error) {
         console.error('Error fetching weekly appointments:', error);
-        return { totalCustomers: 0, upcomingAppointments: 0 };
+        return { totalCustomers: 0, upcomingAppointments: 0, customers: [] };
       }
 
-      // Count unique customers with weekly pool cleaning appointments
-      const uniqueCustomers = new Set(
-        weeklyAppointments
-          ?.filter(apt => apt.customer_id)
-          .map(apt => apt.customer_id)
+      // Get unique customers with their next appointment
+      const customerMap = new Map();
+      weeklyAppointments?.forEach(apt => {
+        if (apt.customer_id && apt.customers && !customerMap.has(apt.customer_id)) {
+          customerMap.set(apt.customer_id, {
+            id: apt.customer_id,
+            firstName: apt.customers.first_name,
+            lastName: apt.customers.last_name,
+            nextAppointment: apt.appointment_date,
+          });
+        }
+      });
+
+      const customers = Array.from(customerMap.values()).sort((a, b) => 
+        a.lastName.localeCompare(b.lastName)
       );
 
       // Get upcoming appointments count
@@ -48,8 +67,9 @@ const CleaningForecast = () => {
         .gte('appointment_date', today);
 
       return {
-        totalCustomers: uniqueCustomers.size || 0,
+        totalCustomers: customers.length,
         upcomingAppointments: upcomingAppointments?.length || 0,
+        customers,
       };
     },
   });
@@ -247,6 +267,42 @@ const CleaningForecast = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Current Customers List */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Current Weekly Cleaning Customers ({currentStats?.totalCustomers || 0})
+                </CardTitle>
+                <CardDescription>
+                  Active customers with upcoming weekly pool cleaning appointments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {currentStats?.customers && currentStats.customers.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {currentStats.customers.map((customer: any) => (
+                      <div 
+                        key={customer.id} 
+                        className="p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
+                      >
+                        <div className="font-medium">
+                          {customer.firstName} {customer.lastName}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Next: {new Date(customer.nextAppointment).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    No weekly cleaning customers with upcoming appointments
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
