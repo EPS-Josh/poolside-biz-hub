@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle, DollarSign } from 'lucide-react';
 import { MetricsCard } from '@/components/MetricsCard';
+import { useNavigate } from 'react-router-dom';
 
 const CleaningForecast = () => {
+  const navigate = useNavigate();
   const [newCustomers, setNewCustomers] = useState(0);
   const [serviceFrequency, setServiceFrequency] = useState<'weekly' | 'biweekly'>('weekly');
   const [avgServiceTime, setAvgServiceTime] = useState(60);
@@ -138,11 +140,17 @@ const CleaningForecast = () => {
         <Header />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Cleaning Forecast</h1>
-              <p className="text-muted-foreground">
-                Analyze your current workload and forecast capacity needs
-              </p>
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Cleaning Forecast</h1>
+                <p className="text-muted-foreground">
+                  Analyze your current workload and forecast capacity needs
+                </p>
+              </div>
+              <Button onClick={() => navigate('/bulk-rate-update')} variant="outline">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Update Customer Rates
+              </Button>
             </div>
 
             {/* Current Metrics */}

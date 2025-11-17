@@ -36,6 +36,7 @@ import ClientPortalRequestService from "./pages/ClientPortalRequestService";
 import CustomerLogin from "./pages/CustomerLogin";
 import HADashboard from "./pages/HADashboard";
 import CleaningForecast from "./pages/CleaningForecast";
+import BulkRateUpdate from "./pages/BulkRateUpdate";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,11 @@ const App = () => (
             <Route path="/cleaning-forecast" element={
               <ProtectedRoute excludedRoles={['guest']}>
                 <CleaningForecast />
+              </ProtectedRoute>
+            } />
+            <Route path="/bulk-rate-update" element={
+              <ProtectedRoute excludedRoles={['guest']}>
+                <BulkRateUpdate />
               </ProtectedRoute>
             } />
             <Route path="/tsbs" element={<TSBs />} />
