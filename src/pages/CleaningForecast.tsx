@@ -23,7 +23,7 @@ const CleaningForecast = () => {
       const today = new Date().toISOString().split('T')[0];
       
       // Get appointments with Weekly and Bi-Weekly Pool Cleaning from today forward
-      const { data: weeklyAppointments, error } = await supabase
+      const { data: allAppointments, error } = await supabase
         .from('appointments')
         .select(`
           customer_id,
@@ -39,29 +39,30 @@ const CleaningForecast = () => {
         .order('appointment_date');
 
       if (error) {
-        console.error('Error fetching weekly appointments:', error);
+        console.error('Error fetching appointments:', error);
         return { totalCustomers: 0, upcomingAppointments: 0, weeklyCustomers: [], biweeklyCustomers: [] };
       }
 
-      // Separate customers by service type
+      // Group by customer and use their FIRST (earliest) appointment to determine current service type
       const weeklyMap = new Map();
       const biweeklyMap = new Map();
       
-      weeklyAppointments?.forEach(apt => {
+      allAppointments?.forEach(apt => {
         if (apt.customer_id && apt.customers) {
-          const customerData = {
-            id: apt.customer_id,
-            firstName: apt.customers.first_name,
-            lastName: apt.customers.last_name,
-            nextAppointment: apt.appointment_date,
-          };
-          
-          if (apt.service_type === 'Weekly Pool Cleaning') {
-            if (!weeklyMap.has(apt.customer_id)) {
+          // Only process if we haven't seen this customer yet (first appointment = current service type)
+          if (!weeklyMap.has(apt.customer_id) && !biweeklyMap.has(apt.customer_id)) {
+            const customerData = {
+              id: apt.customer_id,
+              firstName: apt.customers.first_name,
+              lastName: apt.customers.last_name,
+              nextAppointment: apt.appointment_date,
+              serviceType: apt.service_type,
+            };
+            
+            // Classify based on their CURRENT (first) appointment type
+            if (apt.service_type === 'Weekly Pool Cleaning') {
               weeklyMap.set(apt.customer_id, customerData);
-            }
-          } else if (apt.service_type === 'Bi-Weekly Pool Cleaning') {
-            if (!biweeklyMap.has(apt.customer_id)) {
+            } else if (apt.service_type === 'Bi-Weekly Pool Cleaning') {
               biweeklyMap.set(apt.customer_id, customerData);
             }
           }
