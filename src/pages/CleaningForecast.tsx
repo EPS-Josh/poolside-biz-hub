@@ -19,6 +19,8 @@ const CleaningForecast = () => {
   const [workingHoursPerDay, setWorkingHoursPerDay] = useState(8);
   const [workingDaysPerWeek, setWorkingDaysPerWeek] = useState(5);
   const [currentEmployees, setCurrentEmployees] = useState(1);
+  const [hourlyWage, setHourlyWage] = useState(20);
+  const [monthlyOverhead, setMonthlyOverhead] = useState(500);
 
   const { data: currentStats } = useQuery({
     queryKey: ['cleaning-forecast-stats'],
@@ -34,7 +36,10 @@ const CleaningForecast = () => {
           appointment_date,
           customers!customer_id (
             first_name,
-            last_name
+            last_name,
+            customer_service_details (
+              weekly_rate
+            )
           )
         `)
         .in('service_type', ['Weekly Pool Cleaning', 'Bi-Weekly Pool Cleaning'])
@@ -43,30 +48,36 @@ const CleaningForecast = () => {
 
       if (error) {
         console.error('Error fetching appointments:', error);
-        return { totalCustomers: 0, upcomingAppointments: 0, weeklyCustomers: [], biweeklyCustomers: [] };
+        return { totalCustomers: 0, upcomingAppointments: 0, weeklyCustomers: [], biweeklyCustomers: [], weeklyRevenue: 0, biweeklyRevenue: 0 };
       }
 
       // Group by customer and use their FIRST (earliest) appointment to determine current service type
       const weeklyMap = new Map();
       const biweeklyMap = new Map();
+      let totalWeeklyRevenue = 0;
+      let totalBiweeklyRevenue = 0;
       
       allAppointments?.forEach(apt => {
         if (apt.customer_id && apt.customers) {
           // Only process if we haven't seen this customer yet (first appointment = current service type)
           if (!weeklyMap.has(apt.customer_id) && !biweeklyMap.has(apt.customer_id)) {
+            const weeklyRate = apt.customers.customer_service_details?.[0]?.weekly_rate || 0;
             const customerData = {
               id: apt.customer_id,
               firstName: apt.customers.first_name,
               lastName: apt.customers.last_name,
               nextAppointment: apt.appointment_date,
               serviceType: apt.service_type,
+              weeklyRate,
             };
             
             // Classify based on their CURRENT (first) appointment type
             if (apt.service_type === 'Weekly Pool Cleaning') {
               weeklyMap.set(apt.customer_id, customerData);
+              totalWeeklyRevenue += weeklyRate;
             } else if (apt.service_type === 'Bi-Weekly Pool Cleaning') {
               biweeklyMap.set(apt.customer_id, customerData);
+              totalBiweeklyRevenue += weeklyRate;
             }
           }
         }
@@ -93,6 +104,8 @@ const CleaningForecast = () => {
         upcomingAppointments: upcomingAppointments?.length || 0,
         weeklyCustomers,
         biweeklyCustomers,
+        weeklyRevenue: totalWeeklyRevenue,
+        biweeklyRevenue: totalBiweeklyRevenue,
       };
     },
   });
@@ -100,6 +113,8 @@ const CleaningForecast = () => {
   const calculateForecast = () => {
     const currentWeekly = currentStats?.weeklyCount || 0;
     const currentBiweekly = currentStats?.biweeklyCount || 0;
+    const currentWeeklyRevenue = currentStats?.weeklyRevenue || 0;
+    const currentBiweeklyRevenue = currentStats?.biweeklyRevenue || 0;
     
     // Add new customers based on selected frequency
     const totalWeekly = currentWeekly + (serviceFrequency === 'weekly' ? newCustomers : 0);
@@ -118,15 +133,51 @@ const CleaningForecast = () => {
     // Calculate employees needed for staffing projection
     const employeesNeeded = Math.ceil(hoursPerWeek / availableHoursPerWeek);
 
+    // Revenue calculations
+    const weeklyRevenue = currentWeeklyRevenue; // Weekly customers pay every week
+    const biweeklyRevenuePerWeek = currentBiweeklyRevenue / 2; // Bi-weekly customers pay every 2 weeks
+    const totalWeeklyRevenue = weeklyRevenue + biweeklyRevenuePerWeek;
+    const monthlyRevenue = totalWeeklyRevenue * 4.33; // Average weeks per month
+    const annualRevenue = totalWeeklyRevenue * 52;
+
+    // Expense calculations
+    const laborCostPerWeek = hoursPerWeek * hourlyWage;
+    const monthlyLaborCost = laborCostPerWeek * 4.33;
+    const annualLaborCost = laborCostPerWeek * 52;
+    const annualOverhead = monthlyOverhead * 12;
+    const totalAnnualExpenses = annualLaborCost + annualOverhead;
+
+    // Profit calculations
+    const weeklyProfit = totalWeeklyRevenue - laborCostPerWeek;
+    const monthlyProfit = monthlyRevenue - monthlyLaborCost - monthlyOverhead;
+    const annualProfit = annualRevenue - totalAnnualExpenses;
+    const profitMargin = annualRevenue > 0 ? (annualProfit / annualRevenue) * 100 : 0;
+
     return {
       totalCustomers: totalWeekly + totalBiweekly,
       totalWeekly,
       totalBiweekly,
-      servicesPerWeek: Math.round(servicesPerWeek * 10) / 10, // one decimal
+      servicesPerWeek: Math.round(servicesPerWeek * 10) / 10,
       hoursPerWeek: Math.round(hoursPerWeek),
       employeesNeeded,
       utilizationRate: Math.round(utilizationRate),
       capacityRemaining: Math.round(capacityRemaining),
+      // Revenue
+      weeklyRevenue: Math.round(totalWeeklyRevenue),
+      monthlyRevenue: Math.round(monthlyRevenue),
+      annualRevenue: Math.round(annualRevenue),
+      // Expenses
+      weeklyLaborCost: Math.round(laborCostPerWeek),
+      monthlyLaborCost: Math.round(monthlyLaborCost),
+      annualLaborCost: Math.round(annualLaborCost),
+      monthlyOverhead,
+      annualOverhead,
+      totalAnnualExpenses: Math.round(totalAnnualExpenses),
+      // Profit
+      weeklyProfit: Math.round(weeklyProfit),
+      monthlyProfit: Math.round(monthlyProfit),
+      annualProfit: Math.round(annualProfit),
+      profitMargin: Math.round(profitMargin * 10) / 10,
     };
   };
 
@@ -258,6 +309,30 @@ const CleaningForecast = () => {
                       onChange={(e) => setWorkingDaysPerWeek(parseInt(e.target.value) || 5)}
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="hourlyWage">Employee Hourly Wage ($)</Label>
+                    <Input
+                      id="hourlyWage"
+                      type="number"
+                      min="0"
+                      step="0.50"
+                      value={hourlyWage}
+                      onChange={(e) => setHourlyWage(parseFloat(e.target.value) || 20)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyOverhead">Monthly Overhead ($)</Label>
+                    <Input
+                      id="monthlyOverhead"
+                      type="number"
+                      min="0"
+                      step="10"
+                      value={monthlyOverhead}
+                      onChange={(e) => setMonthlyOverhead(parseFloat(e.target.value) || 500)}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -313,8 +388,118 @@ const CleaningForecast = () => {
                       <span className="text-lg font-bold">{forecast.capacityRemaining}</span>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                  {/* Status Alert */}
+            {/* Revenue & Expense Matrix */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              {/* Revenue Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                    Revenue
+                  </CardTitle>
+                  <CardDescription>
+                    Income from pool cleaning services
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Weekly</span>
+                    <span className="text-lg font-bold text-green-600">${forecast.weeklyRevenue}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Monthly</span>
+                    <span className="text-lg font-bold text-green-600">${forecast.monthlyRevenue}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Annual</span>
+                    <span className="text-lg font-bold text-green-600">${forecast.annualRevenue}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Expenses Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-orange-600" />
+                    Expenses
+                  </CardTitle>
+                  <CardDescription>
+                    Labor and overhead costs
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg text-sm">
+                    <span className="font-medium">Weekly Labor</span>
+                    <span className="font-bold">${forecast.weeklyLaborCost}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Monthly Total</span>
+                    <span className="text-lg font-bold text-orange-600">${forecast.monthlyLaborCost + forecast.monthlyOverhead}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg text-sm">
+                    <span className="font-medium">• Labor</span>
+                    <span className="font-bold">${forecast.monthlyLaborCost}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg text-sm">
+                    <span className="font-medium">• Overhead</span>
+                    <span className="font-bold">${forecast.monthlyOverhead}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Annual Total</span>
+                    <span className="text-lg font-bold text-orange-600">${forecast.totalAnnualExpenses}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Profit Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                    Profit
+                  </CardTitle>
+                  <CardDescription>
+                    Net income after expenses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Weekly</span>
+                    <span className={`text-lg font-bold ${forecast.weeklyProfit >= 0 ? 'text-blue-600' : 'text-destructive'}`}>
+                      ${forecast.weeklyProfit}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Monthly</span>
+                    <span className={`text-lg font-bold ${forecast.monthlyProfit >= 0 ? 'text-blue-600' : 'text-destructive'}`}>
+                      ${forecast.monthlyProfit}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Annual</span>
+                    <span className={`text-lg font-bold ${forecast.annualProfit >= 0 ? 'text-blue-600' : 'text-destructive'}`}>
+                      ${forecast.annualProfit}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <span className="text-sm font-medium">Profit Margin</span>
+                    <span className={`text-lg font-bold ${forecast.profitMargin >= 0 ? 'text-blue-600' : 'text-destructive'}`}>
+                      {forecast.profitMargin}%
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Staffing Status Alert */}
+            <div className="mt-6">
+              <Card>
+                <CardContent className="pt-6">
                   <div className={`p-4 rounded-lg border ${needsMoreStaff ? 'bg-destructive/10 border-destructive' : 'bg-green-50 dark:bg-green-950 border-green-600'}`}>
                     <div className="flex items-center gap-2 mb-2">
                       {needsMoreStaff ? (
