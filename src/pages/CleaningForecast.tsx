@@ -16,6 +16,7 @@ const CleaningForecast = () => {
   const [avgServiceTime, setAvgServiceTime] = useState(60);
   const [workingHoursPerDay, setWorkingHoursPerDay] = useState(8);
   const [workingDaysPerWeek, setWorkingDaysPerWeek] = useState(5);
+  const [currentEmployees, setCurrentEmployees] = useState(1);
 
   const { data: currentStats } = useQuery({
     queryKey: ['cleaning-forecast-stats'],
@@ -124,7 +125,8 @@ const CleaningForecast = () => {
   };
 
   const forecast = calculateForecast();
-  const needsMoreStaff = forecast.utilizationRate > 90;
+  const needsMoreStaff = forecast.employeesNeeded > currentEmployees;
+  const staffDifference = forecast.employeesNeeded - currentEmployees;
 
   return (
     <ProtectedRoute>
@@ -140,7 +142,7 @@ const CleaningForecast = () => {
             </div>
 
             {/* Current Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <MetricsCard
                 title="Total Customers"
                 value={currentStats?.totalCustomers || 0}
@@ -152,10 +154,16 @@ const CleaningForecast = () => {
                 icon={Calendar}
               />
               <MetricsCard
+                title="Current Employees"
+                value={currentEmployees}
+                icon={Users}
+              />
+              <MetricsCard
                 title="Employees Needed"
                 value={forecast.employeesNeeded}
                 icon={TrendingUp}
                 changeType={needsMoreStaff ? 'negative' : 'positive'}
+                change={needsMoreStaff ? `Need ${staffDifference} more` : 'Sufficient staff'}
               />
             </div>
 
@@ -169,6 +177,17 @@ const CleaningForecast = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentEmployees">Current Employees</Label>
+                    <Input
+                      id="currentEmployees"
+                      type="number"
+                      min="1"
+                      value={currentEmployees}
+                      onChange={(e) => setCurrentEmployees(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="newCustomers">New Customers to Add</Label>
                     <Input
@@ -292,13 +311,13 @@ const CleaningForecast = () => {
                         <CheckCircle className="h-5 w-5 text-green-600" />
                       )}
                       <span className="font-semibold">
-                        {needsMoreStaff ? 'Additional Staff Needed' : 'Capacity Available'}
+                        {needsMoreStaff ? 'Additional Staff Needed' : 'Sufficient Staffing'}
                       </span>
                     </div>
                     <p className="text-sm">
                       {needsMoreStaff
-                        ? `Your utilization rate is ${forecast.utilizationRate}%. Consider hiring additional staff to maintain service quality.`
-                        : `You have ${forecast.capacityRemaining} hours of weekly capacity remaining with your current staffing.`}
+                        ? `You need ${forecast.employeesNeeded} employees but currently have ${currentEmployees}. Consider hiring ${staffDifference} more employee${staffDifference > 1 ? 's' : ''} to maintain service quality.`
+                        : `Your current team of ${currentEmployees} employee${currentEmployees > 1 ? 's' : ''} can handle the workload. You have ${forecast.capacityRemaining} hours of weekly capacity remaining.`}
                     </p>
                   </div>
                 </CardContent>
