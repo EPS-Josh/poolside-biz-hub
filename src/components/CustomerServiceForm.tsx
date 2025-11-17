@@ -28,6 +28,7 @@ interface CustomerServiceDetails {
   access_instructions?: string;
   chemical_preferences?: string;
   service_frequency?: string;
+  weekly_rate?: number;
   special_notes?: string;
 }
 
@@ -192,7 +193,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
     }
   };
 
-  const updateField = (field: keyof CustomerServiceDetails, value: string) => {
+  const updateField = (field: keyof CustomerServiceDetails, value: string | number | undefined) => {
     setDetails(prev => ({ ...prev, [field]: value }));
   };
 
@@ -578,6 +579,18 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                     value={details.service_frequency || ''}
                     onChange={(e) => updateField('service_frequency', e.target.value)}
                     placeholder="e.g., Weekly, Bi-weekly, Monthly"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="weekly_rate">Weekly Service Rate ($)</Label>
+                  <Input
+                    id="weekly_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={details.weekly_rate || ''}
+                    onChange={(e) => updateField('weekly_rate', parseFloat(e.target.value) || undefined)}
+                    placeholder="Weekly rate charged"
                   />
                 </div>
               </div>
