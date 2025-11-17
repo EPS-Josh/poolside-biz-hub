@@ -117,6 +117,13 @@ const Menu = () => {
           color: "bg-gray-500",
           action: () => navigate('/company-data'),
         },
+        {
+          title: "Cleaning Forecast",
+          description: "Analyze workload capacity and forecast staffing needs",
+          icon: TrendingUp,
+          color: "bg-emerald-500",
+          action: () => navigate('/cleaning-forecast'),
+        },
       ]
     }
   ];

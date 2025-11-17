@@ -35,6 +35,7 @@ import ClientPortalProfile from "./pages/ClientPortalProfile";
 import ClientPortalRequestService from "./pages/ClientPortalRequestService";
 import CustomerLogin from "./pages/CustomerLogin";
 import HADashboard from "./pages/HADashboard";
+import CleaningForecast from "./pages/CleaningForecast";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,11 @@ const App = () => (
             <Route path="/employees" element={
               <ProtectedRoute excludedRoles={['guest']}>
                 <Employees />
+              </ProtectedRoute>
+            } />
+            <Route path="/cleaning-forecast" element={
+              <ProtectedRoute excludedRoles={['guest']}>
+                <CleaningForecast />
               </ProtectedRoute>
             } />
             <Route path="/tsbs" element={<TSBs />} />
