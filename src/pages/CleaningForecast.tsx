@@ -15,6 +15,7 @@ const CleaningForecast = () => {
   const navigate = useNavigate();
   const [newCustomers, setNewCustomers] = useState(0);
   const [serviceFrequency, setServiceFrequency] = useState<'weekly' | 'biweekly'>('weekly');
+  const [avgNewCustomerRate, setAvgNewCustomerRate] = useState(50);
   const [avgServiceTime, setAvgServiceTime] = useState(60);
   const [workingHoursPerDay, setWorkingHoursPerDay] = useState(8);
   const [workingDaysPerWeek, setWorkingDaysPerWeek] = useState(5);
@@ -136,9 +137,16 @@ const CleaningForecast = () => {
     // Revenue calculations
     const weeklyRevenue = currentWeeklyRevenue; // Weekly customers pay every week
     const biweeklyRevenuePerWeek = currentBiweeklyRevenue / 2; // Bi-weekly customers pay every 2 weeks
-    const totalWeeklyRevenue = weeklyRevenue + biweeklyRevenuePerWeek;
+    
+    // Add new customer revenue
+    const newCustomerWeeklyRevenue = serviceFrequency === 'weekly' 
+      ? (newCustomers * avgNewCustomerRate) 
+      : (newCustomers * avgNewCustomerRate) / 2; // Bi-weekly customers contribute half per week
+    
+    const totalWeeklyRevenue = weeklyRevenue + biweeklyRevenuePerWeek + newCustomerWeeklyRevenue;
     const monthlyRevenue = totalWeeklyRevenue * 4.33; // Average weeks per month
     const annualRevenue = totalWeeklyRevenue * 52;
+    const newCustomerMonthlyRevenue = newCustomerWeeklyRevenue * 4.33;
 
     // Expense calculations
     const laborCostPerWeek = hoursPerWeek * hourlyWage;
@@ -166,6 +174,7 @@ const CleaningForecast = () => {
       weeklyRevenue: Math.round(totalWeeklyRevenue),
       monthlyRevenue: Math.round(monthlyRevenue),
       annualRevenue: Math.round(annualRevenue),
+      newCustomerMonthlyRevenue: Math.round(newCustomerMonthlyRevenue),
       // Expenses
       weeklyLaborCost: Math.round(laborCostPerWeek),
       monthlyLaborCost: Math.round(monthlyLaborCost),
@@ -273,6 +282,23 @@ const CleaningForecast = () => {
                       <option value="weekly">Weekly</option>
                       <option value="biweekly">Bi-weekly</option>
                     </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="avgNewCustomerRate">Avg Weekly Rate per New Customer ($)</Label>
+                    <Input
+                      id="avgNewCustomerRate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={avgNewCustomerRate}
+                      onChange={(e) => setAvgNewCustomerRate(parseFloat(e.target.value) || 50)}
+                    />
+                    {newCustomers > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        New customer monthly revenue: ${Math.round(forecast.newCustomerMonthlyRevenue)}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
