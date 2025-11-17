@@ -20,14 +20,33 @@ const CleaningForecast = () => {
   const { data: currentStats } = useQuery({
     queryKey: ['cleaning-forecast-stats'],
     queryFn: async () => {
-      const [customersResult, appointmentsResult] = await Promise.all([
-        supabase.from('customers').select('id', { count: 'exact', head: true }),
-        supabase.from('appointments').select('*').gte('appointment_date', new Date().toISOString().split('T')[0]),
-      ]);
+      // Get appointments with Weekly Cleaning or Weekly Chemical Test service types
+      const { data: weeklyAppointments, error } = await supabase
+        .from('appointments')
+        .select('customer_id, service_type')
+        .in('service_type', ['Weekly Cleaning', 'Weekly Chemical Test']);
+
+      if (error) {
+        console.error('Error fetching weekly appointments:', error);
+        return { totalCustomers: 0, upcomingAppointments: 0 };
+      }
+
+      // Count unique customers with weekly service appointments
+      const uniqueCustomers = new Set(
+        weeklyAppointments
+          ?.filter(apt => apt.customer_id)
+          .map(apt => apt.customer_id)
+      );
+
+      // Get upcoming appointments count
+      const { data: upcomingAppointments } = await supabase
+        .from('appointments')
+        .select('id')
+        .gte('appointment_date', new Date().toISOString().split('T')[0]);
 
       return {
-        totalCustomers: customersResult.count || 0,
-        upcomingAppointments: appointmentsResult.data?.length || 0,
+        totalCustomers: uniqueCustomers.size || 0,
+        upcomingAppointments: upcomingAppointments?.length || 0,
       };
     },
   });
