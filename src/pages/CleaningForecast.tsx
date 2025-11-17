@@ -20,18 +20,18 @@ const CleaningForecast = () => {
   const { data: currentStats } = useQuery({
     queryKey: ['cleaning-forecast-stats'],
     queryFn: async () => {
-      // Get appointments with Weekly Cleaning or Weekly Chemical Test service types
+      // Get appointments with Weekly Pool Cleaning service type
       const { data: weeklyAppointments, error } = await supabase
         .from('appointments')
         .select('customer_id, service_type')
-        .in('service_type', ['Weekly Cleaning', 'Weekly Chemical Test']);
+        .eq('service_type', 'Weekly Pool Cleaning');
 
       if (error) {
         console.error('Error fetching weekly appointments:', error);
         return { totalCustomers: 0, upcomingAppointments: 0 };
       }
 
-      // Count unique customers with weekly service appointments
+      // Count unique customers with weekly pool cleaning appointments
       const uniqueCustomers = new Set(
         weeklyAppointments
           ?.filter(apt => apt.customer_id)
