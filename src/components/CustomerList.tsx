@@ -58,7 +58,8 @@ export const CustomerList = () => {
       const { data, error } = await supabase
         .from('customer_service_details')
         .select('customer_id')
-        .eq('service_frequency', 'Weekly');
+        .not('service_frequency', 'is', null)
+        .neq('service_frequency', '');
 
       if (error) throw error;
       
