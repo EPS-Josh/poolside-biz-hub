@@ -46,7 +46,7 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set());
   const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
   const [viewingRecord, setViewingRecord] = useState<ServiceRecord | null>(null);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   const fetchServiceRecords = async () => {
     if (!user) return;
