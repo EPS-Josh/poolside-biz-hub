@@ -46,6 +46,7 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
   const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set());
   const [editingRecord, setEditingRecord] = useState<ServiceRecord | null>(null);
   const [viewingRecord, setViewingRecord] = useState<ServiceRecord | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   const fetchServiceRecords = async () => {
     if (!user) return;
@@ -157,20 +158,29 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Service History</CardTitle>
-          <ServiceRecordForm customerId={customerId} onSuccess={fetchServiceRecords} />
-        </CardHeader>
-        <CardContent>
-          {serviceRecords.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">No service records found</p>
-              <ServiceRecordForm customerId={customerId} onSuccess={fetchServiceRecords} />
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div className="flex items-center space-x-2">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent">
+                  {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              <CardTitle>Service History</CardTitle>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {serviceRecords.map((record) => (
+            <ServiceRecordForm customerId={customerId} onSuccess={fetchServiceRecords} />
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {serviceRecords.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No service records found</p>
+                  <ServiceRecordForm customerId={customerId} onSuccess={fetchServiceRecords} />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {serviceRecords.map((record) => (
                 <Card key={record.id} className="border-l-4 border-l-blue-500">
                   <Collapsible>
                     <CardHeader className="pb-3">
@@ -367,11 +377,13 @@ export const ServiceHistory = ({ customerId }: ServiceHistoryProps) => {
                     </CollapsibleContent>
                   </Collapsible>
                 </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {editingRecord && (
         <EditServiceRecordForm
