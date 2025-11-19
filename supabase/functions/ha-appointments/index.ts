@@ -12,11 +12,28 @@ serve(async (req) => {
   }
 
   try {
-    // Use service role key to bypass RLS for this public endpoint
-    const supabase = createClient(
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
     );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { date, user_id } = await req.json();
     
@@ -29,10 +46,25 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Verify user can only access their own appointments (unless admin)
+    const { data: userRoles } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+
+    const isAdmin = userRoles?.some(r => r.role === 'admin') || false;
+
+    if (!isAdmin && user.id !== user_id) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: You can only access your own appointments' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     console.log(`Fetching appointments for user ${user_id} on date: ${date}`);
 
-    const { data: appointments, error } = await supabase
+    const { data: appointments, error } = await supabaseClient
       .from('appointments')
       .select(`
         *,

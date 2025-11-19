@@ -33,4 +33,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.ha-appointments]
-verify_jwt = false
+verify_jwt = true
+
+[functions.geocode-customer]
+verify_jwt = true

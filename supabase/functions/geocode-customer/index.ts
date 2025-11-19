@@ -15,23 +15,48 @@ interface GeocodeRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const mapboxToken = Deno.env.get('MAPBOX_TOKEN');
-    if (!mapboxToken) {
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Mapbox token not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check user has admin or manager role
+    const { data: userRoles } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id);
+
+    const hasPermission = userRoles?.some(r => r.role === 'admin' || r.role === 'manager') || false;
+
+    if (!hasPermission) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Insufficient permissions to geocode customers' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { customerId, address, city, state, zipCode }: GeocodeRequest = await req.json();
 
@@ -42,24 +67,34 @@ serve(async (req) => {
       );
     }
 
-    // Build full address for geocoding
+    const mapboxToken = Deno.env.get('MAPBOX_TOKEN');
+    if (!mapboxToken) {
+      return new Response(
+        JSON.stringify({ error: 'Mapbox token not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const fullAddress = `${address}, ${city}, ${state} ${zipCode || ''}`.trim();
-    
     console.log(`Geocoding address for customer ${customerId}: ${fullAddress}`);
 
-    // Call Mapbox Geocoding API
     const geocodeUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(fullAddress)}.json?access_token=${mapboxToken}&country=US&proximity=-110.8,32.2`;
     
     const response = await fetch(geocodeUrl);
     const data = await response.json();
+
+    // Use service role only for the update operation after auth checks passed
+    const supabaseServiceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     if (data.features && data.features.length > 0) {
       const [longitude, latitude] = data.features[0].center;
       
       console.log(`Geocoded coordinates: ${latitude}, ${longitude}`);
 
-      // Update customer with geocoded coordinates
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseServiceClient
         .from('customers')
         .update({
           latitude,
@@ -88,8 +123,7 @@ serve(async (req) => {
     } else {
       console.log(`No geocoding results found for: ${fullAddress}`);
       
-      // Still update geocoded_at to mark as attempted
-      await supabase
+      await supabaseServiceClient
         .from('customers')
         .update({ geocoded_at: new Date().toISOString() })
         .eq('id', customerId);
