@@ -99,6 +99,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
   }>({ pumps: {}, filters: {}, heaters: {} });
 
   // Collapsible section states
+  const [serviceOpen, setServiceOpen] = useState(true);
   const [poolOpen, setPoolOpen] = useState(true);
   const [spaOpen, setSpaOpen] = useState(false);
   const [waterFeaturesOpen, setWaterFeaturesOpen] = useState(false);
@@ -233,6 +234,40 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Service & Billing - Collapsible */}
+          <Collapsible open={serviceOpen} onOpenChange={setServiceOpen}>
+            <CollapsibleTrigger className="flex items-center space-x-2 w-full text-left hover:bg-gray-50 p-2 rounded">
+              {serviceOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <FileText className="h-5 w-5 text-green-600" />
+              <h3 className="text-lg font-medium">Service & Billing</h3>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="service_frequency">Service Frequency</Label>
+                  <Input
+                    id="service_frequency"
+                    value={details.service_frequency || ''}
+                    onChange={(e) => updateField('service_frequency', e.target.value)}
+                    placeholder="e.g., Weekly, Bi-weekly, Monthly"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="weekly_rate">Weekly Service Rate ($)</Label>
+                  <Input
+                    id="weekly_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={details.weekly_rate || ''}
+                    onChange={(e) => updateField('weekly_rate', parseFloat(e.target.value) || undefined)}
+                    placeholder="Weekly rate charged"
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           {/* Pool Information - Collapsible */}
           <Collapsible open={poolOpen} onOpenChange={setPoolOpen}>
             <CollapsibleTrigger className="flex items-center space-x-2 w-full text-left hover:bg-gray-50 p-2 rounded">
@@ -570,27 +605,6 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                     value={details.gate_code || ''}
                     onChange={(e) => updateField('gate_code', e.target.value)}
                     placeholder="Gate access code"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="service_frequency">Service Frequency</Label>
-                  <Input
-                    id="service_frequency"
-                    value={details.service_frequency || ''}
-                    onChange={(e) => updateField('service_frequency', e.target.value)}
-                    placeholder="e.g., Weekly, Bi-weekly, Monthly"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="weekly_rate">Weekly Service Rate ($)</Label>
-                  <Input
-                    id="weekly_rate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={details.weekly_rate || ''}
-                    onChange={(e) => updateField('weekly_rate', parseFloat(e.target.value) || undefined)}
-                    placeholder="Weekly rate charged"
                   />
                 </div>
               </div>
