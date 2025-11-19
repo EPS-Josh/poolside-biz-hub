@@ -12,10 +12,11 @@ import { CustomerAccountManager } from '@/components/customers/CustomerAccountMa
 import { CustomerProfileHistory } from '@/components/CustomerProfileHistory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, User, Building, Mail, Phone, MapPin, Clock, UserX, ShieldCheck, FileText, FileImage } from 'lucide-react';
+import { ArrowLeft, User, Building, Mail, Phone, MapPin, Clock, UserX, ShieldCheck, FileText, FileImage, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Customer {
@@ -56,6 +57,7 @@ const CustomerDetails = () => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [companyName, setCompanyName] = useState('Your Company');
+  const [photosOpen, setPhotosOpen] = useState(false);
 
   const fetchCustomer = async () => {
     if (!user || !id) return;
@@ -299,7 +301,26 @@ const CustomerDetails = () => {
             <CustomerServiceForm customerId={customer.id} />
 
             {/* Photos Section */}
-            <CustomerPhotos customerId={customer.id} />
+            <Card className="mb-6">
+              <Collapsible open={photosOpen} onOpenChange={setPhotosOpen}>
+                <CardHeader className="cursor-pointer" onClick={() => setPhotosOpen(!photosOpen)}>
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between w-full">
+                      <CardTitle className="flex items-center gap-2">
+                        <FileImage className="h-5 w-5" />
+                        Customer Photos
+                      </CardTitle>
+                      <ChevronDown className={`h-5 w-5 transition-transform ${photosOpen ? 'transform rotate-180' : ''}`} />
+                    </div>
+                  </CollapsibleTrigger>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent>
+                    <CustomerPhotos customerId={customer.id} />
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
 
             {/* Plans, Prints, Drawings Section */}
             <CustomerPlansDrawings customerId={customer.id} />
