@@ -35,7 +35,102 @@ const handler = async (req: Request): Promise<Response> => {
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
     const requestData: ServiceRequestData = await req.json();
-    console.log('Received service request:', requestData);
+    
+    // Server-side validation
+    if (!requestData.firstName || typeof requestData.firstName !== 'string' || 
+        requestData.firstName.trim().length === 0 || requestData.firstName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid first name' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!requestData.lastName || typeof requestData.lastName !== 'string' ||
+        requestData.lastName.trim().length === 0 || requestData.lastName.length > 100) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid last name' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!requestData.email || typeof requestData.email !== 'string' ||
+        !emailRegex.test(requestData.email) || requestData.email.length > 255) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email address' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!requestData.phone || typeof requestData.phone !== 'string' ||
+        requestData.phone.trim().length === 0 || requestData.phone.length > 20) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid phone number' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!requestData.address || typeof requestData.address !== 'string' ||
+        requestData.address.trim().length === 0 || requestData.address.length > 500) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid address' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!requestData.serviceType || typeof requestData.serviceType !== 'string' ||
+        requestData.serviceType.length > 100) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid service type' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!requestData.preferredContactMethod || 
+        !['phone', 'email', 'either'].includes(requestData.preferredContactMethod.toLowerCase())) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid contact method' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (requestData.message && (typeof requestData.message !== 'string' || requestData.message.length > 2000)) {
+      return new Response(
+        JSON.stringify({ error: 'Message too long' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Basic rate limiting check
+    const clientIp = req.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimitKey = `service-request:${clientIp}`;
+    
+    const { data: recentRequests } = await supabaseClient
+      .from('rate_limit_log')
+      .select('request_count')
+      .eq('endpoint', 'send-service-request-email')
+      .eq('identifier', clientIp)
+      .gte('window_start', new Date(Date.now() - 3600000).toISOString())
+      .maybeSingle();
+
+    if (recentRequests && recentRequests.request_count >= 5) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Log the request for rate limiting
+    await supabaseClient
+      .from('rate_limit_log')
+      .insert({
+        endpoint: 'send-service-request-email',
+        identifier: clientIp,
+        request_count: (recentRequests?.request_count || 0) + 1,
+        window_start: new Date().toISOString()
+      });
+
+    console.log('Service request validated:', requestData);
 
     // Insert into database
     const { data: serviceRequest, error: dbError } = await supabaseClient
