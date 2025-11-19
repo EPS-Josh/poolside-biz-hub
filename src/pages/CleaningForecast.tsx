@@ -43,7 +43,7 @@ const CleaningForecast = () => {
             )
           )
         `)
-        .in('service_type', ['Weekly Pool Cleaning', 'Bi-Weekly Pool Cleaning'])
+        .in('service_type', ['Weekly Pool Cleaning', 'Weekly Chemical Test', 'Bi-Weekly Pool Cleaning'])
         .gte('appointment_date', today)
         .order('appointment_date');
 
@@ -73,7 +73,7 @@ const CleaningForecast = () => {
             };
             
             // Classify based on their CURRENT (first) appointment type
-            if (apt.service_type === 'Weekly Pool Cleaning') {
+            if (apt.service_type === 'Weekly Pool Cleaning' || apt.service_type === 'Weekly Chemical Test') {
               weeklyMap.set(apt.customer_id, customerData);
               totalWeeklyRevenue += weeklyRate;
             } else if (apt.service_type === 'Bi-Weekly Pool Cleaning') {
