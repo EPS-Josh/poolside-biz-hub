@@ -56,15 +56,14 @@ export const CustomerList = () => {
     queryKey: ['weekly-customer-ids'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('appointments')
+        .from('customer_service_details')
         .select('customer_id')
-        .in('service_type', ['Weekly Pool Cleaning', 'Weekly Chemical Test'])
-        .not('customer_id', 'is', null);
+        .eq('service_frequency', 'Weekly');
 
       if (error) throw error;
       
       // Get unique customer IDs
-      const uniqueIds = [...new Set(data?.map(apt => apt.customer_id).filter(Boolean))];
+      const uniqueIds = [...new Set(data?.map(detail => detail.customer_id).filter(Boolean))];
       return uniqueIds as string[];
     },
     enabled: weeklyFilter,
