@@ -100,8 +100,8 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
   }>({ pumps: {}, filters: {}, heaters: {} });
 
   // Collapsible section states
-  const [serviceOpen, setServiceOpen] = useState(true);
-  const [poolOpen, setPoolOpen] = useState(true);
+  const [serviceOpen, setServiceOpen] = useState(false);
+  const [poolOpen, setPoolOpen] = useState(false);
   const [spaOpen, setSpaOpen] = useState(false);
   const [waterFeaturesOpen, setWaterFeaturesOpen] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
