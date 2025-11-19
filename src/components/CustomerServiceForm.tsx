@@ -28,6 +28,7 @@ interface CustomerServiceDetails {
   access_instructions?: string;
   chemical_preferences?: string;
   service_frequency?: string;
+  service_description?: string;
   weekly_rate?: number;
   special_notes?: string;
 }
@@ -245,12 +246,21 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="service_frequency">Service Frequency</Label>
-                  <Input
-                    id="service_frequency"
+                  <Select
                     value={details.service_frequency || ''}
-                    onChange={(e) => updateField('service_frequency', e.target.value)}
-                    placeholder="e.g., Weekly, Bi-weekly, Monthly"
-                  />
+                    onValueChange={(value) => updateField('service_frequency', value)}
+                  >
+                    <SelectTrigger id="service_frequency">
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Weekly">Weekly</SelectItem>
+                      <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
+                      <SelectItem value="Monthly">Monthly</SelectItem>
+                      <SelectItem value="Quarterly">Quarterly</SelectItem>
+                      <SelectItem value="Annually">Annually</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="weekly_rate">Weekly Service Rate ($)</Label>
@@ -264,6 +274,16 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                     placeholder="Weekly rate charged"
                   />
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="service_description">Description of Service</Label>
+                <Textarea
+                  id="service_description"
+                  value={details.service_description || ''}
+                  onChange={(e) => updateField('service_description', e.target.value)}
+                  placeholder="Describe the services provided"
+                  rows={3}
+                />
               </div>
             </CollapsibleContent>
           </Collapsible>
