@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -43,11 +44,36 @@ export const CustomerList = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [weeklyFilter, setWeeklyFilter] = useState(false);
   const { customers, loading, fetchCustomers } = useCustomers(searchTerm);
   const [showForm, setShowForm] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showEmailCampaign, setShowEmailCampaign] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+
+  // Fetch weekly customer IDs when filter is active
+  const { data: weeklyCustomerIds } = useQuery({
+    queryKey: ['weekly-customer-ids'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('customer_id')
+        .in('service_type', ['Weekly Pool Cleaning', 'Weekly Chemical Test'])
+        .not('customer_id', 'is', null);
+
+      if (error) throw error;
+      
+      // Get unique customer IDs
+      const uniqueIds = [...new Set(data?.map(apt => apt.customer_id).filter(Boolean))];
+      return uniqueIds as string[];
+    },
+    enabled: weeklyFilter,
+  });
+
+  // Filter customers based on weekly filter
+  const filteredCustomers = weeklyFilter && weeklyCustomerIds
+    ? customers.filter(customer => weeklyCustomerIds.includes(customer.id))
+    : customers;
 
   const handleFormSuccess = () => {
     fetchCustomers();
@@ -130,6 +156,8 @@ export const CustomerList = () => {
         onAddCustomer={handleAddCustomer}
         onBulkUpload={handleBulkUpload}
         onEmailCampaign={handleEmailCampaign}
+        filterActive={weeklyFilter}
+        onFilterToggle={() => setWeeklyFilter(!weeklyFilter)}
       />
       
       <CardContent>
@@ -139,18 +167,22 @@ export const CustomerList = () => {
           placeholder="Search by name, email, pool builder, or location..."
         />
 
-        {customers.length === 0 && !searchTerm ? (
+        {filteredCustomers.length === 0 && !searchTerm && !weeklyFilter ? (
           <EmptyCustomerState
             onAddCustomer={handleAddCustomer}
             onBulkUpload={handleBulkUpload}
           />
-        ) : customers.length === 0 && searchTerm ? (
+        ) : filteredCustomers.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500">No customers found matching "{searchTerm}"</p>
+            <p className="text-gray-500">
+              {weeklyFilter 
+                ? "No weekly customers found" 
+                : `No customers found matching "${searchTerm}"`}
+            </p>
           </div>
         ) : isMobile ? (
           <div className="space-y-3">
-            {customers.map((customer) => (
+            {filteredCustomers.map((customer) => (
               <CustomerCard 
                 key={customer.id} 
                 customer={customer}
@@ -161,7 +193,7 @@ export const CustomerList = () => {
           </div>
         ) : (
           <CustomerTable 
-            customers={customers}
+            customers={filteredCustomers}
             onCustomerClick={handleCustomerClick}
             onEditCustomer={handleEditCustomer}
             onDeleteCustomer={handleDeleteCustomer}
@@ -197,7 +229,7 @@ export const CustomerList = () => {
             </DialogDescription>
           </DialogHeader>
           <CustomerEmailCampaign 
-            customers={customers} 
+            customers={filteredCustomers} 
             onClose={handleCloseEmailCampaign} 
           />
         </DialogContent>
