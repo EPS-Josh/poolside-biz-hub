@@ -479,6 +479,7 @@ export type Database = {
           pool_equipment: string | null
           pool_size: string | null
           pool_type: string | null
+          service_description: string | null
           service_frequency: string | null
           spa_equipment: string | null
           spa_type: string | null
@@ -497,6 +498,7 @@ export type Database = {
           pool_equipment?: string | null
           pool_size?: string | null
           pool_type?: string | null
+          service_description?: string | null
           service_frequency?: string | null
           spa_equipment?: string | null
           spa_type?: string | null
@@ -515,6 +517,7 @@ export type Database = {
           pool_equipment?: string | null
           pool_size?: string | null
           pool_type?: string | null
+          service_description?: string | null
           service_frequency?: string | null
           spa_equipment?: string | null
           spa_type?: string | null
