@@ -28,6 +28,9 @@ interface Customer {
   previous_first_name?: string;
   previous_last_name?: string;
   customer_user_id?: string;
+  sms_opt_in?: boolean;
+  sms_opt_in_date?: string;
+  phone_verified?: boolean;
 }
 
 export const useCustomers = (searchTerm: string = '') => {
