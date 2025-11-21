@@ -9,6 +9,7 @@ import { Search, Phone, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { SmsMessageComposer } from '@/components/sms/SmsMessageComposer';
 import { SmsLogsViewer } from '@/components/sms/SmsLogsViewer';
+import { SmsOptInRequestSender } from '@/components/sms/SmsOptInRequestSender';
 
 export default function SmsOptIn() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,9 +29,14 @@ export default function SmsOptIn() {
           </p>
         </div>
 
-        <div className="space-y-6 mb-6">
-          <SmsMessageComposer customers={optedInCustomers} />
-          <SmsLogsViewer />
+        <div className="grid gap-6 lg:grid-cols-2 mb-6">
+          <div className="space-y-6">
+            <SmsOptInRequestSender />
+            <SmsMessageComposer customers={optedInCustomers} />
+          </div>
+          <div>
+            <SmsLogsViewer />
+          </div>
         </div>
 
         <Card>
