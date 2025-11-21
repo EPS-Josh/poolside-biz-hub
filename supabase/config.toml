@@ -1,4 +1,3 @@
-
 project_id = "fsqztictdjcguzchlcdf"
 
 [api]
@@ -36,4 +35,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.geocode-customer]
+verify_jwt = true
+
+[functions.send-sms]
 verify_jwt = true
