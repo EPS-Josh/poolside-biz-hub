@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Phone, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { SmsMessageComposer } from '@/components/sms/SmsMessageComposer';
 
 export default function SmsOptIn() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +25,10 @@ export default function SmsOptIn() {
           <p className="text-muted-foreground">
             Customers who have opted in to receive text messages from Finest Pools & Spas LLC
           </p>
+        </div>
+
+        <div className="mb-6">
+          <SmsMessageComposer customers={optedInCustomers} />
         </div>
 
         <Card>
