@@ -24,7 +24,7 @@ export const SmsOptInRequestSender = () => {
   const { toast } = useToast();
 
   // Compliance-friendly opt-in message template
-  const optInMessage = `Hi {firstName}, this is {YourCompanyName}. We'd like to send you pool service updates and reminders via text. Reply YES to opt in. Message and data rates may apply. Reply STOP to opt out anytime.`;
+  const optInMessage = `Hi {firstName}, this is Finest Pools & Spas LLC. We'd like to send you pool service updates and reminders via text. Reply YES to opt in. Message and data rates may apply. Reply STOP to opt out anytime.`;
 
   useEffect(() => {
     fetchNonOptedInCustomers();
@@ -74,8 +74,7 @@ export const SmsOptInRequestSender = () => {
     return text
       .replace(/{firstName}/g, customer.first_name)
       .replace(/{lastName}/g, customer.last_name)
-      .replace(/{fullName}/g, `${customer.first_name} ${customer.last_name}`)
-      .replace(/{YourCompanyName}/g, 'Your Company'); // User should customize this
+      .replace(/{fullName}/g, `${customer.first_name} ${customer.last_name}`);
   };
 
   const handleSendRequests = async () => {
@@ -83,16 +82,6 @@ export const SmsOptInRequestSender = () => {
       toast({
         title: "Error",
         description: "Please select at least one customer",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if user has customized the company name
-    if (optInMessage.includes('{YourCompanyName}')) {
-      toast({
-        title: "Action Required",
-        description: "Please edit the message to replace {YourCompanyName} with your actual company name",
         variant: "destructive",
       });
       return;
@@ -182,7 +171,7 @@ export const SmsOptInRequestSender = () => {
             className="resize-none bg-muted"
           />
           <p className="text-xs text-muted-foreground">
-            Note: Replace {"{YourCompanyName}"} with your actual company name in your implementation
+            Placeholders like {"{firstName}"} will be replaced with customer-specific information
           </p>
         </div>
 
