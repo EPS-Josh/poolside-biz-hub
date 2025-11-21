@@ -271,6 +271,21 @@ const Splash = () => {
             </div>
             <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
               <p>© 2025 Finest Pools & Spas LLC. Keeping your pool perfect, one service at a time.</p>
+              <div className="flex justify-center gap-4 mt-4">
+                <button 
+                  onClick={() => navigate('/privacy-policy')}
+                  className="hover:text-white transition-colors underline"
+                >
+                  Privacy Policy
+                </button>
+                <span>•</span>
+                <button 
+                  onClick={() => navigate('/eula')}
+                  className="hover:text-white transition-colors underline"
+                >
+                  Terms & Conditions
+                </button>
+              </div>
             </div>
           </div>
         </footer>
