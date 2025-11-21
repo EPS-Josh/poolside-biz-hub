@@ -124,6 +124,7 @@ export const SmsMessageComposer = ({ customers }: SmsMessageComposerProps) => {
           body: {
             to: customer.phone,
             message: personalizedMessage,
+            customerId: customer.id,
           },
         });
 

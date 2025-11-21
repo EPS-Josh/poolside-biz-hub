@@ -58,7 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { to, message }: SendSmsRequest = await req.json();
+    const { to, message, customerId }: SendSmsRequest & { customerId?: string } = await req.json();
 
     if (!to || !message) {
       throw new Error('Missing required fields: to and message');
@@ -72,42 +72,77 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending SMS to:', to);
 
-    // Send SMS via Twilio
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-    const formData = new URLSearchParams();
-    formData.append('To', to);
-    formData.append('From', twilioPhoneNumber!);
-    formData.append('Body', message);
+    let messageSid: string | null = null;
+    let smsStatus = 'pending';
+    let errorMsg: string | null = null;
 
-    const twilioResponse = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + btoa(`${twilioAccountSid}:${twilioAuthToken}`),
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString(),
-    });
+    try {
+      // Send SMS via Twilio
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+      const formData = new URLSearchParams();
+      formData.append('To', to);
+      formData.append('From', twilioPhoneNumber!);
+      formData.append('Body', message);
 
-    if (!twilioResponse.ok) {
-      const errorData = await twilioResponse.json();
-      console.error('Twilio API error:', errorData);
-      throw new Error(`Twilio API error: ${errorData.message || 'Unknown error'}`);
-    }
+      const twilioResponse = await fetch(twilioUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`${twilioAccountSid}:${twilioAuthToken}`),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+      });
 
-    const twilioData = await twilioResponse.json();
-    console.log('SMS sent successfully:', twilioData.sid);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        messageSid: twilioData.sid,
-        status: twilioData.status 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      if (!twilioResponse.ok) {
+        const errorData = await twilioResponse.json();
+        console.error('Twilio API error:', errorData);
+        errorMsg = errorData.message || 'Unknown error';
+        smsStatus = 'failed';
+        throw new Error(`Twilio API error: ${errorMsg}`);
       }
-    );
+
+      const twilioData = await twilioResponse.json();
+      console.log('SMS sent successfully:', twilioData.sid);
+      
+      messageSid = twilioData.sid;
+      smsStatus = twilioData.status || 'sent';
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          messageSid: twilioData.sid,
+          status: twilioData.status 
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    } finally {
+      // Log the SMS attempt to the database (whether successful or failed)
+      try {
+        const { error: logError } = await supabase
+          .from('sms_logs')
+          .insert({
+            user_id: user.id,
+            customer_id: customerId || null,
+            phone_number: to,
+            message_content: message,
+            message_sid: messageSid,
+            status: smsStatus,
+            error_message: errorMsg,
+            sent_at: new Date().toISOString(),
+          });
+
+        if (logError) {
+          console.error('Failed to log SMS to database:', logError);
+        } else {
+          console.log('SMS logged to database successfully');
+        }
+      } catch (dbError) {
+        console.error('Error logging SMS to database:', dbError);
+      }
+    }
   } catch (error: any) {
     console.error('Error in send-sms function:', error);
     return new Response(

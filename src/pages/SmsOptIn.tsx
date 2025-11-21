@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Phone, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { SmsMessageComposer } from '@/components/sms/SmsMessageComposer';
+import { SmsLogsViewer } from '@/components/sms/SmsLogsViewer';
 
 export default function SmsOptIn() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,8 +28,9 @@ export default function SmsOptIn() {
           </p>
         </div>
 
-        <div className="mb-6">
+        <div className="space-y-6 mb-6">
           <SmsMessageComposer customers={optedInCustomers} />
+          <SmsLogsViewer />
         </div>
 
         <Card>
