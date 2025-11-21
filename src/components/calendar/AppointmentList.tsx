@@ -273,16 +273,16 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
 
                 {/* Action buttons contained within card */}
                 <div className="flex flex-wrap justify-end gap-2 pt-3 border-t border-gray-100">
-                  {appointment.customers?.customer_service_details?.[0] && 
-                   (appointment.customers.customer_service_details[0].gate_code || 
-                    appointment.customers.customer_service_details[0].access_instructions) && (
+                  {appointment.customers?.customer_service_details && 
+                   (appointment.customers.customer_service_details.gate_code || 
+                    appointment.customers.customer_service_details.access_instructions) && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setAccessInfoDialog({
                         isOpen: true,
-                        gateCode: appointment.customers.customer_service_details[0].gate_code,
-                        accessInstructions: appointment.customers.customer_service_details[0].access_instructions,
+                        gateCode: appointment.customers.customer_service_details.gate_code,
+                        accessInstructions: appointment.customers.customer_service_details.access_instructions,
                       })}
                       className="flex items-center gap-1 text-xs"
                     >
