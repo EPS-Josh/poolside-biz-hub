@@ -17,7 +17,8 @@ import {
   Calendar,
   FileText,
   ClipboardList,
-  Bell
+  Bell,
+  MessageSquare
 } from 'lucide-react';
 
 
@@ -55,6 +56,13 @@ const Menu = () => {
           icon: Users,
           color: "bg-blue-500",
           action: () => navigate('/customers'),
+        },
+        {
+          title: "Customer Messaging",
+          description: "Manage SMS opt-ins and customer communications",
+          icon: MessageSquare,
+          color: "bg-cyan-500",
+          action: () => navigate('/sms-opt-in'),
         },
       ]
     },
