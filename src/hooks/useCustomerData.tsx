@@ -15,6 +15,9 @@ export interface CustomerData {
   company?: string;
   notes?: string;
   customer_user_id?: string;
+  sms_opt_in?: boolean;
+  sms_opt_in_date?: string;
+  phone_verified?: boolean;
 }
 
 export const useCustomerData = () => {

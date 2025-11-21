@@ -37,6 +37,7 @@ import CustomerLogin from "./pages/CustomerLogin";
 import HADashboard from "./pages/HADashboard";
 import CleaningForecast from "./pages/CleaningForecast";
 import BulkRateUpdate from "./pages/BulkRateUpdate";
+import SmsOptIn from "./pages/SmsOptIn";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,11 @@ const App = () => (
             <Route path="/client-portal/profile" element={<ClientPortalProfile />} />
             <Route path="/client-portal/request-service" element={<ClientPortalRequestService />} />
             <Route path="/ha-dashboard" element={<HADashboard />} />
+            <Route path="/sms-opt-in" element={
+              <ProtectedRoute excludedRoles={['guest']}>
+                <SmsOptIn />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
