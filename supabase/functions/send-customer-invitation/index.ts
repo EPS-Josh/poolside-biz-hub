@@ -37,21 +37,17 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create a client with the user's token for authentication verification
+    // Extract the JWT token
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create anon client for JWT verification
     const supabaseAuth = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      }
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
     
-    // Verify the JWT using anon client with user's token
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    // Verify the JWT by passing the token directly
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     
     if (userError || !user) {
       console.error('Invalid authentication:', userError);
