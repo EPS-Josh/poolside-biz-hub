@@ -96,7 +96,7 @@ const handler = async (req: Request): Promise<Response> => {
     }: InvitationRequest = await req.json();
 
     // Get the application URL from parameter or request referer
-    const baseUrl = appUrl || req.headers.get('referer')?.split('/customer')[0] || 'https://lovableproject.com';
+    const baseUrl = appUrl || req.headers.get('referer')?.split('/customer')[0] || 'https://poolside.fps-tucson.com';
 
     console.log('Creating invitation for customer:', customerId, email);
 
