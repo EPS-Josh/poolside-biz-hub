@@ -37,27 +37,36 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Extract the JWT token
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Create anon client for JWT verification
-    const supabaseAuth = createClient(
+    // Create authenticated client using the user's JWT
+    const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
     );
-    
-    // Verify the JWT by passing the token directly
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
-    
-    if (userError || !user) {
-      console.error('Invalid authentication:', userError);
+
+    // Verify authentication by checking user roles (this will fail if token is invalid)
+    const { data: roles, error: rolesError } = await supabaseClient
+      .from('user_roles')
+      .select('role, user_id');
+
+    if (rolesError || !roles || roles.length === 0) {
+      console.error('Authentication failed or no roles found:', rolesError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        JSON.stringify({ error: 'Unauthorized - Invalid token or no roles assigned' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User authenticated:', user.id);
+    const userId = roles[0].user_id;
+    const userRoles = roles.map(r => r.role);
+    
+    console.log('User authenticated:', userId, 'Roles:', userRoles);
     
     // Create service role client for admin operations
     const supabase = createClient(
@@ -66,31 +75,17 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     // Check if user has admin or manager role
-    const { data: roles, error: rolesError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id);
-
-    if (rolesError) {
-      console.error('Error checking user roles:', rolesError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to verify permissions' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userRoles = roles?.map(r => r.role) || [];
     const hasPermission = userRoles.includes('admin') || userRoles.includes('manager');
 
     if (!hasPermission) {
-      console.error('User lacks required role:', user.id, userRoles);
+      console.error('User lacks required role:', userId, userRoles);
       return new Response(
         JSON.stringify({ error: 'Forbidden - Admin or Manager role required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User authorized:', user.id, userRoles);
+    console.log('User authorized:', userId, userRoles);
 
     const {
       customerId, 
