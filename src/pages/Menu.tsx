@@ -18,8 +18,7 @@ import {
   FileText,
   ClipboardList,
   Bell,
-  MessageSquare,
-  Upload
+  MessageSquare
 } from 'lucide-react';
 
 
@@ -77,13 +76,6 @@ const Menu = () => {
           icon: Package,
           color: "bg-orange-500",
           action: () => navigate('/inventory'),
-        },
-        {
-          title: "Pool360 Import",
-          description: "Import Pool360 catalog CSV data",
-          icon: Upload,
-          color: "bg-pink-500",
-          action: () => navigate('/inventory/pool360-import'),
         },
         {
           title: "Appointment Calendar",
