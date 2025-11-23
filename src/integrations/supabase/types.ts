@@ -662,9 +662,12 @@ export type Database = {
           cost_price: number | null
           created_at: string
           description: string | null
+          epool_item_number: string | null
           fps_item_number: string | null
           fps_sales_price: number | null
           height: number | null
+          heritage_item_number: string | null
+          horizon_item_number: string | null
           id: string
           item_number: string | null
           item_status: string | null
@@ -677,6 +680,8 @@ export type Database = {
           pieces_per_case: number | null
           pieces_per_pallet: number | null
           pieces_per_part: number | null
+          pool360_item_number: string | null
+          pwp_item_number: string | null
           quantity_in_stock: number
           sku: string | null
           solution: string | null
@@ -704,9 +709,12 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          epool_item_number?: string | null
           fps_item_number?: string | null
           fps_sales_price?: number | null
           height?: number | null
+          heritage_item_number?: string | null
+          horizon_item_number?: string | null
           id?: string
           item_number?: string | null
           item_status?: string | null
@@ -719,6 +727,8 @@ export type Database = {
           pieces_per_case?: number | null
           pieces_per_pallet?: number | null
           pieces_per_part?: number | null
+          pool360_item_number?: string | null
+          pwp_item_number?: string | null
           quantity_in_stock?: number
           sku?: string | null
           solution?: string | null
@@ -746,9 +756,12 @@ export type Database = {
           cost_price?: number | null
           created_at?: string
           description?: string | null
+          epool_item_number?: string | null
           fps_item_number?: string | null
           fps_sales_price?: number | null
           height?: number | null
+          heritage_item_number?: string | null
+          horizon_item_number?: string | null
           id?: string
           item_number?: string | null
           item_status?: string | null
@@ -761,6 +774,8 @@ export type Database = {
           pieces_per_case?: number | null
           pieces_per_pallet?: number | null
           pieces_per_part?: number | null
+          pool360_item_number?: string | null
+          pwp_item_number?: string | null
           quantity_in_stock?: number
           sku?: string | null
           solution?: string | null
