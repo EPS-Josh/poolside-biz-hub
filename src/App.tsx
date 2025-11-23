@@ -41,6 +41,7 @@ import SmsOptIn from "./pages/SmsOptIn";
 import SupplierManagement from "./pages/SupplierManagement";
 import SupplierPriceEntry from "./pages/SupplierPriceEntry";
 import SupplierPriceComparison from "./pages/SupplierPriceComparison";
+import Pool360Import from "./pages/Pool360Import";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/inventory/suppliers" element={<SupplierManagement />} />
             <Route path="/inventory/price-entry" element={<SupplierPriceEntry />} />
             <Route path="/inventory/price-comparison" element={<SupplierPriceComparison />} />
+            <Route path="/inventory/pool360-import" element={<Pool360Import />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/employees" element={
               <ProtectedRoute excludedRoles={['guest']}>
