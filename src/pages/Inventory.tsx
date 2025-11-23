@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, MoreHorizontal, History } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, MoreHorizontal, History, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 import { InventoryHistory } from "@/components/InventoryHistory";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 
 interface InventoryItem {
   id: string;
@@ -78,6 +79,7 @@ const Inventory = () => {
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: inventoryItems = [], isLoading } = useQuery({
     queryKey: ["inventory-items"],
@@ -725,6 +727,10 @@ const Inventory = () => {
               <p className="text-muted-foreground">Track and manage your inventory items</p>
             </div>
             <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => navigate("/inventory/suppliers")}>
+                <Building2 className="mr-2 h-4 w-4" />
+                Suppliers
+              </Button>
               <InventoryBulkUpload />
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
