@@ -38,6 +38,9 @@ import HADashboard from "./pages/HADashboard";
 import CleaningForecast from "./pages/CleaningForecast";
 import BulkRateUpdate from "./pages/BulkRateUpdate";
 import SmsOptIn from "./pages/SmsOptIn";
+import SupplierManagement from "./pages/SupplierManagement";
+import SupplierPriceEntry from "./pages/SupplierPriceEntry";
+import SupplierPriceComparison from "./pages/SupplierPriceComparison";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +68,9 @@ const App = () => (
             } />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/inventory" element={<Inventory />} />
+            <Route path="/inventory/suppliers" element={<SupplierManagement />} />
+            <Route path="/inventory/price-entry" element={<SupplierPriceEntry />} />
+            <Route path="/inventory/price-comparison" element={<SupplierPriceComparison />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/employees" element={
               <ProtectedRoute excludedRoles={['guest']}>
