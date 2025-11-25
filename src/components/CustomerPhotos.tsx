@@ -211,23 +211,14 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <div>Loading photos...</div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-8">
+        <div>Loading photos...</div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Camera className="h-5 w-5" />
-          <span>Customer Photos</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div>
         {/* Upload Section */}
         <div className="mb-6">
           <Label htmlFor="photo-upload" className="block mb-2">
@@ -328,7 +319,6 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
             )}
           </DialogContent>
         </Dialog>
-      </CardContent>
-    </Card>
+      </div>
   );
 };
