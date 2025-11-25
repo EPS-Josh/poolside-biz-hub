@@ -303,70 +303,70 @@ const CustomerDetails = () => {
             <CustomerServiceForm customerId={customer.id} />
 
             {/* Photos Section */}
-            <Card className="mb-6">
+            <div className="mb-6">
               <Collapsible open={photosOpen} onOpenChange={setPhotosOpen}>
-                <CardHeader className="cursor-pointer" onClick={() => setPhotosOpen(!photosOpen)}>
-                  <CollapsibleTrigger asChild>
-                    <div className="flex items-center justify-between w-full">
-                      <CardTitle className="flex items-center gap-2">
-                        <FileImage className="h-5 w-5" />
-                        Customer Photos
-                      </CardTitle>
-                      <ChevronDown className={`h-5 w-5 transition-transform ${photosOpen ? 'transform rotate-180' : ''}`} />
-                    </div>
-                  </CollapsibleTrigger>
-                </CardHeader>
-                <CollapsibleContent>
-                  <CardContent>
+                <Card>
+                  <CardHeader className="cursor-pointer" onClick={() => setPhotosOpen(!photosOpen)}>
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between w-full">
+                        <CardTitle className="flex items-center gap-2">
+                          <FileImage className="h-5 w-5" />
+                          Customer Photos
+                        </CardTitle>
+                        <ChevronDown className={`h-5 w-5 transition-transform ${photosOpen ? 'transform rotate-180' : ''}`} />
+                      </div>
+                    </CollapsibleTrigger>
+                  </CardHeader>
+                  <CollapsibleContent>
                     <CustomerPhotos customerId={customer.id} />
-                  </CardContent>
-                </CollapsibleContent>
+                  </CollapsibleContent>
+                </Card>
               </Collapsible>
-            </Card>
+            </div>
 
             {/* Plans, Prints, Drawings Section */}
-            <Card className="mb-6">
+            <div className="mb-6">
               <Collapsible open={plansOpen} onOpenChange={setPlansOpen}>
-                <CardHeader className="cursor-pointer" onClick={() => setPlansOpen(!plansOpen)}>
-                  <CollapsibleTrigger asChild>
-                    <div className="flex items-center justify-between w-full">
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Plans, Prints, Drawings
-                      </CardTitle>
-                      <ChevronDown className={`h-5 w-5 transition-transform ${plansOpen ? 'transform rotate-180' : ''}`} />
-                    </div>
-                  </CollapsibleTrigger>
-                </CardHeader>
-                <CollapsibleContent>
-                  <CardContent>
+                <Card>
+                  <CardHeader className="cursor-pointer" onClick={() => setPlansOpen(!plansOpen)}>
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between w-full">
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Plans, Prints, Drawings
+                        </CardTitle>
+                        <ChevronDown className={`h-5 w-5 transition-transform ${plansOpen ? 'transform rotate-180' : ''}`} />
+                      </div>
+                    </CollapsibleTrigger>
+                  </CardHeader>
+                  <CollapsibleContent>
                     <CustomerPlansDrawings customerId={customer.id} />
-                  </CardContent>
-                </CollapsibleContent>
+                  </CollapsibleContent>
+                </Card>
               </Collapsible>
-            </Card>
+            </div>
 
             {/* Scanned Documents Section */}
-            <Card className="mb-6">
+            <div className="mb-6">
               <Collapsible open={documentsOpen} onOpenChange={setDocumentsOpen}>
-                <CardHeader className="cursor-pointer" onClick={() => setDocumentsOpen(!documentsOpen)}>
-                  <CollapsibleTrigger asChild>
-                    <div className="flex items-center justify-between w-full">
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Scanned Documents
-                      </CardTitle>
-                      <ChevronDown className={`h-5 w-5 transition-transform ${documentsOpen ? 'transform rotate-180' : ''}`} />
-                    </div>
-                  </CollapsibleTrigger>
-                </CardHeader>
-                <CollapsibleContent>
-                  <CardContent>
+                <Card>
+                  <CardHeader className="cursor-pointer" onClick={() => setDocumentsOpen(!documentsOpen)}>
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between w-full">
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Scanned Documents
+                        </CardTitle>
+                        <ChevronDown className={`h-5 w-5 transition-transform ${documentsOpen ? 'transform rotate-180' : ''}`} />
+                      </div>
+                    </CollapsibleTrigger>
+                  </CardHeader>
+                  <CollapsibleContent>
                     <CustomerScannedDocuments customerId={customer.id} />
-                  </CardContent>
-                </CollapsibleContent>
+                  </CollapsibleContent>
+                </Card>
               </Collapsible>
-            </Card>
+            </div>
 
             {/* Previous Owner Information */}
             {customer.owner_changed_date && customer.previous_first_name && customer.previous_last_name && (
