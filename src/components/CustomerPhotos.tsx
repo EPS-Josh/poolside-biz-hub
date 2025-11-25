@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Image as ImageIcon, Expand } from 'lucide-react';
+import { WaterDropLoader } from '@/components/ui/water-drop-loader';
 
 interface CustomerPhoto {
   id: string;
@@ -242,11 +243,7 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div>Loading photos...</div>
-      </div>
-    );
+    return <WaterDropLoader />;
   }
 
   return (
