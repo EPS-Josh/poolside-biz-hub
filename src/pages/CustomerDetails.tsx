@@ -318,7 +318,9 @@ const CustomerDetails = () => {
                     </CollapsibleTrigger>
                   </CardHeader>
                   <CollapsibleContent>
-                    <CustomerPhotos customerId={customer.id} />
+                    <CardContent>
+                      <CustomerPhotos customerId={customer.id} />
+                    </CardContent>
                   </CollapsibleContent>
                 </Card>
               </Collapsible>
@@ -340,7 +342,9 @@ const CustomerDetails = () => {
                     </CollapsibleTrigger>
                   </CardHeader>
                   <CollapsibleContent>
-                    <CustomerPlansDrawings customerId={customer.id} />
+                    <CardContent>
+                      <CustomerPlansDrawings customerId={customer.id} />
+                    </CardContent>
                   </CollapsibleContent>
                 </Card>
               </Collapsible>
@@ -362,7 +366,9 @@ const CustomerDetails = () => {
                     </CollapsibleTrigger>
                   </CardHeader>
                   <CollapsibleContent>
-                    <CustomerScannedDocuments customerId={customer.id} />
+                    <CardContent>
+                      <CustomerScannedDocuments customerId={customer.id} />
+                    </CardContent>
                   </CollapsibleContent>
                 </Card>
               </Collapsible>
