@@ -12,6 +12,7 @@ interface CustomerPhoto {
   id: string;
   file_name: string;
   file_path: string;
+  signedUrl?: string;
   file_size?: number;
   file_type?: string;
   description?: string;
@@ -29,19 +30,28 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
   const [selectedPhoto, setSelectedPhoto] = useState<CustomerPhoto | null>(null);
   const { toast } = useToast();
 
-  const getPublicUrl = (filePath: string) => {
-    // If it's already a full URL, return it
-    if (filePath.startsWith('http')) {
-      return filePath;
+  const getSignedUrl = async (filePath: string): Promise<string> => {
+    try {
+      // Extract the storage path from the URL or use as-is
+      let storagePath = filePath;
+      if (filePath.startsWith('http')) {
+        // Extract path after /customer-photos/
+        const match = filePath.match(/customer-photos\/(.+)$/);
+        if (match) {
+          storagePath = match[1];
+        }
+      }
+      
+      const { data, error } = await supabase.storage
+        .from('customer-photos')
+        .createSignedUrl(storagePath, 3600); // 1 hour expiry
+      
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error generating signed URL:', error);
+      return filePath; // Fallback to original path
     }
-    
-    // Otherwise, extract the file name and generate public URL
-    const fileName = filePath.includes('/') ? filePath : `${customerId}/${filePath}`;
-    const { data } = supabase.storage
-      .from('customer-photos')
-      .getPublicUrl(fileName);
-    
-    return data.publicUrl;
   };
 
   const fetchPhotos = async () => {
@@ -54,7 +64,15 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
 
       if (error) throw error;
 
-      setPhotos(data || []);
+      // Generate signed URLs for all photos
+      const photosWithSignedUrls = await Promise.all(
+        (data || []).map(async (photo) => ({
+          ...photo,
+          signedUrl: await getSignedUrl(photo.file_path)
+        }))
+      );
+
+      setPhotos(photosWithSignedUrls);
     } catch (error) {
       console.error('Error fetching photos:', error);
       toast({
@@ -270,7 +288,7 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
               <div key={photo.id} className="border rounded-lg overflow-hidden">
                 <div className="relative group">
                   <img
-                    src={getPublicUrl(photo.file_path)}
+                    src={photo.signedUrl || photo.file_path}
                     alt={photo.file_name}
                     className="w-full h-48 object-cover cursor-pointer transition-opacity hover:opacity-90"
                     onClick={() => setSelectedPhoto(photo)}
@@ -315,7 +333,7 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
             {selectedPhoto && (
               <div className="relative w-full h-full flex items-center justify-center bg-black">
                 <img
-                  src={getPublicUrl(selectedPhoto.file_path)}
+                  src={selectedPhoto.signedUrl || selectedPhoto.file_path}
                   alt={selectedPhoto.file_name}
                   className="max-w-full max-h-full object-contain"
                 />
