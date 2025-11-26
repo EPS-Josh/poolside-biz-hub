@@ -21,6 +21,7 @@ import Manuals from "./pages/Manuals";
 import PartsDiagrams from "./pages/PartsDiagrams";
 import EULA from "./pages/EULA";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import SmsNotifications from "./pages/SmsNotifications";
 import { Employees } from "./pages/Employees";
 import CustomerMapPage from "./pages/CustomerMap";
 import PropertyVerification from "./pages/PropertyVerification";
@@ -98,6 +99,7 @@ const App = () => (
           <Route path="/parts-diagrams/:category" element={<PartsDiagrams />} />
           <Route path="/eula" element={<EULA />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/sms-notifications" element={<SmsNotifications />} />
             {/* Customer Login */}
             <Route path="/customer-login" element={<CustomerLogin />} />
             {/* Client Portal Routes */}
