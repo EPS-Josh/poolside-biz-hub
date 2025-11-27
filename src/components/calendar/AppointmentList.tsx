@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
-import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw, KeyRound } from 'lucide-react';
+import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw, KeyRound, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
@@ -56,6 +56,8 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
             last_name,
             address,
             city,
+            phone,
+            sms_opt_in,
             customer_service_details (
               gate_code,
               access_instructions
@@ -128,6 +130,24 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
     onError: (error) => {
       console.error('Error deleting appointment:', error);
       toast.error('Failed to delete appointment');
+    }
+  });
+
+  const sendEnRouteSMS = useMutation({
+    mutationFn: async ({ phone, message }: { phone: string; message: string }) => {
+      const { data, error } = await supabase.functions.invoke('send-sms', {
+        body: { to: phone, message }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('En route message sent successfully');
+    },
+    onError: (error) => {
+      console.error('Error sending SMS:', error);
+      toast.error('Failed to send message');
     }
   });
 
@@ -288,6 +308,24 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                     >
                       <KeyRound className="h-3 w-3" />
                       <span>Access Info</span>
+                    </Button>
+                  )}
+                  {appointment.customers?.sms_opt_in && appointment.customers?.phone && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const message = `Your technician is en route for your scheduled service appointment today at ${appointment.appointment_time}.`;
+                        sendEnRouteSMS.mutate({ 
+                          phone: appointment.customers.phone, 
+                          message 
+                        });
+                      }}
+                      disabled={sendEnRouteSMS.isPending}
+                      className="flex items-center gap-1 text-xs"
+                    >
+                      <Send className="h-3 w-3" />
+                      <span>En Route</span>
                     </Button>
                   )}
                   <Button
