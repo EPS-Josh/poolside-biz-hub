@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { UserPlus, Mail, Trash2, Shield } from 'lucide-react';
+import { UserPlus, Mail, Trash2, Shield, Key } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface CustomerAccountManagerProps {
   customerId: string;
@@ -36,6 +46,8 @@ export const CustomerAccountManager = ({
 }: CustomerAccountManagerProps) => {
   const [sending, setSending] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [tempPassword, setTempPassword] = useState('');
   const { toast } = useToast();
   const { session } = useAuth();
 
@@ -45,7 +57,7 @@ export const CustomerAccountManager = ({
     }
   }, [session]);
 
-  const handleSendInvitation = async () => {
+  const handleSendInvitation = async (customPassword?: string) => {
     if (!session) {
       toast({
         title: "Authentication Required",
@@ -72,6 +84,7 @@ export const CustomerAccountManager = ({
           lastName: customerLastName,
           companyName,
           appUrl: window.location.origin,
+          temporaryPassword: customPassword,
         },
       });
 
@@ -79,7 +92,7 @@ export const CustomerAccountManager = ({
 
       toast({
         title: "Invitation Sent",
-        description: `Portal invitation sent to ${customerEmail}`,
+        description: `Portal invitation sent to ${customerEmail}${customPassword ? ' with custom password' : ''}`,
       });
 
       onAccountLinked();
@@ -93,6 +106,21 @@ export const CustomerAccountManager = ({
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSetPassword = async () => {
+    if (!tempPassword || tempPassword.length < 6) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await handleSendInvitation(tempPassword);
+    setShowPasswordDialog(false);
+    setTempPassword('');
   };
 
   const handleResendInvitation = async () => {
@@ -158,7 +186,7 @@ export const CustomerAccountManager = ({
           </p>
         </div>
         <Button
-          onClick={handleSendInvitation}
+          onClick={() => handleSendInvitation()}
           disabled={sending || !customerEmail}
           size="sm"
         >
@@ -181,6 +209,15 @@ export const CustomerAccountManager = ({
         </div>
         <div className="flex gap-2">
           <Button
+            onClick={() => setShowPasswordDialog(true)}
+            disabled={sending}
+            variant="outline"
+            size="sm"
+          >
+            <Key className="h-4 w-4 mr-2" />
+            Set Password
+          </Button>
+          <Button
             onClick={handleResendInvitation}
             disabled={sending}
             variant="outline"
@@ -199,6 +236,41 @@ export const CustomerAccountManager = ({
           </Button>
         </div>
       </div>
+
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Set Temporary Password</DialogTitle>
+            <DialogDescription>
+              Set a temporary password for {customerFirstName} {customerLastName}. 
+              They will be required to change it on first login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="temp-password">Temporary Password</Label>
+              <Input
+                id="temp-password"
+                type="text"
+                placeholder="Enter temporary password (min 6 characters)"
+                value={tempPassword}
+                onChange={(e) => setTempPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowPasswordDialog(false);
+              setTempPassword('');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSetPassword} disabled={sending}>
+              {sending ? "Setting..." : "Set Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
