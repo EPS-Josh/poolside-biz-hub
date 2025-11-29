@@ -441,6 +441,43 @@ export const QuickBooksIntegration = () => {
     return invoiceSyncs.find(sync => sync.service_record_id === serviceRecordId);
   };
 
+  const unmatchRecord = async (serviceRecordId: string) => {
+    try {
+      const syncStatus = getSyncStatus(serviceRecordId);
+      if (!syncStatus) return;
+
+      // Delete from quickbooks_invoice_sync table
+      const { error: deleteError } = await supabase
+        .from('quickbooks_invoice_sync')
+        .delete()
+        .eq('id', syncStatus.id);
+
+      if (deleteError) throw deleteError;
+
+      // Update service record status back to ready_for_qb
+      const { error: updateError } = await supabase
+        .from('service_records')
+        .update({ invoicing_status: 'ready_for_qb' })
+        .eq('id', serviceRecordId);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Success",
+        description: "Record unmatched successfully",
+      });
+
+      loadData();
+    } catch (error) {
+      console.error('Error unmatching record:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unmatch record",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -825,7 +862,20 @@ export const QuickBooksIntegration = () => {
                            record.invoicing_status}
                         </Badge>
                         {isAlreadyMatched && (
-                          <Badge variant="outline">Already Matched</Badge>
+                          <>
+                            <Badge variant="outline">Already Matched</Badge>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                unmatchRecord(record.id);
+                              }}
+                              className="h-6 px-2 text-xs"
+                            >
+                              Un-match
+                            </Button>
+                          </>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
