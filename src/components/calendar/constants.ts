@@ -16,7 +16,8 @@ export const SERVICES = [
   'Inspection',
   'Consultation',
   'Follow up - No Charge',
-  'Collar Set'
+  'Collar Set',
+  'Pentair Warranty Call'
 ];
 
 // Service types for forms that need value/label pairs
@@ -37,7 +38,8 @@ export const SERVICE_TYPES = [
   { value: 'Inspection', label: 'Inspection' },
   { value: 'Consultation', label: 'Consultation' },
   { value: 'Follow up - No Charge', label: 'Follow up - No Charge' },
-  { value: 'Collar Set', label: 'Collar Set' }
+  { value: 'Collar Set', label: 'Collar Set' },
+  { value: 'Pentair Warranty Call', label: 'Pentair Warranty Call' }
 ];
 
 export const TIME_SLOTS = [
