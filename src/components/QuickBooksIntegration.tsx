@@ -64,6 +64,7 @@ export const QuickBooksIntegration = () => {
   const [filterUnsyncedOnly, setFilterUnsyncedOnly] = useState(false);
   const [filterUnmatchedInvoices, setFilterUnmatchedInvoices] = useState(false);
   const [filterUnmatchedRecords, setFilterUnmatchedRecords] = useState(false);
+  const [filterByCustomerName, setFilterByCustomerName] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -723,6 +724,15 @@ export const QuickBooksIntegration = () => {
               Match Service Records to Invoice
               <div className="flex items-center gap-2">
                 <Button 
+                  onClick={() => setFilterByCustomerName(!filterByCustomerName)}
+                  size="sm"
+                  variant={filterByCustomerName ? "default" : "outline"}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  {filterByCustomerName ? "Matching Names" : "All Customers"}
+                </Button>
+                <Button 
                   onClick={() => setFilterUnmatchedRecords(!filterUnmatchedRecords)}
                   size="sm"
                   variant={filterUnmatchedRecords ? "default" : "outline"}
@@ -759,8 +769,22 @@ export const QuickBooksIntegration = () => {
               
               {allServiceRecords
                 .filter((record) => {
-                  if (!filterUnmatchedRecords) return true;
-                  return !getSyncStatus(record.id);
+                  // First apply the unmatched filter
+                  if (filterUnmatchedRecords && getSyncStatus(record.id)) {
+                    return false;
+                  }
+                  
+                  // Then apply customer name filter if enabled
+                  if (filterByCustomerName) {
+                    const invoice = qbInvoices.find(inv => inv.id === matchingMode);
+                    if (invoice?.customer_ref?.name) {
+                      const invoiceCustomerName = invoice.customer_ref.name.toLowerCase();
+                      const recordCustomerName = `${record.customers.first_name} ${record.customers.last_name}`.toLowerCase();
+                      return recordCustomerName.includes(invoiceCustomerName) || invoiceCustomerName.includes(recordCustomerName);
+                    }
+                  }
+                  
+                  return true;
                 })
                 .map((record) => {
                   const isSelected = selectedServiceRecords.includes(record.id);
