@@ -65,6 +65,7 @@ export const QuickBooksIntegration = () => {
   const [filterUnmatchedInvoices, setFilterUnmatchedInvoices] = useState(false);
   const [filterUnmatchedRecords, setFilterUnmatchedRecords] = useState(false);
   const [filterByCustomerName, setFilterByCustomerName] = useState(true);
+  const [filterNotToBeInvoiced, setFilterNotToBeInvoiced] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -103,7 +104,7 @@ export const QuickBooksIntegration = () => {
 
       setServiceRecords(recordsData || []);
 
-      // Load all service records for manual matching
+      // Load all service records for manual matching (increased limit)
       const { data: allRecordsData } = await supabase
         .from('service_records')
         .select(`
@@ -117,7 +118,7 @@ export const QuickBooksIntegration = () => {
           )
         `)
         .order('service_date', { ascending: false })
-        .limit(100);
+        .limit(500);
 
       setAllServiceRecords(allRecordsData || []);
 
@@ -742,6 +743,15 @@ export const QuickBooksIntegration = () => {
                   {filterUnmatchedRecords ? "Show All" : "Unmatched Only"}
                 </Button>
                 <Button 
+                  onClick={() => setFilterNotToBeInvoiced(!filterNotToBeInvoiced)}
+                  size="sm"
+                  variant={filterNotToBeInvoiced ? "default" : "outline"}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  {filterNotToBeInvoiced ? "Hide Non-Invoiced" : "Show All"}
+                </Button>
+                <Button 
                   onClick={saveMatches}
                   disabled={selectedServiceRecords.length === 0}
                   size="sm"
@@ -769,12 +779,17 @@ export const QuickBooksIntegration = () => {
               
               {allServiceRecords
                 .filter((record) => {
-                  // First apply the unmatched filter
+                  // Apply the unmatched filter
                   if (filterUnmatchedRecords && getSyncStatus(record.id)) {
                     return false;
                   }
                   
-                  // Then apply customer name filter if enabled
+                  // Apply "not to be invoiced" filter
+                  if (filterNotToBeInvoiced && record.invoicing_status === 'not_to_be_invoiced') {
+                    return false;
+                  }
+                  
+                  // Apply customer name filter if enabled
                   if (filterByCustomerName) {
                     const invoice = qbInvoices.find(inv => inv.id === matchingMode);
                     if (invoice?.customer_ref?.name) {
