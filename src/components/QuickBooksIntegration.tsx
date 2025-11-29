@@ -200,7 +200,8 @@ export const QuickBooksIntegration = () => {
       if (error) throw error;
 
       if (data.oauth_url) {
-        window.open(data.oauth_url, '_blank', 'width=600,height=700');
+        // Navigate to QuickBooks in the same window for better OAuth support
+        window.location.href = data.oauth_url;
       } else {
         throw new Error('Failed to generate OAuth URL');
       }
