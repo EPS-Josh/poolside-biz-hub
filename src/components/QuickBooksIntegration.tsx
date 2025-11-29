@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ExternalLink, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Loader2, ExternalLink, RefreshCw, CheckCircle, AlertCircle, Filter } from 'lucide-react';
 import { parseDateFromDatabase, toPhoenixTime } from '@/utils/phoenixTimeUtils';
 
 interface QuickBooksConnection {
@@ -61,6 +61,9 @@ export const QuickBooksIntegration = () => {
   const [fetchingInvoices, setFetchingInvoices] = useState(false);
   const [matchingMode, setMatchingMode] = useState<string | null>(null);
   const [selectedServiceRecords, setSelectedServiceRecords] = useState<string[]>([]);
+  const [filterUnsyncedOnly, setFilterUnsyncedOnly] = useState(false);
+  const [filterUnmatchedInvoices, setFilterUnmatchedInvoices] = useState(false);
+  const [filterUnmatchedRecords, setFilterUnmatchedRecords] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -511,13 +514,24 @@ export const QuickBooksIntegration = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Invoice Sync
-              <Button 
-                onClick={clearInvoicesToSync}
-                size="sm"
-                variant="outline"
-              >
-                Clear List
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => setFilterUnsyncedOnly(!filterUnsyncedOnly)}
+                  size="sm"
+                  variant={filterUnsyncedOnly ? "default" : "outline"}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  {filterUnsyncedOnly ? "Show All" : "Unsynced Only"}
+                </Button>
+                <Button 
+                  onClick={clearInvoicesToSync}
+                  size="sm"
+                  variant="outline"
+                >
+                  Clear List
+                </Button>
+              </div>
             </CardTitle>
             <CardDescription>
               Sync your service records as invoices to QuickBooks Online
@@ -530,9 +544,15 @@ export const QuickBooksIntegration = () => {
                   No service records found
                 </p>
               ) : (
-                serviceRecords.map((record) => {
-                  const syncStatus = getSyncStatus(record.id);
-                  const isSyncing = syncing === record.id;
+                serviceRecords
+                  .filter((record) => {
+                    if (!filterUnsyncedOnly) return true;
+                    const syncStatus = getSyncStatus(record.id);
+                    return !syncStatus || syncStatus.sync_status === 'error' || syncStatus.sync_status === 'pending';
+                  })
+                  .map((record) => {
+                    const syncStatus = getSyncStatus(record.id);
+                    const isSyncing = syncing === record.id;
                   
                   return (
                     <div
@@ -603,17 +623,28 @@ export const QuickBooksIntegration = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               QuickBooks Invoices
-              <Button 
-                onClick={fetchQBInvoices}
-                disabled={fetchingInvoices}
-                size="sm"
-                variant="outline"
-              >
-                {fetchingInvoices ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Fetch Invoices
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => setFilterUnmatchedInvoices(!filterUnmatchedInvoices)}
+                  size="sm"
+                  variant={filterUnmatchedInvoices ? "default" : "outline"}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  {filterUnmatchedInvoices ? "Show All" : "Unmatched Only"}
+                </Button>
+                <Button 
+                  onClick={fetchQBInvoices}
+                  disabled={fetchingInvoices}
+                  size="sm"
+                  variant="outline"
+                >
+                  {fetchingInvoices ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : null}
+                  Fetch Invoices
+                </Button>
+              </div>
             </CardTitle>
             <CardDescription>
               View existing invoices from QuickBooks Online and manually match them with service records
@@ -626,9 +657,15 @@ export const QuickBooksIntegration = () => {
                   Click "Fetch Invoices" to load invoices from QuickBooks
                 </p>
               ) : (
-                qbInvoices.map((invoice) => {
-                  // Check if this invoice is already matched with a service record
-                  const matchedSync = invoiceSyncs.find(sync => sync.quickbooks_invoice_id === invoice.id);
+                qbInvoices
+                  .filter((invoice) => {
+                    if (!filterUnmatchedInvoices) return true;
+                    const matchedSync = invoiceSyncs.find(sync => sync.quickbooks_invoice_id === invoice.id);
+                    return !matchedSync;
+                  })
+                  .map((invoice) => {
+                    // Check if this invoice is already matched with a service record
+                    const matchedSync = invoiceSyncs.find(sync => sync.quickbooks_invoice_id === invoice.id);
                   
                   return (
                     <div
@@ -686,6 +723,15 @@ export const QuickBooksIntegration = () => {
               Match Service Records to Invoice
               <div className="flex items-center gap-2">
                 <Button 
+                  onClick={() => setFilterUnmatchedRecords(!filterUnmatchedRecords)}
+                  size="sm"
+                  variant={filterUnmatchedRecords ? "default" : "outline"}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  {filterUnmatchedRecords ? "Show All" : "Unmatched Only"}
+                </Button>
+                <Button 
                   onClick={saveMatches}
                   disabled={selectedServiceRecords.length === 0}
                   size="sm"
@@ -711,9 +757,14 @@ export const QuickBooksIntegration = () => {
                 Matching Invoice: <strong>#{qbInvoices.find(inv => inv.id === matchingMode)?.doc_number}</strong>
               </div>
               
-              {allServiceRecords.map((record) => {
-                const isSelected = selectedServiceRecords.includes(record.id);
-                const isAlreadyMatched = getSyncStatus(record.id);
+              {allServiceRecords
+                .filter((record) => {
+                  if (!filterUnmatchedRecords) return true;
+                  return !getSyncStatus(record.id);
+                })
+                .map((record) => {
+                  const isSelected = selectedServiceRecords.includes(record.id);
+                  const isAlreadyMatched = getSyncStatus(record.id);
                 
                 return (
                   <div
