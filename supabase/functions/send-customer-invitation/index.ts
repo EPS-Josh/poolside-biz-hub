@@ -114,13 +114,27 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('User already exists:', existingUser.id);
       authUserId = existingUser.id;
       
-      // Update user metadata
-      await supabase.auth.admin.updateUserById(existingUser.id, {
-        user_metadata: {
-          full_name: `${firstName} ${lastName}`,
-          is_customer: true,
-        },
-      });
+      // If a temporary password was provided, update the user's password
+      if (temporaryPassword) {
+        tempPassword = temporaryPassword;
+        await supabase.auth.admin.updateUserById(existingUser.id, {
+          password: tempPassword,
+          user_metadata: {
+            full_name: `${firstName} ${lastName}`,
+            is_customer: true,
+            requires_password_change: true,
+          },
+        });
+        console.log('Updated existing user password');
+      } else {
+        // Just update metadata without password change
+        await supabase.auth.admin.updateUserById(existingUser.id, {
+          user_metadata: {
+            full_name: `${firstName} ${lastName}`,
+            is_customer: true,
+          },
+        });
+      }
     } else {
       // Use provided password or create a temporary password
       tempPassword = temporaryPassword || crypto.randomUUID().slice(0, 12);
@@ -452,12 +466,193 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     } else {
-      // User already exists, send portal access notification
-      console.log("User already exists, sending portal access notification");
+      // User already exists - if temp password was set, send it; otherwise just notify
+      console.log("User already exists", tempPassword ? "with new password" : "sending access notification");
       
       const loginUrl = `${baseUrl}/customer-login`;
       
-      const htmlContent = `
+      // If a temp password was set, show credentials; otherwise just notify of access
+      const htmlContent = tempPassword ? `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>${companyName} - Password Reset</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              margin: 0;
+              padding: 0;
+              background-color: #f0f9ff;
+            }
+            .email-container {
+              max-width: 600px;
+              margin: 40px auto;
+              background-color: #ffffff;
+              border-radius: 12px;
+              overflow: hidden;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+              background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+              padding: 40px 30px;
+              text-align: center;
+            }
+            .logo {
+              max-width: 280px;
+              height: auto;
+              margin-bottom: 20px;
+            }
+            .header-text {
+              color: #ffffff;
+              font-size: 24px;
+              font-weight: 600;
+              margin: 0;
+            }
+            .content {
+              padding: 40px 30px;
+            }
+            .greeting {
+              font-size: 18px;
+              color: #1f2937;
+              margin-bottom: 20px;
+              font-weight: 500;
+            }
+            .message {
+              color: #4b5563;
+              font-size: 15px;
+              margin-bottom: 20px;
+              line-height: 1.6;
+            }
+            .credentials-box {
+              background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+              border: 2px solid #0891b2;
+              padding: 24px;
+              border-radius: 8px;
+              margin: 30px 0;
+            }
+            .credentials-title {
+              color: #0c4a6e;
+              font-size: 18px;
+              font-weight: 600;
+              margin: 0 0 16px 0;
+            }
+            .credential-item {
+              margin: 12px 0;
+              font-size: 15px;
+            }
+            .credential-label {
+              color: #0c4a6e;
+              font-weight: 600;
+              display: inline-block;
+              min-width: 140px;
+            }
+            .credential-value {
+              color: #1e293b;
+              font-family: 'Courier New', monospace;
+              background-color: #ffffff;
+              padding: 6px 12px;
+              border-radius: 4px;
+              display: inline-block;
+              margin-left: 8px;
+            }
+            .security-note {
+              background-color: #fef3c7;
+              border-left: 4px solid #f59e0b;
+              padding: 16px;
+              margin: 24px 0;
+              border-radius: 4px;
+              font-size: 14px;
+              color: #92400e;
+            }
+            .button-container {
+              text-align: center;
+              margin: 32px 0;
+            }
+            .button {
+              display: inline-block;
+              padding: 16px 40px;
+              background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+              color: #ffffff !important;
+              text-decoration: none;
+              border-radius: 8px;
+              font-weight: 600;
+              font-size: 16px;
+              box-shadow: 0 4px 6px rgba(8, 145, 178, 0.3);
+            }
+            .support-text {
+              font-size: 14px;
+              color: #6b7280;
+              text-align: center;
+              margin-top: 24px;
+            }
+            .footer {
+              background-color: #1e293b;
+              padding: 30px;
+              text-align: center;
+            }
+            .footer-text {
+              color: #94a3b8;
+              font-size: 13px;
+              margin: 8px 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="email-container">
+            <div class="header">
+              <img 
+                src="${baseUrl}/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
+                alt="${companyName} Logo" 
+                class="logo"
+              />
+              <p class="header-text">Password Reset</p>
+            </div>
+            
+            <div class="content">
+              <p class="greeting">Hello ${firstName},</p>
+              
+              <p class="message">
+                Your ${companyName} client portal password has been reset. Use the temporary password below to log in.
+              </p>
+              
+              <div class="credentials-box">
+                <h3 class="credentials-title">🔐 Your Login Credentials</h3>
+                <div class="credential-item">
+                  <span class="credential-label">Email:</span>
+                  <span class="credential-value">${email}</span>
+                </div>
+                <div class="credential-item">
+                  <span class="credential-label">Temporary Password:</span>
+                  <span class="credential-value">${tempPassword}</span>
+                </div>
+              </div>
+              
+              <div class="security-note">
+                <strong>⚠️ Important Security Notice:</strong><br/>
+                For your security, you will be required to change this temporary password on your first login.
+              </div>
+              
+              <div class="button-container">
+                <a href="${loginUrl}" class="button">Log In to Portal</a>
+              </div>
+              
+              <p class="support-text">
+                Need help? Contact us at <strong>(520) 728-3002</strong>
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p class="footer-text">© 2025 ${companyName}</p>
+              <p class="footer-text">PO Box 40144, Tucson, AZ 85717</p>
+            </div>
+          </div>
+        </body>
+      </html>
+      ` : `
       <!DOCTYPE html>
       <html>
         <head>
@@ -689,7 +884,9 @@ const handler = async (req: Request): Promise<Response> => {
       const emailResponse = await resend.emails.send({
         from: `${companyName} <portal@finestpoolsandspas.com>`,
         to: [email],
-        subject: `${companyName} Client Portal Access Granted`,
+        subject: tempPassword 
+          ? `${companyName} - Password Reset` 
+          : `${companyName} Client Portal Access Granted`,
         html: htmlContent,
       });
 
@@ -698,7 +895,10 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error(`Failed to send email: ${emailResponse.error.message}`);
       }
 
-      console.log("Portal access notification sent successfully:", emailResponse);
+      console.log(tempPassword 
+        ? "Password reset email sent successfully:" 
+        : "Portal access notification sent successfully:", 
+        emailResponse);
 
       return new Response(
         JSON.stringify({ 
