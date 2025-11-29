@@ -17,6 +17,7 @@ interface InvitationRequest {
   lastName: string;
   companyName: string;
   appUrl?: string;
+  temporaryPassword?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -93,7 +94,8 @@ const handler = async (req: Request): Promise<Response> => {
       firstName, 
       lastName,
       companyName,
-      appUrl
+      appUrl,
+      temporaryPassword
     }: InvitationRequest = await req.json();
 
     // Get the application URL from parameter or request referer
@@ -120,8 +122,8 @@ const handler = async (req: Request): Promise<Response> => {
         },
       });
     } else {
-      // Create a temporary password
-      tempPassword = crypto.randomUUID().slice(0, 12);
+      // Use provided password or create a temporary password
+      tempPassword = temporaryPassword || crypto.randomUUID().slice(0, 12);
 
       // Create auth user account
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
