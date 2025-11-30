@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ServiceRecordViewer } from '@/components/ServiceRecordViewer';
 import { EditServiceRecordForm } from '@/components/EditServiceRecordForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -46,6 +47,7 @@ export const ServiceRecordsList = () => {
   const [serviceRecords, setServiceRecords] = useState<ServiceRecordWithCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [invoicingStatusFilter, setInvoicingStatusFilter] = useState<string>('all');
   const [viewingRecord, setViewingRecord] = useState<ServiceRecordWithCustomer | null>(null);
   const [editingRecord, setEditingRecord] = useState<ServiceRecordWithCustomer | null>(null);
 
@@ -88,12 +90,18 @@ export const ServiceRecordsList = () => {
     fetchServiceRecords();
   }, [user]);
 
-  const filteredRecords = serviceRecords.filter(record =>
-    record.customers?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.customers?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.service_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.technician_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRecords = serviceRecords.filter(record => {
+    const matchesSearch = 
+      record.customers?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.customers?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.service_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.technician_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesInvoicingStatus = 
+      invoicingStatusFilter === 'all' || record.invoicing_status === invoicingStatusFilter;
+    
+    return matchesSearch && matchesInvoicingStatus;
+  });
 
   const handleDelete = async (recordId: string) => {
     try {
@@ -251,14 +259,29 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by customer name, service type, or technician..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-md"
-              />
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by customer name, service type, or technician..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-md"
+                />
+              </div>
+              <Select value={invoicingStatusFilter} onValueChange={setInvoicingStatusFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by invoicing status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="ready_for_qb">Ready for QB</SelectItem>
+                  <SelectItem value="synced_to_qb">Synced to QB</SelectItem>
+                  <SelectItem value="not_to_be_invoiced">Not to be Invoiced</SelectItem>
+                  <SelectItem value="connected_to_future_record">Connected to Future Record</SelectItem>
+                  <SelectItem value="bill_to_company">Bill to Company</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {filteredRecords.length === 0 ? (
@@ -275,6 +298,7 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
                       <TableHead>Service Type</TableHead>
                       <TableHead>Technician</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Invoicing</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -301,6 +325,15 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
                         <TableCell>
                           <Badge className={getStatusColor(record.service_status || 'completed')}>
                             {record.service_status || 'Completed'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {record.invoicing_status === 'ready_for_qb' && 'Ready for QB'}
+                            {record.invoicing_status === 'synced_to_qb' && 'Synced to QB'}
+                            {record.invoicing_status === 'not_to_be_invoiced' && 'Not Invoiced'}
+                            {record.invoicing_status === 'connected_to_future_record' && 'Future Record'}
+                            {record.invoicing_status === 'bill_to_company' && 'Bill to Company'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
