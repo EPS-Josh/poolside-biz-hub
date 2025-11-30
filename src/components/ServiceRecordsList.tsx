@@ -103,6 +103,35 @@ export const ServiceRecordsList = () => {
     return matchesSearch && matchesInvoicingStatus;
   });
 
+  const restoreInvoicingStatus = async () => {
+    try {
+      const { error } = await supabase
+        .from('service_records')
+        .update({ 
+          invoicing_status: 'ready_for_qb',
+          updated_at: new Date().toISOString()
+        })
+        .neq('service_type', 'Consultation')
+        .eq('invoicing_status', 'not_to_be_invoiced');
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Updated service records back to Ready for QB",
+      });
+      
+      fetchServiceRecords();
+    } catch (error) {
+      console.error('Error updating records:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update service records",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDelete = async (recordId: string) => {
     try {
       const { error } = await supabase
@@ -266,9 +295,16 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
                   placeholder="Search by customer name, service type, or technician..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="max-w-md"
+                  className="flex-1"
                 />
               </div>
+              <Button
+                onClick={restoreInvoicingStatus}
+                variant="outline"
+                size="sm"
+              >
+                Restore Non-Consultation to Ready for QB
+              </Button>
               <Select value={invoicingStatusFilter} onValueChange={setInvoicingStatusFilter}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filter by invoicing status" />
