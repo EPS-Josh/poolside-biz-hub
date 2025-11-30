@@ -504,10 +504,10 @@ serve(async (req) => {
           return response;
         };
 
-        // Fetch recent invoices from QuickBooks
-        console.log('Fetching invoices from QuickBooks...');
+        // Fetch all invoices from QuickBooks (up to 1000 max per QB API)
+        console.log('Fetching all invoices from QuickBooks...');
         const invoicesResponse = await makeQBRequest(
-          `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice MAXRESULTS 50`,
+          `${quickbooksBaseUrl}/query?query=SELECT * FROM Invoice MAXRESULTS 1000`,
           {
             method: 'GET',
           }
