@@ -18,7 +18,8 @@ import {
   FileText,
   ClipboardList,
   Bell,
-  MessageSquare
+  MessageSquare,
+  Droplets
 } from 'lucide-react';
 
 
@@ -63,6 +64,13 @@ const Menu = () => {
           icon: MessageSquare,
           color: "bg-cyan-500",
           action: () => navigate('/sms-opt-in'),
+        },
+        {
+          title: "Cleaning Pricing",
+          description: "View pool cleaning service pricing by pool size",
+          icon: Droplets,
+          color: "bg-sky-500",
+          action: () => navigate('/cleaning-pricing'),
         },
       ]
     },
