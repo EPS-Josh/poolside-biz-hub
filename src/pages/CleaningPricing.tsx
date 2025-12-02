@@ -160,6 +160,7 @@ const CleaningPricing = () => {
                       <div className="mb-6">
                         <span className="text-4xl font-bold text-foreground">${tier.weeklyPrice}</span>
                         <span className="text-muted-foreground">/week</span>
+                        <div className="text-sm text-muted-foreground mt-1">+ chemicals</div>
                       </div>
                       <ul className="space-y-2 text-left mb-6">
                         {tier.features.map((feature, featureIndex) => (
