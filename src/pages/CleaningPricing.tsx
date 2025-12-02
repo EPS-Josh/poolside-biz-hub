@@ -10,7 +10,7 @@ const CleaningPricing = () => {
     {
       name: "Small Pool",
       size: "Up to 10,000 gallons",
-      weeklyPrice: 125,
+      weeklyPrice: 40,
       color: "bg-blue-500",
       features: [
         "Weekly pool cleaning",
@@ -25,7 +25,7 @@ const CleaningPricing = () => {
     {
       name: "Medium Pool",
       size: "10,001 - 20,000 gallons",
-      weeklyPrice: 150,
+      weeklyPrice: 50,
       color: "bg-cyan-500",
       features: [
         "Weekly pool cleaning",
@@ -41,7 +41,7 @@ const CleaningPricing = () => {
     {
       name: "Large Pool",
       size: "20,001 - 40,000 gallons",
-      weeklyPrice: 185,
+      weeklyPrice: 60,
       color: "bg-indigo-500",
       features: [
         "Weekly pool cleaning",
@@ -58,7 +58,7 @@ const CleaningPricing = () => {
     {
       name: "Extra Large Pool",
       size: "40,001+ gallons",
-      weeklyPrice: 225,
+      weeklyPrice: 75,
       color: "bg-purple-500",
       features: [
         "Weekly pool cleaning",
