@@ -205,7 +205,8 @@ const CleaningPricing = () => {
 
             {/* Repair Pricing */}
             <div className="mt-8 bg-card rounded-lg border p-6">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Repair Services</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-1">Repair Services</h2>
+              <p className="text-muted-foreground mb-4">Exclusive rates for weekly & bi-weekly cleaning customers</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
                   <h3 className="font-semibold text-foreground mb-2">Quick Repairs</h3>
