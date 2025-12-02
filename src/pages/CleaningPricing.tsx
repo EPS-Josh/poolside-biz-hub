@@ -3,7 +3,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Check, Droplets, Sparkles, Shield, Clock } from 'lucide-react';
+import { Check, Droplets, Sparkles, Shield, Clock, Smartphone, Bell, FileText, Camera } from 'lucide-react';
 
 const CleaningPricing = () => {
   const pricingTiers = [
@@ -228,6 +228,44 @@ const CleaningPricing = () => {
                   <p className="text-sm text-muted-foreground">
                     First hour at $125, then $60/hr thereafter, plus parts.
                   </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Technology Section */}
+            <div className="mt-8 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/20 p-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground mb-2">Technology-Driven Service</h2>
+                <p className="text-muted-foreground">Modern tools for a better pool service experience</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex flex-col items-center text-center p-4">
+                  <div className="p-3 bg-primary/10 rounded-full mb-3">
+                    <Smartphone className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">Customer Portal</h3>
+                  <p className="text-sm text-muted-foreground">Access service history, photos, and account details anytime</p>
+                </div>
+                <div className="flex flex-col items-center text-center p-4">
+                  <div className="p-3 bg-primary/10 rounded-full mb-3">
+                    <Bell className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">SMS Notifications</h3>
+                  <p className="text-sm text-muted-foreground">Real-time updates when your service is complete</p>
+                </div>
+                <div className="flex flex-col items-center text-center p-4">
+                  <div className="p-3 bg-primary/10 rounded-full mb-3">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">Digital Service Records</h3>
+                  <p className="text-sm text-muted-foreground">Detailed logs of every visit with water chemistry readings</p>
+                </div>
+                <div className="flex flex-col items-center text-center p-4">
+                  <div className="p-3 bg-primary/10 rounded-full mb-3">
+                    <Camera className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">Photo Documentation</h3>
+                  <p className="text-sm text-muted-foreground">Visual records of your pool's condition after each service</p>
                 </div>
               </div>
             </div>
