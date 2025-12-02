@@ -15,7 +15,8 @@ const CleaningPricing = () => {
       features: [
         "Weekly pool cleaning",
         "Chemical balancing",
-        "Skimming & vacuuming",
+        "Skimming",
+        "Vacuuming (as needed)",
         "Filter check",
         "Equipment inspection",
         "Water testing",
@@ -30,7 +31,8 @@ const CleaningPricing = () => {
       features: [
         "Weekly pool cleaning",
         "Chemical balancing",
-        "Skimming & vacuuming",
+        "Skimming",
+        "Vacuuming (as needed)",
         "Filter cleaning (monthly)",
         "Equipment inspection",
         "Water testing",
@@ -46,7 +48,8 @@ const CleaningPricing = () => {
       features: [
         "Weekly pool cleaning",
         "Chemical balancing",
-        "Skimming & vacuuming",
+        "Skimming",
+        "Vacuuming (as needed)",
         "Filter cleaning (bi-weekly)",
         "Equipment inspection",
         "Water testing",
@@ -63,7 +66,8 @@ const CleaningPricing = () => {
       features: [
         "Weekly pool cleaning",
         "Chemical balancing",
-        "Skimming & vacuuming",
+        "Skimming",
+        "Vacuuming (as needed)",
         "Filter cleaning (weekly)",
         "Full equipment inspection",
         "Comprehensive water testing",
