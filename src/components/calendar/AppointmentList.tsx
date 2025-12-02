@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { EditAppointmentDialog } from './EditAppointmentDialog';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
-import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw, KeyRound, Send } from 'lucide-react';
+import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw, KeyRound, Send, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
@@ -279,6 +279,18 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                     </span>
                   )}
                 </div>
+
+                {appointment.customers?.phone && (
+                  <div className="flex items-center space-x-2">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <a 
+                      href={`tel:${appointment.customers.phone}`}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      {appointment.customers.phone}
+                    </a>
+                  </div>
+                )}
                 
                 <div className="flex items-center space-x-2">
                   <FileText className="h-4 w-4 text-gray-400" />
