@@ -88,7 +88,7 @@ const CleaningPricing = () => {
   const additionalServices = [
     { name: "Spa/Hot Tub Add-on", price: "+$10/week", description: "Full spa maintenance included" },
     { name: "Green to Clean", price: "Starting at $350", description: "Restore neglected pools" },
-    { name: "Filter Deep Clean", price: "$75-$150", description: "Thorough filter cleaning" },
+    { name: "Standalone Water Features", price: "+$10/week", description: "Fountains, waterfalls, and more" },
     { name: "Acid Wash", price: "Starting at $450", description: "Remove stains and buildup" },
     { name: "Equipment Repair", price: "Varies", description: "Pump, filter, heater repairs" },
     { name: "Pool Opening/Closing", price: "$150-$250", description: "Seasonal service" },
