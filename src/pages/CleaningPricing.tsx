@@ -203,6 +203,34 @@ const CleaningPricing = () => {
               </div>
             </div>
 
+            {/* Repair Pricing */}
+            <div className="mt-8 bg-card rounded-lg border p-6">
+              <h2 className="text-2xl font-bold text-foreground mb-4">Repair Services</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-800">
+                  <h3 className="font-semibold text-foreground mb-2">Quick Repairs</h3>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400 mb-2">Parts Only</p>
+                  <p className="text-sm text-muted-foreground">
+                    Minor repairs completed during your regular service visit — no labor charge, just pay for parts.
+                  </p>
+                </div>
+                <div className="p-4 bg-blue-100 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="font-semibold text-foreground mb-2">Standard Repairs</h3>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">$60/hr</p>
+                  <p className="text-sm text-muted-foreground">
+                    More involved repairs requiring dedicated service time, plus parts.
+                  </p>
+                </div>
+                <div className="p-4 bg-orange-100 dark:bg-orange-900/30 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <h3 className="font-semibold text-foreground mb-2">Emergency Service</h3>
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-2">$125/hr</p>
+                  <p className="text-sm text-muted-foreground">
+                    First hour at $125, then $60/hr thereafter, plus parts.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Note */}
             <div className="mt-8 p-4 bg-muted/50 rounded-lg text-center">
               <p className="text-sm text-muted-foreground">
