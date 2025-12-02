@@ -44,6 +44,7 @@ import SupplierManagement from "./pages/SupplierManagement";
 import SupplierPriceEntry from "./pages/SupplierPriceEntry";
 import SupplierPriceComparison from "./pages/SupplierPriceComparison";
 import Pool360Import from "./pages/Pool360Import";
+import CleaningPricing from "./pages/CleaningPricing";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +113,7 @@ const App = () => (
             <Route path="/client-portal/profile" element={<ClientPortalProfile />} />
             <Route path="/client-portal/request-service" element={<ClientPortalRequestService />} />
             <Route path="/ha-dashboard" element={<HADashboard />} />
+            <Route path="/cleaning-pricing" element={<CleaningPricing />} />
             <Route path="/sms-opt-in" element={
               <ProtectedRoute excludedRoles={['guest']}>
                 <SmsOptIn />
