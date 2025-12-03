@@ -270,7 +270,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                   <User className="h-4 w-4 text-gray-400" />
                   {appointment.customers ? (
                     <Link 
-                      to={`/customers/${appointment.customers.id}`}
+                      to={`/customer/${appointment.customers.id}`}
                       className="font-medium text-primary hover:underline"
                     >
                       {appointment.customers.first_name} {appointment.customers.last_name}
