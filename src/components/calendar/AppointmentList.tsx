@@ -10,6 +10,7 @@ import { EditAppointmentDialog } from './EditAppointmentDialog';
 import { ServiceRecordForm } from '@/components/ServiceRecordForm';
 import { format, parseISO } from 'date-fns';
 import { Clock, User, Calendar, Edit, Trash2, FileText, Plus, Filter, RefreshCw, KeyRound, Send, Phone } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { parseDateFromDatabase } from '@/utils/dateUtils';
 import { formatPhoenixDateForDatabase } from '@/utils/phoenixTimeUtils';
@@ -267,12 +268,16 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
 
                 <div className="flex items-center space-x-2">
                   <User className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">
-                    {appointment.customers 
-                      ? `${appointment.customers.first_name} ${appointment.customers.last_name}`
-                      : 'No customer assigned'
-                    }
-                  </span>
+                  {appointment.customers ? (
+                    <Link 
+                      to={`/customers/${appointment.customers.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {appointment.customers.first_name} {appointment.customers.last_name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">No customer assigned</span>
+                  )}
                   {appointment.customers?.address && (
                     <span className="text-sm text-gray-500">
                       - {appointment.customers.address}, {appointment.customers.city}
