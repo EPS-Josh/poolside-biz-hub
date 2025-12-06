@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle, DollarSign } from 'lucide-react';
+import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle, DollarSign, UserPlus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { MetricsCard } from '@/components/MetricsCard';
 import { useNavigate } from 'react-router-dom';
 
@@ -110,6 +111,46 @@ const CleaningForecast = () => {
       };
     },
   });
+
+  // Query for potential customers
+  const { data: potentialCustomers } = useQuery({
+    queryKey: ['potential-cleaning-customers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('customer_service_details')
+        .select(`
+          id,
+          customer_id,
+          is_potential_customer,
+          acquisition_source,
+          proposed_rate,
+          potential_customer_notes,
+          customers!customer_id (
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq('is_potential_customer', true);
+
+      if (error) {
+        console.error('Error fetching potential customers:', error);
+        return [];
+      }
+
+      return data?.map((item: any) => ({
+        id: item.customer_id,
+        firstName: item.customers?.first_name || '',
+        lastName: item.customers?.last_name || '',
+        acquisitionSource: item.acquisition_source,
+        proposedRate: item.proposed_rate,
+        notes: item.potential_customer_notes,
+      })).sort((a, b) => a.lastName.localeCompare(b.lastName)) || [];
+    },
+  });
+
+  const potentialCustomerCount = potentialCustomers?.length || 0;
+  const potentialRevenue = potentialCustomers?.reduce((sum, c) => sum + (c.proposedRate || 0), 0) || 0;
 
   const calculateForecast = () => {
     const currentWeekly = currentStats?.weeklyCount || 0;
@@ -546,6 +587,56 @@ const CleaningForecast = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Potential Customers Section */}
+            {potentialCustomerCount > 0 && (
+              <Card className="mt-6 border-amber-200 dark:border-amber-800">
+                <CardHeader className="bg-amber-50 dark:bg-amber-950/30 rounded-t-lg">
+                  <CardTitle className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-amber-600" />
+                    Potential Cleaning Customers ({potentialCustomerCount})
+                    <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                      +${potentialRevenue}/week
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Customers marked as potential acquisitions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+                    {potentialCustomers?.map((customer: any) => (
+                      <div 
+                        key={customer.id} 
+                        className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/customers/${customer.id}`)}
+                      >
+                        <div className="font-medium">
+                          {customer.firstName} {customer.lastName}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {customer.proposedRate && (
+                            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                              ${customer.proposedRate}/week
+                            </span>
+                          )}
+                          {customer.acquisitionSource && (
+                            <Badge variant="outline" className="text-xs">
+                              {customer.acquisitionSource}
+                            </Badge>
+                          )}
+                        </div>
+                        {customer.notes && (
+                          <div className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                            {customer.notes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Current Customers List */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
