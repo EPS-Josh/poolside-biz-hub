@@ -32,10 +32,12 @@ interface OptimizedCustomerMapProps {
 const OptimizedCustomerMap: React.FC<OptimizedCustomerMapProps> = ({ customers }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -86,6 +88,7 @@ const OptimizedCustomerMap: React.FC<OptimizedCustomerMapProps> = ({ customers }
 
       // Wait for map to load before adding markers
       map.current.on('load', () => {
+        setMapLoaded(true);
         addCustomerMarkers();
       });
 
@@ -101,8 +104,19 @@ const OptimizedCustomerMap: React.FC<OptimizedCustomerMapProps> = ({ customers }
     }
   };
 
+  // Update markers when customers change
+  useEffect(() => {
+    if (mapLoaded && map.current) {
+      addCustomerMarkers();
+    }
+  }, [customers, mapLoaded]);
+
   const addCustomerMarkers = () => {
     if (!map.current) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
 
     // Filter customers that have geocoded coordinates
     const customersWithCoordinates = customers.filter(customer => 
@@ -175,11 +189,12 @@ const OptimizedCustomerMap: React.FC<OptimizedCustomerMapProps> = ({ customers }
         closeOnClick: false
       }).setDOMContent(popupContainer);
 
-      new mapboxgl.Marker(markerElement)
+      const marker = new mapboxgl.Marker(markerElement)
         .setLngLat(coordinates)
         .setPopup(popup)
         .addTo(map.current!);
 
+      markersRef.current.push(marker);
       bounds.extend(coordinates);
       markersAdded++;
     });
