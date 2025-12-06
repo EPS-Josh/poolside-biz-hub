@@ -31,6 +31,9 @@ interface CustomerServiceDetails {
   service_description?: string;
   weekly_rate?: number;
   special_notes?: string;
+  is_potential_customer?: boolean;
+  acquisition_source?: string;
+  proposed_rate?: number;
 }
 
 interface PoolEquipment {
@@ -195,7 +198,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
     }
   };
 
-  const updateField = (field: keyof CustomerServiceDetails, value: string | number | undefined) => {
+  const updateField = (field: keyof CustomerServiceDetails, value: string | number | boolean | undefined) => {
     setDetails(prev => ({ ...prev, [field]: value }));
   };
 
@@ -237,12 +240,66 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Service & Billing - Collapsible */}
           <Collapsible open={serviceOpen} onOpenChange={setServiceOpen}>
-            <CollapsibleTrigger className="flex items-center space-x-2 w-full text-left hover:bg-gray-50 p-2 rounded">
+            <CollapsibleTrigger className="flex items-center space-x-2 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded">
               {serviceOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               <FileText className="h-5 w-5 text-green-600" />
               <h3 className="text-lg font-medium">Service & Billing</h3>
+              {details.is_potential_customer && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-full">
+                  Potential
+                </span>
+              )}
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4 space-y-4">
+              {/* Potential Customer Section */}
+              <div className="p-4 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 rounded-lg space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_potential_customer"
+                    checked={details.is_potential_customer || false}
+                    onCheckedChange={(checked) => updateField('is_potential_customer', checked as boolean)}
+                  />
+                  <Label htmlFor="is_potential_customer" className="font-medium">
+                    Potential Customer (Not Yet Active)
+                  </Label>
+                </div>
+                
+                {details.is_potential_customer && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-6">
+                    <div>
+                      <Label htmlFor="acquisition_source">Acquisition Source</Label>
+                      <Select
+                        value={details.acquisition_source || ''}
+                        onValueChange={(value) => updateField('acquisition_source', value)}
+                      >
+                        <SelectTrigger id="acquisition_source">
+                          <SelectValue placeholder="Select source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Azure Gallery">Azure Gallery</SelectItem>
+                          <SelectItem value="Referral">Referral</SelectItem>
+                          <SelectItem value="Website">Website</SelectItem>
+                          <SelectItem value="Phone Call">Phone Call</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="proposed_rate">Proposed Weekly Rate ($)</Label>
+                      <Input
+                        id="proposed_rate"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={details.proposed_rate || ''}
+                        onChange={(e) => updateField('proposed_rate', parseFloat(e.target.value) || undefined)}
+                        placeholder="Planned rate to charge"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="service_frequency">Service Frequency</Label>
