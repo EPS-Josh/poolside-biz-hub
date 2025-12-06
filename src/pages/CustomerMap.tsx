@@ -1,22 +1,76 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import OptimizedCustomerMap from '@/components/OptimizedCustomerMap';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Users, Droplets, UserPlus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const CustomerMapPage = () => {
   const navigate = useNavigate();
   const { customers, loading } = useCustomers();
+  const [showCleaningOnly, setShowCleaningOnly] = useState(false);
 
-  const customersWithAddresses = customers.filter(customer => 
+  // Get cleaning customer IDs (weekly & bi-weekly)
+  const { data: cleaningCustomerIds = [] } = useQuery({
+    queryKey: ['cleaning-customer-ids'],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select('customer_id')
+        .in('service_type', ['Weekly Pool Cleaning', 'Weekly Chemical Test', 'Bi-Weekly Pool Cleaning'])
+        .gte('appointment_date', today);
+
+      if (error) {
+        console.error('Error fetching cleaning appointments:', error);
+        return [];
+      }
+
+      // Get unique customer IDs
+      const uniqueIds = [...new Set(appointments?.map(apt => apt.customer_id).filter(Boolean))];
+      return uniqueIds as string[];
+    },
+  });
+
+  // Get potential customer IDs
+  const { data: potentialCustomerIds = [] } = useQuery({
+    queryKey: ['potential-customer-ids'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('customer_service_details')
+        .select('customer_id')
+        .eq('is_potential_customer', true);
+
+      if (error) {
+        console.error('Error fetching potential customers:', error);
+        return [];
+      }
+
+      return data?.map(d => d.customer_id) || [];
+    },
+  });
+
+  // Filter customers based on toggle
+  const filteredCustomers = useMemo(() => {
+    if (!showCleaningOnly) return customers;
+    
+    const cleaningAndPotentialIds = new Set([...cleaningCustomerIds, ...potentialCustomerIds]);
+    return customers.filter(c => cleaningAndPotentialIds.has(c.id));
+  }, [customers, showCleaningOnly, cleaningCustomerIds, potentialCustomerIds]);
+
+  const customersWithAddresses = filteredCustomers.filter(customer => 
     customer.address && customer.city && customer.state
   );
 
-  const customersWithoutAddresses = customers.filter(customer => 
+  const customersWithoutAddresses = filteredCustomers.filter(customer => 
     !customer.address || !customer.city || !customer.state
   );
 
@@ -50,15 +104,53 @@ const CustomerMapPage = () => {
             </div>
           </div>
 
+          {/* Filter Toggle */}
+          <Card className="border-primary/20">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Droplets className="h-5 w-5 text-primary" />
+                  <div>
+                    <Label htmlFor="cleaning-filter" className="text-base font-medium cursor-pointer">
+                      Cleaning Customers Only
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show only weekly/bi-weekly cleaning customers and potential cleaning customers
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="cleaning-filter"
+                  checked={showCleaningOnly}
+                  onCheckedChange={setShowCleaningOnly}
+                />
+              </div>
+              {showCleaningOnly && (
+                <div className="mt-3 flex gap-4 text-sm">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4 text-blue-500" />
+                    <span>{cleaningCustomerIds.length} active cleaning</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <UserPlus className="h-4 w-4 text-amber-500" />
+                    <span>{potentialCustomerIds.length} potential</span>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  {showCleaningOnly ? 'Cleaning Customers' : 'Total Customers'}
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{customers.length}</div>
+                <div className="text-2xl font-bold">{filteredCustomers.length}</div>
               </CardContent>
             </Card>
             
@@ -70,7 +162,7 @@ const CustomerMapPage = () => {
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">{customersWithAddresses.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((customersWithAddresses.length / customers.length) * 100)}% of total
+                  {filteredCustomers.length > 0 ? Math.round((customersWithAddresses.length / filteredCustomers.length) * 100) : 0}% of total
                 </p>
               </CardContent>
             </Card>
@@ -106,7 +198,7 @@ const CustomerMapPage = () => {
                   </div>
                 </div>
               ) : (
-                <OptimizedCustomerMap customers={customers} />
+                <OptimizedCustomerMap customers={filteredCustomers} />
               )}
             </CardContent>
           </Card>
