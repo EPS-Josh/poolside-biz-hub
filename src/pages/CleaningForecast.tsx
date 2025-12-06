@@ -609,7 +609,7 @@ const CleaningForecast = () => {
                       <div 
                         key={customer.id} 
                         className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/customers/${customer.id}`)}
+                        onClick={() => navigate(`/customer/${customer.id}`)}
                       >
                         <div className="font-medium">
                           {customer.firstName} {customer.lastName}
