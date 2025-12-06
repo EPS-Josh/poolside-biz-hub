@@ -471,14 +471,17 @@ export type Database = {
       customer_service_details: {
         Row: {
           access_instructions: string | null
+          acquisition_source: string | null
           chemical_preferences: string | null
           created_at: string
           customer_id: string
           gate_code: string | null
           id: string
+          is_potential_customer: boolean | null
           pool_equipment: string | null
           pool_size: string | null
           pool_type: string | null
+          proposed_rate: number | null
           service_description: string | null
           service_frequency: string | null
           spa_equipment: string | null
@@ -490,14 +493,17 @@ export type Database = {
         }
         Insert: {
           access_instructions?: string | null
+          acquisition_source?: string | null
           chemical_preferences?: string | null
           created_at?: string
           customer_id: string
           gate_code?: string | null
           id?: string
+          is_potential_customer?: boolean | null
           pool_equipment?: string | null
           pool_size?: string | null
           pool_type?: string | null
+          proposed_rate?: number | null
           service_description?: string | null
           service_frequency?: string | null
           spa_equipment?: string | null
@@ -509,14 +515,17 @@ export type Database = {
         }
         Update: {
           access_instructions?: string | null
+          acquisition_source?: string | null
           chemical_preferences?: string | null
           created_at?: string
           customer_id?: string
           gate_code?: string | null
           id?: string
+          is_potential_customer?: boolean | null
           pool_equipment?: string | null
           pool_size?: string | null
           pool_type?: string | null
+          proposed_rate?: number | null
           service_description?: string | null
           service_frequency?: string | null
           spa_equipment?: string | null
