@@ -34,6 +34,7 @@ interface CustomerServiceDetails {
   is_potential_customer?: boolean;
   acquisition_source?: string;
   proposed_rate?: number;
+  potential_customer_notes?: string;
 }
 
 interface PoolEquipment {
@@ -294,6 +295,16 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                         value={details.proposed_rate || ''}
                         onChange={(e) => updateField('proposed_rate', parseFloat(e.target.value) || undefined)}
                         placeholder="Planned rate to charge"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label htmlFor="potential_customer_notes">Pros/Cons Notes</Label>
+                      <Textarea
+                        id="potential_customer_notes"
+                        value={details.potential_customer_notes || ''}
+                        onChange={(e) => updateField('potential_customer_notes', e.target.value)}
+                        placeholder="Notes about pros and cons of taking on this customer..."
+                        rows={3}
                       />
                     </div>
                   </div>
