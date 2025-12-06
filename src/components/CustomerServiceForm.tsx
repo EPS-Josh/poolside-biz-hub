@@ -253,7 +253,11 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4 space-y-4">
               {/* Potential Customer Section */}
-              <div className="p-4 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 rounded-lg space-y-4">
+              <div className={`p-4 border rounded-lg space-y-4 ${
+                details.is_potential_customer 
+                  ? 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30' 
+                  : 'border-border bg-muted/30'
+              }`}>
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="is_potential_customer"
