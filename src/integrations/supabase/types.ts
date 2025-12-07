@@ -483,6 +483,7 @@ export type Database = {
           pool_type: string | null
           potential_customer_notes: string | null
           proposed_rate: number | null
+          route_order: number | null
           service_day: string | null
           service_description: string | null
           service_frequency: string | null
@@ -507,6 +508,7 @@ export type Database = {
           pool_type?: string | null
           potential_customer_notes?: string | null
           proposed_rate?: number | null
+          route_order?: number | null
           service_day?: string | null
           service_description?: string | null
           service_frequency?: string | null
@@ -531,6 +533,7 @@ export type Database = {
           pool_type?: string | null
           potential_customer_notes?: string | null
           proposed_rate?: number | null
+          route_order?: number | null
           service_day?: string | null
           service_description?: string | null
           service_frequency?: string | null

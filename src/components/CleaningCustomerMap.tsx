@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Settings, RefreshCw, Calendar } from 'lucide-react';
+import { MapPin, Settings, RefreshCw, Calendar, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 interface Customer {
   id: string;
@@ -29,6 +30,7 @@ interface Customer {
 interface ServiceDetails {
   customer_id: string;
   service_day: string | null;
+  route_order: number | null;
 }
 
 interface CleaningCustomerMapProps {
@@ -64,7 +66,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [serviceDetails, setServiceDetails] = useState<Map<string, string | null>>(new Map());
+  const [serviceDetails, setServiceDetails] = useState<Map<string, { day: string | null; order: number | null }>>(new Map());
   const [shouldFitBounds, setShouldFitBounds] = useState(true);
   const { toast } = useToast();
 
@@ -73,16 +75,16 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
     const fetchServiceDetails = async () => {
       const { data, error } = await supabase
         .from('customer_service_details')
-        .select('customer_id, service_day');
+        .select('customer_id, service_day, route_order');
 
       if (error) {
         console.error('Error fetching service details:', error);
         return;
       }
 
-      const detailsMap = new Map<string, string | null>();
+      const detailsMap = new Map<string, { day: string | null; order: number | null }>();
       data?.forEach((d: ServiceDetails) => {
-        detailsMap.set(d.customer_id, d.service_day);
+        detailsMap.set(d.customer_id, { day: d.service_day, order: d.route_order });
       });
       setServiceDetails(detailsMap);
     };
@@ -98,9 +100,9 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
   // Filter by selected day if any
   const filteredCustomers = selectedDay
     ? cleaningCustomers.filter(c => {
-        const day = serviceDetails.get(c.id);
-        if (selectedDay === 'Unassigned') return !day;
-        return day === selectedDay;
+        const details = serviceDetails.get(c.id);
+        if (selectedDay === 'Unassigned') return !details?.day;
+        return details?.day === selectedDay;
       })
     : cleaningCustomers;
 
@@ -114,11 +116,21 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
         .eq('customer_id', customerId)
         .single();
 
+      // Get next route order for the day
+      let newOrder: number | null = null;
+      if (day) {
+        const customersOnDay = cleaningCustomers.filter(c => {
+          const d = serviceDetails.get(c.id);
+          return d?.day === day;
+        });
+        newOrder = customersOnDay.length + 1;
+      }
+
       if (existing) {
         // Update existing record
         const { error } = await supabase
           .from('customer_service_details')
-          .update({ service_day: day })
+          .update({ service_day: day, route_order: newOrder })
           .eq('customer_id', customerId);
 
         if (error) throw error;
@@ -126,7 +138,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
         // Create new record
         const { error } = await supabase
           .from('customer_service_details')
-          .insert({ customer_id: customerId, service_day: day });
+          .insert({ customer_id: customerId, service_day: day, route_order: newOrder });
 
         if (error) throw error;
       }
@@ -135,7 +147,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
       setShouldFitBounds(false);
       setServiceDetails(prev => {
         const updated = new Map(prev);
-        updated.set(customerId, day);
+        updated.set(customerId, { day, order: newOrder });
         return updated;
       });
 
@@ -151,6 +163,81 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
         variant: 'destructive',
       });
     }
+  };
+
+  // Update route order for a customer
+  const updateRouteOrder = async (customerId: string, newOrder: number) => {
+    try {
+      const { error } = await supabase
+        .from('customer_service_details')
+        .update({ route_order: newOrder })
+        .eq('customer_id', customerId);
+
+      if (error) throw error;
+
+      setServiceDetails(prev => {
+        const updated = new Map(prev);
+        const current = updated.get(customerId);
+        if (current) {
+          updated.set(customerId, { ...current, order: newOrder });
+        }
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error updating route order:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update route order.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Handle drag end for reordering
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    
+    const day = result.source.droppableId;
+    const dayCustomers = cleaningCustomers
+      .filter(c => serviceDetails.get(c.id)?.day === day)
+      .sort((a, b) => {
+        const orderA = serviceDetails.get(a.id)?.order ?? 999;
+        const orderB = serviceDetails.get(b.id)?.order ?? 999;
+        return orderA - orderB;
+      });
+
+    const [reorderedItem] = dayCustomers.splice(result.source.index, 1);
+    dayCustomers.splice(result.destination.index, 0, reorderedItem);
+
+    // Update all orders in batch
+    const updates: Promise<void>[] = [];
+    const newDetailsMap = new Map(serviceDetails);
+    
+    dayCustomers.forEach((customer, index) => {
+      const newOrder = index + 1;
+      const current = newDetailsMap.get(customer.id);
+      if (current) {
+        newDetailsMap.set(customer.id, { ...current, order: newOrder });
+      }
+      
+      updates.push(
+        (async () => {
+          const { error } = await supabase
+            .from('customer_service_details')
+            .update({ route_order: newOrder })
+            .eq('customer_id', customer.id);
+          if (error) console.error('Error updating order:', error);
+        })()
+      );
+    });
+
+    setServiceDetails(newDetailsMap);
+    await Promise.all(updates);
+    
+    toast({
+      title: 'Route Order Updated',
+      description: 'Customer order has been saved.',
+    });
   };
 
   useEffect(() => {
@@ -231,7 +318,8 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
       if (!customer.latitude || !customer.longitude) return;
 
       const coordinates: [number, number] = [customer.longitude, customer.latitude];
-      const serviceDay = serviceDetails.get(customer.id) || null;
+      const details = serviceDetails.get(customer.id);
+      const serviceDay = details?.day || null;
       const dayInfo = serviceDay ? DAY_COLORS[serviceDay] : DAY_COLORS.Unassigned;
       const isPotential = potentialCustomerIds.includes(customer.id);
 
@@ -418,10 +506,10 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
 
   // Count customers per day
   const dayCounts = DAYS_OF_WEEK.reduce((acc, day) => {
-    acc[day] = cleaningCustomers.filter(c => serviceDetails.get(c.id) === day).length;
+    acc[day] = cleaningCustomers.filter(c => serviceDetails.get(c.id)?.day === day).length;
     return acc;
   }, {} as Record<string, number>);
-  const unassignedCount = cleaningCustomers.filter(c => !serviceDetails.get(c.id)).length;
+  const unassignedCount = cleaningCustomers.filter(c => !serviceDetails.get(c.id)?.day).length;
 
   if (showTokenInput) {
     return (
@@ -569,62 +657,108 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
           <h3 className="font-semibold mb-4 flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             Cleaning Customers by Day
+            <span className="text-xs text-muted-foreground font-normal ml-2">
+              (Drag to reorder or edit stop numbers)
+            </span>
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {DAYS_OF_WEEK.map(day => {
-              const dayCustomers = cleaningCustomers.filter(c => serviceDetails.get(c.id) === day);
-              if (dayCustomers.length === 0 && selectedDay && selectedDay !== day) return null;
-              
-              return (
-                <div key={day} className="space-y-2">
-                  <div 
-                    className="flex items-center gap-2 p-2 rounded-lg"
-                    style={{ backgroundColor: `${DAY_COLORS[day].hex}15` }}
-                  >
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {DAYS_OF_WEEK.map(day => {
+                const dayCustomers = cleaningCustomers
+                  .filter(c => serviceDetails.get(c.id)?.day === day)
+                  .sort((a, b) => {
+                    const orderA = serviceDetails.get(a.id)?.order ?? 999;
+                    const orderB = serviceDetails.get(b.id)?.order ?? 999;
+                    return orderA - orderB;
+                  });
+                if (dayCustomers.length === 0 && selectedDay && selectedDay !== day) return null;
+                
+                return (
+                  <div key={day} className="space-y-2">
                     <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: DAY_COLORS[day].hex }}
-                    />
-                    <span className="font-medium text-sm">{day}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      ({dayCustomers.length})
-                    </span>
-                  </div>
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {dayCustomers.length === 0 ? (
-                      <p className="text-xs text-muted-foreground italic px-2">No customers</p>
-                    ) : (
-                      dayCustomers.map(customer => (
-                        <div 
-                          key={customer.id}
-                          className="text-xs p-2 rounded bg-muted/50 hover:bg-muted transition-colors cursor-pointer flex items-center justify-between gap-2"
+                      className="flex items-center gap-2 p-2 rounded-lg"
+                      style={{ backgroundColor: `${DAY_COLORS[day].hex}15` }}
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: DAY_COLORS[day].hex }}
+                      />
+                      <span className="font-medium text-sm">{day}</span>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        ({dayCustomers.length})
+                      </span>
+                    </div>
+                    <Droppable droppableId={day}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`space-y-1 max-h-64 overflow-y-auto min-h-[40px] rounded-lg transition-colors ${
+                            snapshot.isDraggingOver ? 'bg-muted/50' : ''
+                          }`}
                         >
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">
-                              {customer.first_name} {customer.last_name}
+                          {dayCustomers.length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic px-2 py-2">
+                              No customers - drag here to assign
                             </p>
-                            {customer.address && (
-                              <p className="text-muted-foreground truncate">
-                                {customer.address}
-                              </p>
-                            )}
-                          </div>
-                          {potentialCustomerIds.includes(customer.id) && (
-                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded">
-                              Potential
-                            </span>
+                          ) : (
+                            dayCustomers.map((customer, index) => (
+                              <Draggable key={customer.id} draggableId={customer.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`text-xs p-2 rounded bg-background border transition-all flex items-center gap-2 ${
+                                      snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : 'hover:bg-muted/50'
+                                    }`}
+                                  >
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+                                    >
+                                      <GripVertical className="h-3 w-3" />
+                                    </div>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      value={serviceDetails.get(customer.id)?.order || index + 1}
+                                      onChange={(e) => {
+                                        const newOrder = parseInt(e.target.value) || 1;
+                                        updateRouteOrder(customer.id, newOrder);
+                                      }}
+                                      className="w-8 h-5 text-center text-xs border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-medium truncate">
+                                        {customer.first_name} {customer.last_name}
+                                      </p>
+                                      {customer.address && (
+                                        <p className="text-muted-foreground truncate text-[10px]">
+                                          {customer.address}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {potentialCustomerIds.includes(customer.id) && (
+                                      <span className="shrink-0 text-[10px] px-1 py-0.5 bg-amber-100 text-amber-800 rounded">
+                                        P
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))
                           )}
+                          {provided.placeholder}
                         </div>
-                      ))
-                    )}
+                      )}
+                    </Droppable>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
             
             {/* Unassigned */}
             {(() => {
-              const unassignedCustomers = cleaningCustomers.filter(c => !serviceDetails.get(c.id));
+              const unassignedCustomers = cleaningCustomers.filter(c => !serviceDetails.get(c.id)?.day);
               if (unassignedCustomers.length === 0 && selectedDay && selectedDay !== 'Unassigned') return null;
               
               return (
@@ -673,7 +807,8 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                 </div>
               );
             })()}
-          </div>
+            </div>
+          </DragDropContext>
         </CardContent>
       </Card>
     </div>
