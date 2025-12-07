@@ -562,6 +562,120 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Customer List by Day */}
+      <Card>
+        <CardContent className="p-4">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Cleaning Customers by Day
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {DAYS_OF_WEEK.map(day => {
+              const dayCustomers = cleaningCustomers.filter(c => serviceDetails.get(c.id) === day);
+              if (dayCustomers.length === 0 && selectedDay && selectedDay !== day) return null;
+              
+              return (
+                <div key={day} className="space-y-2">
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded-lg"
+                    style={{ backgroundColor: `${DAY_COLORS[day].hex}15` }}
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: DAY_COLORS[day].hex }}
+                    />
+                    <span className="font-medium text-sm">{day}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      ({dayCustomers.length})
+                    </span>
+                  </div>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {dayCustomers.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic px-2">No customers</p>
+                    ) : (
+                      dayCustomers.map(customer => (
+                        <div 
+                          key={customer.id}
+                          className="text-xs p-2 rounded bg-muted/50 hover:bg-muted transition-colors cursor-pointer flex items-center justify-between gap-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">
+                              {customer.first_name} {customer.last_name}
+                            </p>
+                            {customer.address && (
+                              <p className="text-muted-foreground truncate">
+                                {customer.address}
+                              </p>
+                            )}
+                          </div>
+                          {potentialCustomerIds.includes(customer.id) && (
+                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded">
+                              Potential
+                            </span>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Unassigned */}
+            {(() => {
+              const unassignedCustomers = cleaningCustomers.filter(c => !serviceDetails.get(c.id));
+              if (unassignedCustomers.length === 0 && selectedDay && selectedDay !== 'Unassigned') return null;
+              
+              return (
+                <div className="space-y-2">
+                  <div 
+                    className="flex items-center gap-2 p-2 rounded-lg"
+                    style={{ backgroundColor: `${DAY_COLORS.Unassigned.hex}15` }}
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: DAY_COLORS.Unassigned.hex }}
+                    />
+                    <span className="font-medium text-sm">Unassigned</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      ({unassignedCustomers.length})
+                    </span>
+                  </div>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {unassignedCustomers.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic px-2">No customers</p>
+                    ) : (
+                      unassignedCustomers.map(customer => (
+                        <div 
+                          key={customer.id}
+                          className="text-xs p-2 rounded bg-muted/50 hover:bg-muted transition-colors cursor-pointer flex items-center justify-between gap-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">
+                              {customer.first_name} {customer.last_name}
+                            </p>
+                            {customer.address && (
+                              <p className="text-muted-foreground truncate">
+                                {customer.address}
+                              </p>
+                            )}
+                          </div>
+                          {potentialCustomerIds.includes(customer.id) && (
+                            <span className="shrink-0 text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded">
+                              Potential
+                            </span>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
