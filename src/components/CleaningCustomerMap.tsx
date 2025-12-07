@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Settings, RefreshCw, Calendar, GripVertical } from 'lucide-react';
+import { MapPin, Settings, RefreshCw, Calendar, GripVertical, Palette } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface Customer {
   id: string;
@@ -39,19 +40,41 @@ interface CleaningCustomerMapProps {
   potentialCustomerIds: string[];
 }
 
-// Day colors - vibrant and distinct
-const DAY_COLORS: Record<string, { bg: string; hex: string; label: string }> = {
-  Monday: { bg: 'bg-red-500', hex: '#ef4444', label: 'Mon' },
-  Tuesday: { bg: 'bg-orange-500', hex: '#f97316', label: 'Tue' },
-  Wednesday: { bg: 'bg-yellow-500', hex: '#eab308', label: 'Wed' },
-  Thursday: { bg: 'bg-green-500', hex: '#22c55e', label: 'Thu' },
-  Friday: { bg: 'bg-blue-500', hex: '#3b82f6', label: 'Fri' },
-  Saturday: { bg: 'bg-purple-500', hex: '#a855f7', label: 'Sat' },
-  Sunday: { bg: 'bg-pink-500', hex: '#ec4899', label: 'Sun' },
-  Unassigned: { bg: 'bg-gray-400', hex: '#9ca3af', label: 'None' },
+// Default day colors - vibrant and distinct
+const DEFAULT_DAY_COLORS: Record<string, { hex: string; label: string }> = {
+  Monday: { hex: '#ef4444', label: 'Mon' },
+  Tuesday: { hex: '#f97316', label: 'Tue' },
+  Wednesday: { hex: '#eab308', label: 'Wed' },
+  Thursday: { hex: '#22c55e', label: 'Thu' },
+  Friday: { hex: '#3b82f6', label: 'Fri' },
+  Saturday: { hex: '#a855f7', label: 'Sat' },
+  Sunday: { hex: '#ec4899', label: 'Sun' },
+  Unassigned: { hex: '#9ca3af', label: 'None' },
 };
 
+// Color palette options for customization
+const COLOR_PALETTE = [
+  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', 
+  '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#f43f5e',
+  '#84cc16', '#06b6d4', '#8b5cf6', '#d946ef', '#f59e0b',
+  '#10b981', '#0ea5e9', '#7c3aed', '#be185d', '#9ca3af',
+];
+
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+// Load saved colors from localStorage
+const loadSavedColors = (): Record<string, { hex: string; label: string }> => {
+  try {
+    const saved = localStorage.getItem('cleaningMapDayColors');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...DEFAULT_DAY_COLORS, ...parsed };
+    }
+  } catch (e) {
+    console.error('Error loading saved colors:', e);
+  }
+  return DEFAULT_DAY_COLORS;
+};
 
 const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({ 
   customers, 
@@ -68,7 +91,29 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [serviceDetails, setServiceDetails] = useState<Map<string, { day: string | null; order: number | null }>>(new Map());
   const [shouldFitBounds, setShouldFitBounds] = useState(true);
+  const [dayColors, setDayColors] = useState<Record<string, { hex: string; label: string }>>(loadSavedColors);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const { toast } = useToast();
+
+  // Update a day's color
+  const updateDayColor = (day: string, hex: string) => {
+    const newColors = {
+      ...dayColors,
+      [day]: { ...dayColors[day], hex }
+    };
+    setDayColors(newColors);
+    localStorage.setItem('cleaningMapDayColors', JSON.stringify(newColors));
+  };
+
+  // Reset colors to default
+  const resetColors = () => {
+    setDayColors(DEFAULT_DAY_COLORS);
+    localStorage.removeItem('cleaningMapDayColors');
+    toast({
+      title: 'Colors Reset',
+      description: 'Day colors have been reset to defaults.',
+    });
+  };
 
   // Fetch service details for all customers
   useEffect(() => {
@@ -320,7 +365,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
       const coordinates: [number, number] = [customer.longitude, customer.latitude];
       const details = serviceDetails.get(customer.id);
       const serviceDay = details?.day || null;
-      const dayInfo = serviceDay ? DAY_COLORS[serviceDay] : DAY_COLORS.Unassigned;
+      const dayInfo = serviceDay ? dayColors[serviceDay] : dayColors.Unassigned;
       const isPotential = potentialCustomerIds.includes(customer.id);
 
       // Create marker element with day color
@@ -420,19 +465,19 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
           font-size: 10px;
           border-radius: 4px;
           border: ${isSelected ? '2px solid #1f2937' : '1px solid #e5e7eb'};
-          background-color: ${isSelected ? DAY_COLORS[day].hex : '#f9fafb'};
+          background-color: ${isSelected ? dayColors[day].hex : '#f9fafb'};
           color: ${isSelected ? 'white' : '#374151'};
           cursor: pointer;
           transition: all 0.15s;
         `;
-        btn.textContent = DAY_COLORS[day].label;
+        btn.textContent = dayColors[day].label;
         btn.onclick = (e) => {
           e.stopPropagation();
           updateServiceDay(customer.id, isSelected ? null : day);
         };
         btn.onmouseenter = () => {
           if (!isSelected) {
-            btn.style.backgroundColor = DAY_COLORS[day].hex;
+            btn.style.backgroundColor = dayColors[day].hex;
             btn.style.color = 'white';
           }
         };
@@ -577,12 +622,12 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                 }}
                 className="text-xs"
                 style={{
-                  backgroundColor: selectedDay === day ? DAY_COLORS[day].hex : undefined,
-                  borderColor: DAY_COLORS[day].hex,
-                  color: selectedDay === day ? 'white' : DAY_COLORS[day].hex,
+                  backgroundColor: selectedDay === day ? dayColors[day].hex : undefined,
+                  borderColor: dayColors[day].hex,
+                  color: selectedDay === day ? 'white' : dayColors[day].hex,
                 }}
               >
-                {DAY_COLORS[day].label} ({dayCounts[day]})
+                {dayColors[day].label} ({dayCounts[day]})
               </Button>
             ))}
             <Button
@@ -594,13 +639,55 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
               }}
               className="text-xs"
               style={{
-                backgroundColor: selectedDay === 'Unassigned' ? DAY_COLORS.Unassigned.hex : undefined,
-                borderColor: DAY_COLORS.Unassigned.hex,
-                color: selectedDay === 'Unassigned' ? 'white' : DAY_COLORS.Unassigned.hex,
+                backgroundColor: selectedDay === 'Unassigned' ? dayColors.Unassigned.hex : undefined,
+                borderColor: dayColors.Unassigned.hex,
+                color: selectedDay === 'Unassigned' ? 'white' : dayColors.Unassigned.hex,
               }}
             >
               Unassigned ({unassignedCount})
             </Button>
+            
+            {/* Color Picker Button */}
+            <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="ml-2">
+                  <Palette className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">Customize Day Colors</h4>
+                    <Button variant="ghost" size="sm" onClick={resetColors} className="text-xs h-7">
+                      Reset
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {[...DAYS_OF_WEEK, 'Unassigned'].map(day => (
+                      <div key={day} className="flex items-center gap-2">
+                        <div 
+                          className="w-4 h-4 rounded-full border border-border"
+                          style={{ backgroundColor: dayColors[day].hex }}
+                        />
+                        <span className="text-sm w-24">{day}</span>
+                        <div className="flex flex-wrap gap-1 flex-1">
+                          {COLOR_PALETTE.map(color => (
+                            <button
+                              key={color}
+                              className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${
+                                dayColors[day].hex === color ? 'border-foreground' : 'border-transparent'
+                              }`}
+                              style={{ backgroundColor: color }}
+                              onClick={() => updateDayColor(day, color)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </CardContent>
       </Card>
@@ -612,7 +699,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
           <div key={day} className="flex items-center gap-1">
             <div 
               className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: DAY_COLORS[day].hex }}
+              style={{ backgroundColor: dayColors[day].hex }}
             />
             <span>{day}</span>
           </div>
@@ -620,7 +707,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
         <div className="flex items-center gap-1">
           <div 
             className="w-3 h-3 rounded-full" 
-            style={{ backgroundColor: DAY_COLORS.Unassigned.hex }}
+            style={{ backgroundColor: dayColors.Unassigned.hex }}
           />
           <span>Unassigned</span>
         </div>
@@ -677,11 +764,11 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                   <div key={day} className="space-y-2">
                     <div 
                       className="flex items-center gap-2 p-2 rounded-lg"
-                      style={{ backgroundColor: `${DAY_COLORS[day].hex}15` }}
+                      style={{ backgroundColor: `${dayColors[day].hex}15` }}
                     >
                       <div 
                         className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: DAY_COLORS[day].hex }}
+                        style={{ backgroundColor: dayColors[day].hex }}
                       />
                       <span className="font-medium text-sm">{day}</span>
                       <span className="text-xs text-muted-foreground ml-auto">
@@ -765,11 +852,11 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                 <div className="space-y-2">
                   <div 
                     className="flex items-center gap-2 p-2 rounded-lg"
-                    style={{ backgroundColor: `${DAY_COLORS.Unassigned.hex}15` }}
+                    style={{ backgroundColor: `${dayColors.Unassigned.hex}15` }}
                   >
                     <div 
                       className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: DAY_COLORS.Unassigned.hex }}
+                      style={{ backgroundColor: dayColors.Unassigned.hex }}
                     />
                     <span className="font-medium text-sm">Unassigned</span>
                     <span className="text-xs text-muted-foreground ml-auto">
