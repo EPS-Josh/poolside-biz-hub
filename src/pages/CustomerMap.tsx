@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import OptimizedCustomerMap from '@/components/OptimizedCustomerMap';
+import CleaningCustomerMap from '@/components/CleaningCustomerMap';
 import { useCustomers } from '@/hooks/useCustomers';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -197,6 +198,12 @@ const CustomerMapPage = () => {
                     <p className="text-sm text-muted-foreground">Loading customers...</p>
                   </div>
                 </div>
+              ) : showCleaningOnly ? (
+                <CleaningCustomerMap 
+                  customers={filteredCustomers} 
+                  cleaningCustomerIds={cleaningCustomerIds}
+                  potentialCustomerIds={potentialCustomerIds}
+                />
               ) : (
                 <OptimizedCustomerMap customers={filteredCustomers} />
               )}
