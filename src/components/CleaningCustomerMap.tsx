@@ -65,6 +65,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [serviceDetails, setServiceDetails] = useState<Map<string, string | null>>(new Map());
+  const [shouldFitBounds, setShouldFitBounds] = useState(true);
   const { toast } = useToast();
 
   // Fetch service details for all customers
@@ -130,7 +131,8 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
         if (error) throw error;
       }
 
-      // Update local state
+      // Update local state without triggering fitBounds
+      setShouldFitBounds(false);
       setServiceDetails(prev => {
         const updated = new Map(prev);
         updated.set(customerId, day);
@@ -141,11 +143,6 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
         title: 'Service Day Updated',
         description: day ? `Assigned to ${day}` : 'Day assignment removed',
       });
-
-      // Refresh markers
-      if (mapLoaded && map.current) {
-        addCustomerMarkers();
-      }
     } catch (error) {
       console.error('Error updating service day:', error);
       toast({
@@ -398,9 +395,12 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
       markersAdded++;
     });
 
-    if (markersAdded > 0 && !bounds.isEmpty()) {
+    // Only fit bounds on initial load or filter changes, not on day assignment updates
+    if (markersAdded > 0 && !bounds.isEmpty() && shouldFitBounds) {
       map.current!.fitBounds(bounds, { padding: 50 });
     }
+    // Reset the flag after first render
+    setShouldFitBounds(false);
   }, [filteredCustomers, serviceDetails, potentialCustomerIds, mapLoaded]);
 
   const handleTokenSubmit = () => {
@@ -470,7 +470,10 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
             <Button
               variant={selectedDay === null ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedDay(null)}
+              onClick={() => {
+                setShouldFitBounds(true);
+                setSelectedDay(null);
+              }}
               className="text-xs"
             >
               All ({cleaningCustomers.length})
@@ -480,7 +483,10 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                 key={day}
                 variant={selectedDay === day ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedDay(selectedDay === day ? null : day)}
+                onClick={() => {
+                  setShouldFitBounds(true);
+                  setSelectedDay(selectedDay === day ? null : day);
+                }}
                 className="text-xs"
                 style={{
                   backgroundColor: selectedDay === day ? DAY_COLORS[day].hex : undefined,
@@ -494,7 +500,10 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
             <Button
               variant={selectedDay === 'Unassigned' ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedDay(selectedDay === 'Unassigned' ? null : 'Unassigned')}
+              onClick={() => {
+                setShouldFitBounds(true);
+                setSelectedDay(selectedDay === 'Unassigned' ? null : 'Unassigned');
+              }}
               className="text-xs"
               style={{
                 backgroundColor: selectedDay === 'Unassigned' ? DAY_COLORS.Unassigned.hex : undefined,
