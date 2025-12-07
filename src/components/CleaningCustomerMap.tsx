@@ -661,7 +661,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
     }
     // Reset the flag after first render
     setShouldFitBounds(false);
-  }, [filteredCustomers, serviceDetails, potentialCustomerIds, mapLoaded]);
+  }, [filteredCustomers, serviceDetails, potentialCustomerIds, mapLoaded, dayColors]);
 
   const handleTokenSubmit = () => {
     if (mapboxToken.trim()) {
