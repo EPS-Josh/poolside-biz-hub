@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createHmac } from "node:crypto";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,30 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!;
+
+// Validate Twilio signature to ensure request is from Twilio
+function validateTwilioSignature(
+  signature: string | null,
+  url: string,
+  params: Record<string, string>,
+  authToken: string
+): boolean {
+  if (!signature) return false;
+  
+  // Sort params alphabetically and concatenate key + value
+  const sortedParams = Object.keys(params)
+    .sort()
+    .map(key => key + params[key])
+    .join('');
+  
+  // Create HMAC-SHA1 of URL + sorted params
+  const expectedSig = createHmac('sha1', authToken)
+    .update(url + sortedParams)
+    .digest('base64');
+  
+  return signature === expectedSig;
+}
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight
@@ -16,13 +41,33 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Clone request to read form data twice (once for validation, once for processing)
+    const clonedReq = req.clone();
+    const formData = await req.formData();
+    
+    // Convert FormData to object for signature validation
+    const params: Record<string, string> = {};
+    formData.forEach((value, key) => {
+      params[key] = value.toString();
+    });
+    
+    // Validate Twilio signature
+    const twilioSignature = clonedReq.headers.get('X-Twilio-Signature');
+    const requestUrl = clonedReq.url;
+    
+    if (!validateTwilioSignature(twilioSignature, requestUrl, params, TWILIO_AUTH_TOKEN)) {
+      console.error('Invalid Twilio signature - rejecting request');
+      return new Response('Invalid signature', { status: 403, headers: corsHeaders });
+    }
+    
+    console.log('Twilio signature validated successfully');
+    
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Parse incoming SMS data from Twilio
-    const formData = await req.formData();
-    const from = formData.get('From') as string; // Customer's phone number
-    const body = formData.get('Body') as string; // Message content
-    const messageSid = formData.get('MessageSid') as string;
+    const from = params['From']; // Customer's phone number
+    const body = params['Body']; // Message content
+    const messageSid = params['MessageSid'];
 
     console.log('Incoming SMS:', { from, body, messageSid });
 
