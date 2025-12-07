@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Settings, RefreshCw, Calendar, GripVertical, Palette } from 'lucide-react';
+import { MapPin, Settings, RefreshCw, Calendar, GripVertical, Palette, Car } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -93,7 +93,65 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
   const [shouldFitBounds, setShouldFitBounds] = useState(true);
   const [dayColors, setDayColors] = useState<Record<string, { hex: string; label: string }>>(loadSavedColors);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [routeDistances, setRouteDistances] = useState<Map<string, number>>(new Map());
+  const [loadingDistances, setLoadingDistances] = useState(false);
   const { toast } = useToast();
+
+  // Calculate driving distance between two customers
+  const calculateDistance = async (
+    fromCustomer: Customer,
+    toCustomer: Customer
+  ): Promise<number | null> => {
+    if (!fromCustomer.longitude || !fromCustomer.latitude || 
+        !toCustomer.longitude || !toCustomer.latitude || !mapboxToken) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${fromCustomer.longitude},${fromCustomer.latitude};${toCustomer.longitude},${toCustomer.latitude}?access_token=${mapboxToken}&overview=false`
+      );
+      const data = await response.json();
+      
+      if (data.routes && data.routes[0]) {
+        // Distance in meters, convert to miles
+        return data.routes[0].distance * 0.000621371;
+      }
+    } catch (error) {
+      console.error('Error calculating distance:', error);
+    }
+    return null;
+  };
+
+  // Calculate all route distances for a day
+  const calculateDayDistances = async (dayCustomers: Customer[]) => {
+    if (dayCustomers.length < 2 || !mapboxToken) return;
+    
+    setLoadingDistances(true);
+    const newDistances = new Map(routeDistances);
+    
+    for (let i = 0; i < dayCustomers.length - 1; i++) {
+      const from = dayCustomers[i];
+      const to = dayCustomers[i + 1];
+      const key = `${from.id}-${to.id}`;
+      
+      // Only calculate if not already cached
+      if (!newDistances.has(key)) {
+        const distance = await calculateDistance(from, to);
+        if (distance !== null) {
+          newDistances.set(key, distance);
+        }
+      }
+    }
+    
+    setRouteDistances(newDistances);
+    setLoadingDistances(false);
+  };
+
+  // Get distance between two customers
+  const getDistanceBetween = (fromId: string, toId: string): number | null => {
+    return routeDistances.get(`${fromId}-${toId}`) ?? null;
+  };
 
   // Update a day's color
   const updateDayColor = (day: string, hex: string) => {
@@ -771,6 +829,16 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                         style={{ backgroundColor: dayColors[day].hex }}
                       />
                       <span className="font-medium text-sm">{day}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1 ml-1"
+                        onClick={() => calculateDayDistances(dayCustomers)}
+                        disabled={loadingDistances || dayCustomers.length < 2}
+                        title="Calculate driving distances"
+                      >
+                        <Car className="h-3 w-3" />
+                      </Button>
                       <span className="text-xs text-muted-foreground ml-auto">
                         ({dayCustomers.length})
                       </span>
@@ -780,7 +848,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`space-y-1 max-h-64 overflow-y-auto min-h-[40px] rounded-lg transition-colors ${
+                          className={`max-h-64 overflow-y-auto min-h-[40px] rounded-lg transition-colors ${
                             snapshot.isDraggingOver ? 'bg-muted/50' : ''
                           }`}
                         >
@@ -789,51 +857,64 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
                               No customers - drag here to assign
                             </p>
                           ) : (
-                            dayCustomers.map((customer, index) => (
-                              <Draggable key={customer.id} draggableId={customer.id} index={index}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`text-xs p-2 rounded bg-background border transition-all flex items-center gap-2 ${
-                                      snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : 'hover:bg-muted/50'
-                                    }`}
-                                  >
-                                    <div
-                                      {...provided.dragHandleProps}
-                                      className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
-                                    >
-                                      <GripVertical className="h-3 w-3" />
+                            dayCustomers.map((customer, index) => {
+                              const prevCustomer = index > 0 ? dayCustomers[index - 1] : null;
+                              const distance = prevCustomer ? getDistanceBetween(prevCustomer.id, customer.id) : null;
+                              
+                              return (
+                                <React.Fragment key={customer.id}>
+                                  {distance !== null && (
+                                    <div className="flex items-center justify-center py-0.5 text-[10px] text-muted-foreground">
+                                      <Car className="h-2.5 w-2.5 mr-1" />
+                                      <span>{distance.toFixed(1)} mi</span>
                                     </div>
-                                    <input
-                                      type="number"
-                                      min="1"
-                                      value={serviceDetails.get(customer.id)?.order || index + 1}
-                                      onChange={(e) => {
-                                        const newOrder = parseInt(e.target.value) || 1;
-                                        updateRouteOrder(customer.id, newOrder);
-                                      }}
-                                      className="w-8 h-5 text-center text-xs border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary"
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                      <p className="font-medium truncate">
-                                        {customer.first_name} {customer.last_name}
-                                      </p>
-                                      {customer.address && (
-                                        <p className="text-muted-foreground truncate text-[10px]">
-                                          {customer.address}
-                                        </p>
-                                      )}
-                                    </div>
-                                    {potentialCustomerIds.includes(customer.id) && (
-                                      <span className="shrink-0 text-[10px] px-1 py-0.5 bg-amber-100 text-amber-800 rounded">
-                                        P
-                                      </span>
+                                  )}
+                                  <Draggable draggableId={customer.id} index={index}>
+                                    {(provided, snapshot) => (
+                                      <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        className={`text-xs p-2 rounded bg-background border transition-all flex items-center gap-2 ${
+                                          snapshot.isDragging ? 'shadow-lg ring-2 ring-primary' : 'hover:bg-muted/50'
+                                        }`}
+                                      >
+                                        <div
+                                          {...provided.dragHandleProps}
+                                          className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+                                        >
+                                          <GripVertical className="h-3 w-3" />
+                                        </div>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          value={serviceDetails.get(customer.id)?.order || index + 1}
+                                          onChange={(e) => {
+                                            const newOrder = parseInt(e.target.value) || 1;
+                                            updateRouteOrder(customer.id, newOrder);
+                                          }}
+                                          className="w-8 h-5 text-center text-xs border rounded bg-muted/50 focus:outline-none focus:ring-1 focus:ring-primary"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-medium truncate">
+                                            {customer.first_name} {customer.last_name}
+                                          </p>
+                                          {customer.address && (
+                                            <p className="text-muted-foreground truncate text-[10px]">
+                                              {customer.address}
+                                            </p>
+                                          )}
+                                        </div>
+                                        {potentialCustomerIds.includes(customer.id) && (
+                                          <span className="shrink-0 text-[10px] px-1 py-0.5 bg-amber-100 text-amber-800 rounded">
+                                            P
+                                          </span>
+                                        )}
+                                      </div>
                                     )}
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))
+                                  </Draggable>
+                                </React.Fragment>
+                              );
+                            })
                           )}
                           {provided.placeholder}
                         </div>
