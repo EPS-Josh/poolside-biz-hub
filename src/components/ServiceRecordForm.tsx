@@ -40,6 +40,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [partsUsed, setPartsUsed] = useState<PartUsed[]>([]);
+  const [hasStandaloneSpa, setHasStandaloneSpa] = useState(false);
   
   // Initialize with appointment data if provided, otherwise use current Phoenix date
   const currentPhoenixDate = getCurrentPhoenixDate();
@@ -75,8 +76,40 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
       ph: '',
       total_alkalinity: '',
       cyanuric_acid: ''
+    },
+    spa_before_readings: {
+      total_hardness: '',
+      total_chlorine_bromine: '',
+      free_chlorine: '',
+      ph: '',
+      total_alkalinity: '',
+      cyanuric_acid: ''
+    },
+    spa_after_readings: {
+      total_hardness: '',
+      total_chlorine_bromine: '',
+      free_chlorine: '',
+      ph: '',
+      total_alkalinity: '',
+      cyanuric_acid: ''
     }
   });
+
+  // Fetch customer service details to check spa type
+  useEffect(() => {
+    const fetchSpaType = async () => {
+      const { data } = await supabase
+        .from('customer_service_details')
+        .select('spa_type')
+        .eq('customer_id', customerId)
+        .maybeSingle();
+      
+      if (data?.spa_type === 'Standalone' || data?.spa_type === 'Hot Tub') {
+        setHasStandaloneSpa(true);
+      }
+    };
+    fetchSpaType();
+  }, [customerId]);
 
   // Update form data when appointment data changes
   useEffect(() => {
@@ -129,8 +162,8 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
           next_service_date: formData.next_service_date || null,
           total_time_minutes: formData.total_time_minutes ? parseInt(formData.total_time_minutes) : null,
           service_status: formData.service_status,
-          before_readings: formData.before_readings,
-          after_readings: formData.after_readings,
+          before_readings: { ...formData.before_readings, ...(hasStandaloneSpa ? { spa: formData.spa_before_readings } : {}) },
+          after_readings: { ...formData.after_readings, ...(hasStandaloneSpa ? { spa: formData.spa_after_readings } : {}) },
           parts_used: partsUsed.length > 0 ? JSON.parse(JSON.stringify(partsUsed)) : null,
           invoicing_status: formData.invoicing_status,
           needs_follow_up: formData.needs_follow_up,
@@ -165,7 +198,9 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
         follow_up_notes: '',
         follow_up_date: '',
         before_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' },
-        after_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' }
+        after_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' },
+        spa_before_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' },
+        spa_after_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' }
       });
       setPartsUsed([]);
       onSuccess();
@@ -185,7 +220,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateReadings = (type: 'before_readings' | 'after_readings', field: string, value: string) => {
+  const updateReadings = (type: 'before_readings' | 'after_readings' | 'spa_before_readings' | 'spa_after_readings', field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [type]: { ...prev[type], [field]: value }
@@ -287,7 +322,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Before Readings</CardTitle>
+                <CardTitle className="text-sm">Pool Before Readings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
@@ -351,7 +386,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">After Readings</CardTitle>
+                <CardTitle className="text-sm">Pool After Readings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
@@ -413,6 +448,138 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
               </CardContent>
             </Card>
           </div>
+
+          {hasStandaloneSpa && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border-purple-200 dark:border-purple-800">
+                <CardHeader>
+                  <CardTitle className="text-sm text-purple-700 dark:text-purple-300">Spa Before Readings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="spa_before_total_hardness">Total Hardness</Label>
+                      <Input
+                        id="spa_before_total_hardness"
+                        value={formData.spa_before_readings.total_hardness}
+                        onChange={(e) => updateReadings('spa_before_readings', 'total_hardness', e.target.value)}
+                        placeholder="200"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_before_total_chlorine_bromine">Total Chlorine / Bromine</Label>
+                      <Input
+                        id="spa_before_total_chlorine_bromine"
+                        value={formData.spa_before_readings.total_chlorine_bromine}
+                        onChange={(e) => updateReadings('spa_before_readings', 'total_chlorine_bromine', e.target.value)}
+                        placeholder="3.0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_before_free_chlorine">Free Chlorine</Label>
+                      <Input
+                        id="spa_before_free_chlorine"
+                        value={formData.spa_before_readings.free_chlorine}
+                        onChange={(e) => updateReadings('spa_before_readings', 'free_chlorine', e.target.value)}
+                        placeholder="1.5"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_before_ph">pH</Label>
+                      <Input
+                        id="spa_before_ph"
+                        value={formData.spa_before_readings.ph}
+                        onChange={(e) => updateReadings('spa_before_readings', 'ph', e.target.value)}
+                        placeholder="7.2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_before_total_alkalinity">Total Alkalinity</Label>
+                      <Input
+                        id="spa_before_total_alkalinity"
+                        value={formData.spa_before_readings.total_alkalinity}
+                        onChange={(e) => updateReadings('spa_before_readings', 'total_alkalinity', e.target.value)}
+                        placeholder="120"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_before_cyanuric">Cyanuric Acid</Label>
+                      <Input
+                        id="spa_before_cyanuric"
+                        value={formData.spa_before_readings.cyanuric_acid}
+                        onChange={(e) => updateReadings('spa_before_readings', 'cyanuric_acid', e.target.value)}
+                        placeholder="30"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-purple-200 dark:border-purple-800">
+                <CardHeader>
+                  <CardTitle className="text-sm text-purple-700 dark:text-purple-300">Spa After Readings</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="spa_after_total_hardness">Total Hardness</Label>
+                      <Input
+                        id="spa_after_total_hardness"
+                        value={formData.spa_after_readings.total_hardness}
+                        onChange={(e) => updateReadings('spa_after_readings', 'total_hardness', e.target.value)}
+                        placeholder="200"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_after_total_chlorine_bromine">Total Chlorine / Bromine</Label>
+                      <Input
+                        id="spa_after_total_chlorine_bromine"
+                        value={formData.spa_after_readings.total_chlorine_bromine}
+                        onChange={(e) => updateReadings('spa_after_readings', 'total_chlorine_bromine', e.target.value)}
+                        placeholder="3.0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_after_free_chlorine">Free Chlorine</Label>
+                      <Input
+                        id="spa_after_free_chlorine"
+                        value={formData.spa_after_readings.free_chlorine}
+                        onChange={(e) => updateReadings('spa_after_readings', 'free_chlorine', e.target.value)}
+                        placeholder="2.0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_after_ph">pH</Label>
+                      <Input
+                        id="spa_after_ph"
+                        value={formData.spa_after_readings.ph}
+                        onChange={(e) => updateReadings('spa_after_readings', 'ph', e.target.value)}
+                        placeholder="7.4"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_after_total_alkalinity">Total Alkalinity</Label>
+                      <Input
+                        id="spa_after_total_alkalinity"
+                        value={formData.spa_after_readings.total_alkalinity}
+                        onChange={(e) => updateReadings('spa_after_readings', 'total_alkalinity', e.target.value)}
+                        placeholder="125"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="spa_after_cyanuric">Cyanuric Acid</Label>
+                      <Input
+                        id="spa_after_cyanuric"
+                        value={formData.spa_after_readings.cyanuric_acid}
+                        onChange={(e) => updateReadings('spa_after_readings', 'cyanuric_acid', e.target.value)}
+                        placeholder="35"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

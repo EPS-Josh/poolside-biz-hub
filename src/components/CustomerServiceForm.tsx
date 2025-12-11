@@ -640,12 +640,20 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="spa_type">Spa Type</Label>
-                  <Input
-                    id="spa_type"
+                  <Select
                     value={details.spa_type || ''}
-                    onChange={(e) => updateField('spa_type', e.target.value)}
-                    placeholder="e.g., Attached, Standalone, Hot Tub"
-                  />
+                    onValueChange={(value) => updateField('spa_type', value)}
+                  >
+                    <SelectTrigger id="spa_type">
+                      <SelectValue placeholder="Select spa type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="None">None</SelectItem>
+                      <SelectItem value="Attached">Attached (Pool/Spa Combo)</SelectItem>
+                      <SelectItem value="Standalone">Standalone Spa</SelectItem>
+                      <SelectItem value="Hot Tub">Hot Tub</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="spa_equipment">Spa Equipment</Label>
