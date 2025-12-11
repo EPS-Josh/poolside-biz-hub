@@ -41,8 +41,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Clone request to read form data twice (once for validation, once for processing)
-    const clonedReq = req.clone();
     const formData = await req.formData();
     
     // Convert FormData to object for signature validation
@@ -51,12 +49,16 @@ const handler = async (req: Request): Promise<Response> => {
       params[key] = value.toString();
     });
     
-    // Validate Twilio signature
-    const twilioSignature = clonedReq.headers.get('X-Twilio-Signature');
-    const requestUrl = clonedReq.url;
+    // Validate Twilio signature using the configured webhook URL
+    // Twilio signs requests using the exact URL configured in their console
+    const twilioSignature = req.headers.get('X-Twilio-Signature');
+    const webhookUrl = 'https://fsqztictdjcguzchlcdf.supabase.co/functions/v1/sms-webhook';
     
-    if (!validateTwilioSignature(twilioSignature, requestUrl, params, TWILIO_AUTH_TOKEN)) {
+    if (!validateTwilioSignature(twilioSignature, webhookUrl, params, TWILIO_AUTH_TOKEN)) {
       console.error('Invalid Twilio signature - rejecting request');
+      console.error('Signature received:', twilioSignature);
+      console.error('Webhook URL used:', webhookUrl);
+      console.error('Params:', JSON.stringify(params));
       return new Response('Invalid signature', { status: 403, headers: corsHeaders });
     }
     
