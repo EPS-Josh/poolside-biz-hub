@@ -468,13 +468,6 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
     }
   };
 
-  // Update markers when filters or service details change
-  useEffect(() => {
-    if (mapLoaded && map.current) {
-      addCustomerMarkers();
-    }
-  }, [filteredCustomers, mapLoaded, serviceDetails, selectedDay]);
-
   const addCustomerMarkers = useCallback(() => {
     if (!map.current) return;
 
@@ -661,7 +654,14 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
     }
     // Reset the flag after first render
     setShouldFitBounds(false);
-  }, [filteredCustomers, serviceDetails, potentialCustomerIds, mapLoaded, dayColors]);
+  }, [filteredCustomers, serviceDetails, potentialCustomerIds, mapLoaded, dayColors, shouldFitBounds]);
+
+  // Update markers when filters or service details change
+  useEffect(() => {
+    if (mapLoaded && map.current) {
+      addCustomerMarkers();
+    }
+  }, [mapLoaded, addCustomerMarkers]);
 
   const handleTokenSubmit = () => {
     if (mapboxToken.trim()) {
