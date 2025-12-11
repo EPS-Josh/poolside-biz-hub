@@ -135,12 +135,9 @@ export const CustomerTable = ({ customers, onCustomerClick, onEditCustomer, onDe
               )}
             </TableCell>
             <TableCell>
-              {(customer.city || customer.state) && (
+              {customer.address && (
                 <div className="text-sm">
-                  {customer.city && customer.state 
-                    ? `${customer.city}, ${customer.state}`
-                    : customer.city || customer.state
-                  }
+                  {customer.address}
                 </div>
               )}
             </TableCell>

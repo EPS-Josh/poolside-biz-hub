@@ -83,12 +83,9 @@ export const CustomerCard = ({ customer, onCustomerClick, onEditCustomer }: Cust
             {customer.phone}
           </div>
         )}
-        {(customer.city || customer.state) && (
-          <div className="text-sm text-gray-600">
-            {customer.city && customer.state 
-              ? `${customer.city}, ${customer.state}`
-              : customer.city || customer.state
-            }
+        {customer.address && (
+          <div className="text-sm text-muted-foreground">
+            {customer.address}
           </div>
         )}
       </div>
