@@ -245,6 +245,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
   // Fetch service details for all customers
   useEffect(() => {
     const fetchServiceDetails = async () => {
+      console.log('Fetching service details...');
       const { data, error } = await supabase
         .from('customer_service_details')
         .select('customer_id, service_day, route_order');
@@ -253,6 +254,9 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
         console.error('Error fetching service details:', error);
         return;
       }
+
+      console.log('Service details fetched:', data?.length, 'records');
+      console.log('Sample service details:', data?.slice(0, 3));
 
       const detailsMap = new Map<string, { day: string | null; order: number | null }>();
       data?.forEach((d: ServiceDetails) => {
@@ -471,6 +475,10 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
   const addCustomerMarkers = useCallback(() => {
     if (!map.current) return;
 
+    console.log('Adding markers, serviceDetails size:', serviceDetails.size);
+    console.log('dayColors:', dayColors);
+    console.log('filteredCustomers count:', filteredCustomers.length);
+
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
@@ -479,7 +487,7 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
     const bounds = new mapboxgl.LngLatBounds();
     let markersAdded = 0;
 
-    customersWithCoordinates.forEach(customer => {
+    customersWithCoordinates.forEach((customer, index) => {
       if (!customer.latitude || !customer.longitude) return;
 
       const coordinates: [number, number] = [customer.longitude, customer.latitude];
@@ -487,6 +495,10 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
       const serviceDay = details?.day || null;
       const dayInfo = serviceDay ? dayColors[serviceDay] : dayColors.Unassigned;
       const isPotential = potentialCustomerIds.includes(customer.id);
+
+      if (index < 3) {
+        console.log(`Marker ${index}: ${customer.first_name} ${customer.last_name}, day: ${serviceDay}, color: ${dayInfo?.hex}`);
+      }
 
       // Create marker element with day color
       const markerElement = document.createElement('div');
