@@ -19,7 +19,8 @@ import {
   ClipboardList,
   Bell,
   MessageSquare,
-  Droplets
+  Droplets,
+  MapPin
 } from 'lucide-react';
 
 
@@ -71,6 +72,13 @@ const Menu = () => {
           icon: Droplets,
           color: "bg-sky-500",
           action: () => navigate('/cleaning-pricing'),
+        },
+        {
+          title: "Customer Map",
+          description: "View customer locations, plan routes, and manage service areas",
+          icon: MapPin,
+          color: "bg-rose-500",
+          action: () => navigate('/customer-map'),
         },
       ]
     },
