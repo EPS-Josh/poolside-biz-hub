@@ -78,7 +78,7 @@ const Menu = () => {
           description: "View customer locations, plan routes, and manage service areas",
           icon: MapPin,
           color: "bg-rose-500",
-          action: () => navigate('/customer-map'),
+          action: () => navigate('/customers/map'),
         },
       ]
     },
