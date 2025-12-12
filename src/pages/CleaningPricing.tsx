@@ -1,11 +1,20 @@
+import { useState } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Check, Droplets, Sparkles, Shield, Clock, Smartphone, Bell, FileText, Camera } from 'lucide-react';
+import { PotentialCustomerDialog } from '@/components/PotentialCustomerDialog';
 
 const CleaningPricing = () => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<{ name: string; weeklyPrice: number } | null>(null);
+
+  const handleGetStarted = (tierName: string, weeklyPrice: number) => {
+    setSelectedTier({ name: tierName, weeklyPrice });
+    setDialogOpen(true);
+  };
   const pricingTiers = [
     {
       name: "Small Pool",
@@ -176,7 +185,11 @@ const CleaningPricing = () => {
                           </li>
                         ))}
                       </ul>
-                      <Button className="w-full" variant={tier.popular ? "default" : "outline"}>
+                      <Button 
+                        className="w-full" 
+                        variant={tier.popular ? "default" : "outline"}
+                        onClick={() => handleGetStarted(tier.name, tier.weeklyPrice)}
+                      >
                         Get Started
                       </Button>
                     </CardContent>
@@ -278,6 +291,15 @@ const CleaningPricing = () => {
             </div>
           </div>
         </main>
+
+        {selectedTier && (
+          <PotentialCustomerDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            tierName={selectedTier.name}
+            weeklyRate={selectedTier.weeklyPrice}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );
