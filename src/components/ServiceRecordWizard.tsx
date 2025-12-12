@@ -81,12 +81,20 @@ interface ServiceRecordWizardProps {
   onCancel: () => void;
 }
 
-const WIZARD_STEPS = [
-  { id: 'service-info', title: 'Service Info', shortTitle: 'Info' },
-  { id: 'before-readings', title: 'Before Readings', shortTitle: 'Before' },
-  { id: 'work-performed', title: 'Work Performed', shortTitle: 'Work' },
-  { id: 'after-readings', title: 'After Readings', shortTitle: 'After' },
-  { id: 'parts-notes', title: 'Parts & Notes', shortTitle: 'Notes' },
+// Service types that require chemical readings
+const CHEMICAL_READING_SERVICES = [
+  'Weekly Pool Cleaning',
+  'Bi-Weekly Pool Cleaning',
+  'One-Time Pool Cleaning',
+  'Chemical Balancing'
+];
+
+const ALL_WIZARD_STEPS = [
+  { id: 'service-info', title: 'Service Info', shortTitle: 'Info', alwaysShow: true },
+  { id: 'before-readings', title: 'Before Readings', shortTitle: 'Before', alwaysShow: false },
+  { id: 'work-performed', title: 'Work Performed', shortTitle: 'Work', alwaysShow: true },
+  { id: 'after-readings', title: 'After Readings', shortTitle: 'After', alwaysShow: false },
+  { id: 'parts-notes', title: 'Parts & Notes', shortTitle: 'Notes', alwaysShow: true },
 ];
 
 export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
@@ -102,8 +110,21 @@ export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
+  // Check if current service type requires chemical readings
+  const showChemicalReadings = CHEMICAL_READING_SERVICES.includes(formData.service_type);
+
+  // Filter steps based on service type
+  const WIZARD_STEPS = ALL_WIZARD_STEPS.filter(step => step.alwaysShow || showChemicalReadings);
+
   const totalSteps = WIZARD_STEPS.length;
   const progress = ((currentStep + 1) / totalSteps) * 100;
+
+  // Reset to valid step if current step is out of bounds after service type change
+  React.useEffect(() => {
+    if (currentStep >= WIZARD_STEPS.length) {
+      setCurrentStep(WIZARD_STEPS.length - 1);
+    }
+  }, [showChemicalReadings, currentStep, WIZARD_STEPS.length]);
 
   const goNext = () => {
     if (currentStep < totalSteps - 1) {
@@ -670,16 +691,17 @@ export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
   );
 
   const renderCurrentStep = () => {
-    switch (currentStep) {
-      case 0:
+    const currentStepId = WIZARD_STEPS[currentStep]?.id;
+    switch (currentStepId) {
+      case 'service-info':
         return renderServiceInfoStep();
-      case 1:
+      case 'before-readings':
         return renderBeforeReadingsStep();
-      case 2:
+      case 'work-performed':
         return renderWorkPerformedStep();
-      case 3:
+      case 'after-readings':
         return renderAfterReadingsStep();
-      case 4:
+      case 'parts-notes':
         return renderPartsNotesStep();
       default:
         return null;
