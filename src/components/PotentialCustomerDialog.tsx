@@ -14,12 +14,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { AdditionalService } from "./AdditionalServicesDialog";
 
 interface PotentialCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tierName: string;
   weeklyRate: number;
+  selectedServices: AdditionalService[];
 }
 
 export const PotentialCustomerDialog = ({
@@ -27,6 +29,7 @@ export const PotentialCustomerDialog = ({
   onOpenChange,
   tierName,
   weeklyRate,
+  selectedServices,
 }: PotentialCustomerDialogProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,6 +64,13 @@ export const PotentialCustomerDialog = ({
     setIsSubmitting(true);
 
     try {
+      // Build service type string including additional services
+      let serviceTypeString = `Weekly Pool Cleaning - ${tierName} ($${weeklyRate}/week)`;
+      if (selectedServices.length > 0) {
+        const addOnsList = selectedServices.map(s => `${s.name} (${s.price})`).join(", ");
+        serviceTypeString += ` + ${addOnsList}`;
+      }
+
       const { data, error } = await supabase.functions.invoke('send-service-request-email', {
         body: {
           firstName: formData.firstName.trim(),
@@ -68,7 +78,7 @@ export const PotentialCustomerDialog = ({
           email: formData.email.trim(),
           phone: formData.phone.trim(),
           address: formData.address.trim(),
-          serviceType: `Weekly Pool Cleaning - ${tierName} ($${weeklyRate}/week)`,
+          serviceType: serviceTypeString,
           preferredContactMethod: 'email',
           message: formData.message.trim() || undefined,
         },

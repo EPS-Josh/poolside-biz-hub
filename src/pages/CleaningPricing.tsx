@@ -6,14 +6,23 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Check, Droplets, Sparkles, Shield, Clock, Smartphone, Bell, FileText, Camera } from 'lucide-react';
 import { PotentialCustomerDialog } from '@/components/PotentialCustomerDialog';
+import { AdditionalServicesDialog, AdditionalService } from '@/components/AdditionalServicesDialog';
 
 const CleaningPricing = () => {
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [servicesDialogOpen, setServicesDialogOpen] = useState(false);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [selectedTier, setSelectedTier] = useState<{ name: string; weeklyPrice: number } | null>(null);
+  const [selectedAdditionalServices, setSelectedAdditionalServices] = useState<AdditionalService[]>([]);
 
   const handleGetStarted = (tierName: string, weeklyPrice: number) => {
     setSelectedTier({ name: tierName, weeklyPrice });
-    setDialogOpen(true);
+    setServicesDialogOpen(true);
+  };
+
+  const handleServicesSelected = (services: AdditionalService[]) => {
+    setSelectedAdditionalServices(services);
+    setServicesDialogOpen(false);
+    setContactDialogOpen(true);
   };
   const pricingTiers = [
     {
@@ -293,12 +302,22 @@ const CleaningPricing = () => {
         </main>
 
         {selectedTier && (
-          <PotentialCustomerDialog
-            open={dialogOpen}
-            onOpenChange={setDialogOpen}
-            tierName={selectedTier.name}
-            weeklyRate={selectedTier.weeklyPrice}
-          />
+          <>
+            <AdditionalServicesDialog
+              open={servicesDialogOpen}
+              onOpenChange={setServicesDialogOpen}
+              tierName={selectedTier.name}
+              weeklyRate={selectedTier.weeklyPrice}
+              onContinue={handleServicesSelected}
+            />
+            <PotentialCustomerDialog
+              open={contactDialogOpen}
+              onOpenChange={setContactDialogOpen}
+              tierName={selectedTier.name}
+              weeklyRate={selectedTier.weeklyPrice}
+              selectedServices={selectedAdditionalServices}
+            />
+          </>
         )}
       </div>
     </ProtectedRoute>
