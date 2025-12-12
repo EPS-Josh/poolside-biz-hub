@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,15 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ServiceSelect } from '@/components/calendar/ServiceSelect';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, LayoutList, Wand2 } from 'lucide-react';
+import { Plus, LayoutList, Wand2, Clock, Trash2, RotateCcw } from 'lucide-react';
 import { formatPhoenixDateForDatabase, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 import { PartsUsedSelector } from '@/components/PartsUsedSelector';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ServiceRecordWizard } from '@/components/ServiceRecordWizard';
 import { Toggle } from '@/components/ui/toggle';
+import { useServiceRecordDraft } from '@/hooks/useServiceRecordDraft';
 
 interface PartUsed {
   inventoryItemId: string;
@@ -47,6 +49,10 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
   const [hasStandaloneSpa, setHasStandaloneSpa] = useState(false);
   // Default to wizard mode on mobile, full form on desktop
   const [useWizardMode, setUseWizardMode] = useState(isMobile);
+  // Draft management
+  const { hasDraft, saveDraft, loadDraft, clearDraft, formatDraftTime } = useServiceRecordDraft(customerId);
+  const [showDraftPrompt, setShowDraftPrompt] = useState(false);
+  const [draftChecked, setDraftChecked] = useState(false);
   // Initialize with appointment data if provided, otherwise use current Phoenix date
   const currentPhoenixDate = getCurrentPhoenixDate();
   const [formData, setFormData] = useState({
@@ -121,6 +127,32 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
     setUseWizardMode(isMobile);
   }, [isMobile]);
 
+  // Check for draft when dialog opens
+  useEffect(() => {
+    if (open && hasDraft && !draftChecked) {
+      setShowDraftPrompt(true);
+      setDraftChecked(true);
+    }
+  }, [open, hasDraft, draftChecked]);
+
+  // Reset draft check when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setDraftChecked(false);
+      setShowDraftPrompt(false);
+    }
+  }, [open]);
+
+  // Auto-save draft on form data changes (debounced via effect)
+  useEffect(() => {
+    if (open && !showDraftPrompt) {
+      const timeoutId = setTimeout(() => {
+        saveDraft(formData, partsUsed);
+      }, 1000); // Save after 1 second of no changes
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData, partsUsed, open, showDraftPrompt, saveDraft]);
+
   // Update form data when appointment data changes
   useEffect(() => {
     if (appointmentData) {
@@ -145,6 +177,51 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     onTriggerOpenChange?.(newOpen);
+  };
+
+  // Handle continuing from draft
+  const handleContinueDraft = () => {
+    const draft = loadDraft();
+    if (draft) {
+      setFormData(draft.formData);
+      setPartsUsed(draft.partsUsed);
+      toast({
+        title: 'Draft restored',
+        description: 'Your previous work has been restored',
+      });
+    }
+    setShowDraftPrompt(false);
+  };
+
+  // Handle starting fresh
+  const handleStartFresh = () => {
+    clearDraft();
+    // Reset to default/appointment data
+    const resetPhoenixDate = getCurrentPhoenixDate();
+    setFormData({
+      service_date: appointmentData?.appointmentDate || formatPhoenixDateForDatabase(resetPhoenixDate),
+      service_time: appointmentData?.appointmentTime || '',
+      service_type: appointmentData?.serviceType || '',
+      technician_name: '',
+      work_performed: '',
+      chemicals_added: '',
+      equipment_serviced: '',
+      customer_notes: '',
+      technician_notes: '',
+      next_service_date: '',
+      total_time_minutes: '',
+      service_status: 'completed',
+      invoicing_status: 'ready_for_qb',
+      needs_follow_up: false,
+      follow_up_notes: '',
+      follow_up_date: '',
+      before_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' },
+      after_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' },
+      spa_before_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' },
+      spa_after_readings: { total_hardness: '', total_chlorine_bromine: '', free_chlorine: '', ph: '', total_alkalinity: '', cyanuric_acid: '' }
+    });
+    setPartsUsed([]);
+    setShowDraftPrompt(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -188,6 +265,8 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
         description: 'Service record added successfully',
       });
 
+      // Clear draft on successful save
+      clearDraft();
       setOpen(false);
       const resetPhoenixDate = getCurrentPhoenixDate();
       setFormData({
@@ -277,6 +356,30 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
           </p>
         </DialogHeader>
         
+        {/* Draft continuation prompt */}
+        {showDraftPrompt && (
+          <Alert className="border-primary/50 bg-primary/5">
+            <Clock className="h-4 w-4" />
+            <AlertDescription className="flex flex-col gap-3">
+              <span>
+                You have an unsaved draft from <strong>{formatDraftTime()}</strong>. Would you like to continue where you left off?
+              </span>
+              <div className="flex gap-2 flex-wrap">
+                <Button size="sm" onClick={handleContinueDraft} className="gap-1">
+                  <RotateCcw className="h-3 w-3" />
+                  Continue Draft
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleStartFresh} className="gap-1">
+                  <Trash2 className="h-3 w-3" />
+                  Start Fresh
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!showDraftPrompt && (
+          <>
         {useWizardMode ? (
           <ServiceRecordWizard
             formData={formData}
@@ -747,6 +850,8 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
             </Button>
           </div>
         </form>
+        )}
+          </>
         )}
       </DialogContent>
     </Dialog>
