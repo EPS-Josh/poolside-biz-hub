@@ -104,14 +104,23 @@ const Splash = () => {
                     Professional pool maintenance services you can trust. 
                     Serving the community with excellence for over 3 decades.
                   </p>
-                  <ServiceRequestForm>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <ServiceRequestForm>
+                      <Button 
+                        size="lg" 
+                        className="px-8 py-3 text-lg bg-cyan-600 hover:bg-cyan-700"
+                      >
+                        Schedule Repair Service
+                      </Button>
+                    </ServiceRequestForm>
                     <Button 
                       size="lg" 
-                      className="px-8 py-3 text-lg bg-cyan-600 hover:bg-cyan-700"
+                      onClick={() => navigate('/cleaning-pricing')}
+                      className="px-8 py-3 text-lg bg-emerald-600 hover:bg-emerald-700"
                     >
-                      Schedule Service Today
+                      Weekly Cleaning Services
                     </Button>
-                  </ServiceRequestForm>
+                  </div>
                 </div>
               </div>
             </div>
