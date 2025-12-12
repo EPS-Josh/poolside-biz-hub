@@ -670,10 +670,10 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
 
   // Update markers when filters or service details change
   useEffect(() => {
-    if (mapLoaded && map.current) {
+    if (mapLoaded && map.current && serviceDetails.size > 0) {
       addCustomerMarkers();
     }
-  }, [mapLoaded, addCustomerMarkers]);
+  }, [mapLoaded, addCustomerMarkers, serviceDetails.size]);
 
   const handleTokenSubmit = () => {
     if (mapboxToken.trim()) {
