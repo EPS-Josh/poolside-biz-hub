@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Header } from '@/components/Header';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Check, Droplets, Sparkles, Shield, Clock, Smartphone, Bell, FileText, Camera } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Check, Droplets, Sparkles, Shield, Clock, Smartphone, Bell, FileText, Camera } from 'lucide-react';
 import { PotentialCustomerDialog } from '@/components/PotentialCustomerDialog';
 import { AdditionalServicesDialog, AdditionalService } from '@/components/AdditionalServicesDialog';
 
@@ -112,11 +112,27 @@ const CleaningPricing = () => {
     { name: "Pool Opening/Closing", price: "$150-$250", description: "Seasonal service" },
   ];
 
+  const navigate = useNavigate();
+
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background">
+      {/* Simple public header */}
+      <header className="bg-background/80 backdrop-blur-sm shadow-sm border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </Button>
+            <ThemeToggle />
+          </div>
+        </div>
+      </header>
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
             {/* Hero Section */}
             <div className="text-center mb-12">
@@ -320,7 +336,6 @@ const CleaningPricing = () => {
           </>
         )}
       </div>
-    </ProtectedRoute>
   );
 };
 
