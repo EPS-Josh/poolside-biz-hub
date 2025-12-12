@@ -49,7 +49,40 @@ export const useServiceRecordDraft = (customerId: string) => {
     }
   }, [getDraftKey]);
 
+  // Check if form has meaningful data worth saving
+  const hasFormData = useCallback((formData: any, partsUsed: PartUsed[]) => {
+    // Check if any text fields have content
+    const textFields = [
+      formData.technician_name,
+      formData.work_performed,
+      formData.chemicals_added,
+      formData.equipment_serviced,
+      formData.customer_notes,
+      formData.technician_notes,
+      formData.total_time_minutes,
+      formData.follow_up_notes,
+    ];
+    
+    const hasTextContent = textFields.some(field => field && field.trim() !== '');
+    const hasParts = partsUsed.length > 0;
+    
+    // Check if any readings have been entered
+    const readingFields = ['before_readings', 'after_readings', 'spa_before_readings', 'spa_after_readings'];
+    const hasReadings = readingFields.some(readingType => {
+      const readings = formData[readingType];
+      if (!readings) return false;
+      return Object.values(readings).some(val => val && String(val).trim() !== '');
+    });
+    
+    return hasTextContent || hasParts || hasReadings;
+  }, []);
+
   const saveDraft = useCallback((formData: any, partsUsed: PartUsed[]) => {
+    // Only save if there's meaningful data
+    if (!hasFormData(formData, partsUsed)) {
+      return;
+    }
+    
     const draftKey = getDraftKey();
     const draft: ServiceRecordDraft = {
       formData,
@@ -60,7 +93,7 @@ export const useServiceRecordDraft = (customerId: string) => {
     localStorage.setItem(draftKey, JSON.stringify(draft));
     setHasDraft(true);
     setDraftTimestamp(draft.savedAt);
-  }, [customerId, getDraftKey]);
+  }, [customerId, getDraftKey, hasFormData]);
 
   const loadDraft = useCallback((): { formData: any; partsUsed: PartUsed[] } | null => {
     const draftKey = getDraftKey();
