@@ -79,7 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!requestData.serviceType || typeof requestData.serviceType !== 'string' ||
-        requestData.serviceType.length > 100) {
+        requestData.serviceType.length > 500) {
       return new Response(
         JSON.stringify({ error: 'Invalid service type' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
