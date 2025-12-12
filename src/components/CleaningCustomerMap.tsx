@@ -458,7 +458,8 @@ const CleaningCustomerMap: React.FC<CleaningCustomerMapProps> = ({
 
       map.current.on('load', () => {
         setMapLoaded(true);
-        addCustomerMarkers();
+        // Don't call addCustomerMarkers here - let the useEffect handle it
+        // when both mapLoaded is true AND serviceDetails are loaded
       });
 
     } catch (error) {
