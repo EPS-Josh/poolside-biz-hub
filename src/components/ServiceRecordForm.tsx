@@ -11,9 +11,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { Plus, LayoutList, Wand2 } from 'lucide-react';
 import { formatPhoenixDateForDatabase, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 import { PartsUsedSelector } from '@/components/PartsUsedSelector';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ServiceRecordWizard } from '@/components/ServiceRecordWizard';
+import { Toggle } from '@/components/ui/toggle';
 
 interface PartUsed {
   inventoryItemId: string;
@@ -37,11 +40,13 @@ interface ServiceRecordFormProps {
 export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, triggerOpen, onTriggerOpenChange }: ServiceRecordFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [partsUsed, setPartsUsed] = useState<PartUsed[]>([]);
   const [hasStandaloneSpa, setHasStandaloneSpa] = useState(false);
-  
+  // Default to wizard mode on mobile, full form on desktop
+  const [useWizardMode, setUseWizardMode] = useState(isMobile);
   // Initialize with appointment data if provided, otherwise use current Phoenix date
   const currentPhoenixDate = getCurrentPhoenixDate();
   const [formData, setFormData] = useState({
@@ -110,6 +115,11 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
     };
     fetchSpaType();
   }, [customerId]);
+
+  // Update wizard mode default when mobile detection changes
+  useEffect(() => {
+    setUseWizardMode(isMobile);
+  }, [isMobile]);
 
   // Update form data when appointment data changes
   useEffect(() => {
@@ -237,10 +247,49 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`${useWizardMode ? 'max-w-lg' : 'max-w-4xl'} max-h-[90vh] overflow-y-auto`}>
         <DialogHeader>
-          <DialogTitle>Add New Service Record</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Add New Service Record</DialogTitle>
+            <div className="flex items-center gap-2">
+              <Toggle
+                pressed={!useWizardMode}
+                onPressedChange={(pressed) => setUseWizardMode(!pressed)}
+                aria-label="Toggle form mode"
+                size="sm"
+                className="data-[state=on]:bg-primary/10"
+              >
+                <LayoutList className="h-4 w-4" />
+              </Toggle>
+              <Toggle
+                pressed={useWizardMode}
+                onPressedChange={(pressed) => setUseWizardMode(pressed)}
+                aria-label="Toggle wizard mode"
+                size="sm"
+                className="data-[state=on]:bg-primary/10"
+              >
+                <Wand2 className="h-4 w-4" />
+              </Toggle>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {useWizardMode ? 'Step-by-step wizard' : 'Full form view'}
+          </p>
         </DialogHeader>
+        
+        {useWizardMode ? (
+          <ServiceRecordWizard
+            formData={formData}
+            updateFormData={updateFormData}
+            updateReadings={updateReadings}
+            partsUsed={partsUsed}
+            onPartsUsedChange={setPartsUsed}
+            hasStandaloneSpa={hasStandaloneSpa}
+            loading={loading}
+            onSubmit={handleSubmit}
+            onCancel={() => setOpen(false)}
+          />
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -698,6 +747,7 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
             </Button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
