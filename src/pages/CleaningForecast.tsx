@@ -659,8 +659,15 @@ const CleaningForecast = () => {
                           key={customer.id} 
                           className="p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
                         >
-                          <div className="font-medium">
-                            {customer.firstName} {customer.lastName}
+                          <div className="flex justify-between items-start">
+                            <div className="font-medium">
+                              {customer.firstName} {customer.lastName}
+                            </div>
+                            {customer.weeklyRate > 0 && (
+                              <span className="text-sm font-semibold text-primary">
+                                ${customer.weeklyRate}/wk
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
                             Next: {new Date(customer.nextAppointment).toLocaleDateString()}
@@ -695,8 +702,15 @@ const CleaningForecast = () => {
                           key={customer.id} 
                           className="p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
                         >
-                          <div className="font-medium">
-                            {customer.firstName} {customer.lastName}
+                          <div className="flex justify-between items-start">
+                            <div className="font-medium">
+                              {customer.firstName} {customer.lastName}
+                            </div>
+                            {customer.weeklyRate > 0 && (
+                              <span className="text-sm font-semibold text-primary">
+                                ${customer.weeklyRate}/wk
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
                             Next: {new Date(customer.nextAppointment).toLocaleDateString()}
