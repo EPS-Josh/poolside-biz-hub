@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle, DollarSign, UserPlus } from 'lucide-react';
+import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle, DollarSign, UserPlus, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MetricsCard } from '@/components/MetricsCard';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
 
 const CleaningForecast = () => {
   const navigate = useNavigate();
@@ -151,6 +152,80 @@ const CleaningForecast = () => {
 
   const potentialCustomerCount = potentialCustomers?.length || 0;
   const potentialRevenue = potentialCustomers?.reduce((sum, c) => sum + (c.proposedRate || 0), 0) || 0;
+
+  const exportPotentialCustomersPdf = () => {
+    if (!potentialCustomers || potentialCustomers.length === 0) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Potential Cleaning Customers', margin, yPos);
+    yPos += 10;
+
+    // Summary
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total: ${potentialCustomerCount} customers | Potential Revenue: $${potentialRevenue}/week`, margin, yPos);
+    yPos += 5;
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, yPos);
+    yPos += 15;
+
+    // Table header
+    doc.setFillColor(245, 158, 11); // Amber color
+    doc.rect(margin, yPos - 5, pageWidth - 2 * margin, 10, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(255, 255, 255);
+    doc.text('Name', margin + 5, yPos);
+    doc.text('Rate/Week', margin + 80, yPos);
+    doc.text('Source', margin + 120, yPos);
+    yPos += 10;
+
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+
+    potentialCustomers.forEach((customer, index) => {
+      // Check if we need a new page
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Alternate row background
+      if (index % 2 === 0) {
+        doc.setFillColor(254, 243, 199); // Light amber
+        doc.rect(margin, yPos - 5, pageWidth - 2 * margin, 10, 'F');
+      }
+
+      const name = `${customer.firstName} ${customer.lastName}`;
+      const rate = customer.proposedRate ? `$${customer.proposedRate}` : '-';
+      const source = customer.acquisitionSource || '-';
+
+      doc.text(name, margin + 5, yPos);
+      doc.text(rate, margin + 80, yPos);
+      doc.text(source.substring(0, 25), margin + 120, yPos);
+      yPos += 10;
+
+      // Add notes if present
+      if (customer.notes) {
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        const notesText = `Notes: ${customer.notes.substring(0, 80)}${customer.notes.length > 80 ? '...' : ''}`;
+        doc.text(notesText, margin + 10, yPos);
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        yPos += 8;
+      }
+    });
+
+    doc.save('potential-cleaning-customers.pdf');
+  };
 
   const calculateForecast = () => {
     const currentWeekly = currentStats?.weeklyCount || 0;
@@ -592,16 +667,29 @@ const CleaningForecast = () => {
             {potentialCustomerCount > 0 && (
               <Card className="mt-6 border-amber-200 dark:border-amber-800">
                 <CardHeader className="bg-amber-50 dark:bg-amber-950/30 rounded-t-lg">
-                  <CardTitle className="flex items-center gap-2">
-                    <UserPlus className="h-5 w-5 text-amber-600" />
-                    Potential Cleaning Customers ({potentialCustomerCount})
-                    <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-                      +${potentialRevenue}/week
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Customers marked as potential acquisitions
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <UserPlus className="h-5 w-5 text-amber-600" />
+                        Potential Cleaning Customers ({potentialCustomerCount})
+                        <Badge variant="secondary" className="ml-2 bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                          +${potentialRevenue}/week
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        Customers marked as potential acquisitions
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={exportPotentialCustomersPdf}
+                      className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900"
+                    >
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Export PDF
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
