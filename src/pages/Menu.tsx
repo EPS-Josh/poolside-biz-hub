@@ -30,6 +30,47 @@ const Menu = () => {
 
   const menuSections = [
     {
+      title: "Operations",
+      description: "Day-to-day business operations and management",
+      items: [
+        {
+          title: "Inventory",
+          description: "Track products, parts, and supplies",
+          icon: Package,
+          color: "bg-orange-500",
+          action: () => navigate('/inventory'),
+        },
+        {
+          title: "Appointment Calendar",
+          description: "Schedule and manage appointments",
+          icon: Calendar,
+          color: "bg-red-500",
+          action: () => navigate('/calendar'),
+        },
+        {
+          title: "Service Records",
+          description: "View and manage all service records",
+          icon: ClipboardList,
+          color: "bg-blue-600",
+          action: () => navigate('/service-records'),
+        },
+        {
+          title: "Follow-ups Needed",
+          description: "Manage service records requiring follow-up",
+          icon: Bell,
+          color: "bg-yellow-500",
+          action: () => navigate('/follow-ups'),
+        },
+        {
+          title: "TSB's",
+          description: "Technical Service Bulletins management",
+          icon: FileText,
+          color: "bg-indigo-500",
+          action: () => navigate('/tsbs'),
+        },
+      ]
+    },
+    {
       title: "Dashboard & Metrics",
       description: "Key performance indicators and business overview",
       items: [
@@ -80,47 +121,6 @@ const Menu = () => {
           icon: MapPin,
           color: "bg-rose-500",
           action: () => navigate('/customers/map'),
-        },
-      ]
-    },
-    {
-      title: "Operations",
-      description: "Day-to-day business operations and management",
-      items: [
-        {
-          title: "Inventory",
-          description: "Track products, parts, and supplies",
-          icon: Package,
-          color: "bg-orange-500",
-          action: () => navigate('/inventory'),
-        },
-        {
-          title: "Appointment Calendar",
-          description: "Schedule and manage appointments",
-          icon: Calendar,
-          color: "bg-red-500",
-          action: () => navigate('/calendar'),
-        },
-        {
-          title: "Service Records",
-          description: "View and manage all service records",
-          icon: ClipboardList,
-          color: "bg-blue-600",
-          action: () => navigate('/service-records'),
-        },
-        {
-          title: "Follow-ups Needed",
-          description: "Manage service records requiring follow-up",
-          icon: Bell,
-          color: "bg-yellow-500",
-          action: () => navigate('/follow-ups'),
-        },
-        {
-          title: "TSB's",
-          description: "Technical Service Bulletins management",
-          icon: FileText,
-          color: "bg-indigo-500",
-          action: () => navigate('/tsbs'),
         },
       ]
     },
