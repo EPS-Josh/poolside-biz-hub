@@ -4,8 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { Pencil, Check, X, Plus, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface QuestionSection {
   title: string;
@@ -14,7 +24,7 @@ interface QuestionSection {
   notes?: string[];
 }
 
-const accountantQuestions: QuestionSection[] = [
+const defaultQuestions: QuestionSection[] = [
   {
     title: "1. Business Structure & Big-Picture Strategy",
     goal: "Make sure your entity and setup aren't costing you money.",
@@ -107,8 +117,25 @@ const accountantQuestions: QuestionSection[] = [
   }
 ];
 
+interface SavedSession {
+  accountantName: string;
+  date: string;
+  answers: Record<string, string>;
+  questions: QuestionSection[];
+}
+
 const Accountant = () => {
+  const [questions, setQuestions] = useState<QuestionSection[]>(() => {
+    const saved = localStorage.getItem('accountant-questions');
+    return saved ? JSON.parse(saved) : defaultQuestions;
+  });
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [editingQuestion, setEditingQuestion] = useState<{ sectionIndex: number; questionIndex: number } | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [accountantName, setAccountantName] = useState('');
+  const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
 
   const handleAnswerChange = (questionKey: string, value: string) => {
     setAnswers(prev => ({
@@ -122,20 +149,44 @@ const Accountant = () => {
   };
 
   const handleSave = () => {
-    localStorage.setItem('accountant-answers', JSON.stringify(answers));
+    setShowSaveDialog(true);
+  };
+
+  const confirmSave = () => {
+    const session: SavedSession = {
+      accountantName,
+      date: sessionDate,
+      answers,
+      questions
+    };
+    localStorage.setItem('accountant-answers', JSON.stringify(session));
+    localStorage.setItem('accountant-questions', JSON.stringify(questions));
+    setShowSaveDialog(false);
     toast({
-      title: "Answers Saved",
-      description: "Your answers have been saved to local storage.",
+      title: "Session Saved",
+      description: `Saved session with ${accountantName} on ${sessionDate}`,
     });
   };
 
   const handleLoad = () => {
     const saved = localStorage.getItem('accountant-answers');
     if (saved) {
-      setAnswers(JSON.parse(saved));
+      const session: SavedSession = JSON.parse(saved);
+      setAnswers(session.answers);
+      if (session.questions) {
+        setQuestions(session.questions);
+      }
+      if (session.accountantName) {
+        setAccountantName(session.accountantName);
+      }
+      if (session.date) {
+        setSessionDate(session.date);
+      }
       toast({
-        title: "Answers Loaded",
-        description: "Your saved answers have been loaded.",
+        title: "Session Loaded",
+        description: session.accountantName 
+          ? `Loaded session with ${session.accountantName} from ${session.date}`
+          : "Your saved answers have been loaded.",
       });
     } else {
       toast({
@@ -144,6 +195,50 @@ const Accountant = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const startEditQuestion = (sectionIndex: number, questionIndex: number) => {
+    setEditingQuestion({ sectionIndex, questionIndex });
+    setEditValue(questions[sectionIndex].questions[questionIndex]);
+  };
+
+  const saveEditQuestion = () => {
+    if (!editingQuestion) return;
+    const { sectionIndex, questionIndex } = editingQuestion;
+    const newQuestions = [...questions];
+    newQuestions[sectionIndex].questions[questionIndex] = editValue;
+    setQuestions(newQuestions);
+    localStorage.setItem('accountant-questions', JSON.stringify(newQuestions));
+    setEditingQuestion(null);
+    setEditValue('');
+  };
+
+  const cancelEditQuestion = () => {
+    setEditingQuestion(null);
+    setEditValue('');
+  };
+
+  const addQuestion = (sectionIndex: number) => {
+    const newQuestions = [...questions];
+    newQuestions[sectionIndex].questions.push('New question');
+    setQuestions(newQuestions);
+    localStorage.setItem('accountant-questions', JSON.stringify(newQuestions));
+  };
+
+  const deleteQuestion = (sectionIndex: number, questionIndex: number) => {
+    const newQuestions = [...questions];
+    newQuestions[sectionIndex].questions.splice(questionIndex, 1);
+    setQuestions(newQuestions);
+    localStorage.setItem('accountant-questions', JSON.stringify(newQuestions));
+  };
+
+  const resetQuestions = () => {
+    setQuestions(defaultQuestions);
+    localStorage.setItem('accountant-questions', JSON.stringify(defaultQuestions));
+    toast({
+      title: "Questions Reset",
+      description: "All questions have been reset to defaults.",
+    });
   };
 
   return (
@@ -156,18 +251,30 @@ const Accountant = () => {
             <p className="text-muted-foreground">
               Questions to ask your accountant and track their answers
             </p>
-            <div className="flex gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 mt-4">
               <Button onClick={handleSave} variant="default">
-                Save Answers
+                Save Session
               </Button>
               <Button onClick={handleLoad} variant="outline">
-                Load Saved Answers
+                Load Saved Session
               </Button>
+              <Button 
+                onClick={() => setIsEditMode(!isEditMode)} 
+                variant={isEditMode ? "secondary" : "outline"}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                {isEditMode ? 'Done Editing' : 'Edit Questions'}
+              </Button>
+              {isEditMode && (
+                <Button onClick={resetQuestions} variant="outline" className="text-destructive">
+                  Reset to Defaults
+                </Button>
+              )}
             </div>
           </div>
 
           <div className="space-y-6">
-            {accountantQuestions.map((section, sectionIndex) => (
+            {questions.map((section, sectionIndex) => (
               <Card key={sectionIndex}>
                 <CardHeader>
                   <CardTitle className="text-lg">{section.title}</CardTitle>
@@ -176,11 +283,52 @@ const Accountant = () => {
                 <CardContent className="space-y-4">
                   {section.questions.map((question, questionIndex) => {
                     const key = getQuestionKey(sectionIndex, questionIndex);
+                    const isEditing = editingQuestion?.sectionIndex === sectionIndex && 
+                                     editingQuestion?.questionIndex === questionIndex;
+                    
                     return (
                       <div key={questionIndex} className="space-y-2">
-                        <Label htmlFor={key} className="text-sm font-medium">
-                          {question}
-                        </Label>
+                        {isEditing ? (
+                          <div className="flex gap-2">
+                            <Input
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button size="icon" variant="ghost" onClick={saveEditQuestion}>
+                              <Check className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={cancelEditQuestion}>
+                              <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2">
+                            <Label htmlFor={key} className="text-sm font-medium flex-1">
+                              {question}
+                            </Label>
+                            {isEditMode && (
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-6 w-6"
+                                  onClick={() => startEditQuestion(sectionIndex, questionIndex)}
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 text-destructive"
+                                  onClick={() => deleteQuestion(sectionIndex, questionIndex)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <Textarea
                           id={key}
                           placeholder="Type your answer here..."
@@ -191,6 +339,17 @@ const Accountant = () => {
                       </div>
                     );
                   })}
+                  {isEditMode && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => addQuestion(sectionIndex)}
+                      className="mt-2"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Question
+                    </Button>
+                  )}
                   {section.notes && section.notes.map((note, noteIndex) => (
                     <p key={noteIndex} className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-md">
                       {note}
@@ -202,6 +361,45 @@ const Accountant = () => {
           </div>
         </main>
       </div>
+
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Session</DialogTitle>
+            <DialogDescription>
+              Enter the accountant's name and session date
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="accountant-name">Accountant Name</Label>
+              <Input
+                id="accountant-name"
+                placeholder="e.g., John Smith, CPA"
+                value={accountantName}
+                onChange={(e) => setAccountantName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="session-date">Session Date</Label>
+              <Input
+                id="session-date"
+                type="date"
+                value={sessionDate}
+                onChange={(e) => setSessionDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmSave}>
+              Save Session
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </ProtectedRoute>
   );
 };
