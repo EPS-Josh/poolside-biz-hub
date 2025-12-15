@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
-import { Pencil, Check, X, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Check, X, Plus, Trash2, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import {
   Dialog,
   DialogContent,
@@ -232,6 +233,61 @@ const Accountant = () => {
     localStorage.setItem('accountant-questions', JSON.stringify(newQuestions));
   };
 
+  const handleDragEnd = (result: DropResult, sectionIndex: number) => {
+    if (!result.destination) return;
+    
+    const sourceIndex = result.source.index;
+    const destIndex = result.destination.index;
+    
+    if (sourceIndex === destIndex) return;
+    
+    const newQuestions = [...questions];
+    const sectionQuestions = [...newQuestions[sectionIndex].questions];
+    const [removed] = sectionQuestions.splice(sourceIndex, 1);
+    sectionQuestions.splice(destIndex, 0, removed);
+    newQuestions[sectionIndex].questions = sectionQuestions;
+    
+    // Also reorder the answers to maintain correct associations
+    const newAnswers = { ...answers };
+    const tempAnswers: Record<string, string> = {};
+    
+    // Save answers with new indices
+    sectionQuestions.forEach((_, newIndex) => {
+      const oldIndex = newIndex === destIndex 
+        ? sourceIndex 
+        : newIndex < Math.min(sourceIndex, destIndex) || newIndex > Math.max(sourceIndex, destIndex)
+          ? newIndex
+          : sourceIndex < destIndex
+            ? newIndex + 1
+            : newIndex - 1;
+      
+      const oldKey = getQuestionKey(sectionIndex, sourceIndex === newIndex ? sourceIndex : 
+        newIndex === destIndex ? sourceIndex :
+        newIndex > sourceIndex && newIndex <= destIndex ? newIndex :
+        newIndex < sourceIndex && newIndex >= destIndex ? newIndex : newIndex);
+    });
+    
+    // Rebuild answers for this section
+    const sectionAnswers: string[] = [];
+    for (let i = 0; i < questions[sectionIndex].questions.length; i++) {
+      sectionAnswers.push(answers[getQuestionKey(sectionIndex, i)] || '');
+    }
+    const [removedAnswer] = sectionAnswers.splice(sourceIndex, 1);
+    sectionAnswers.splice(destIndex, 0, removedAnswer);
+    
+    sectionAnswers.forEach((answer, index) => {
+      if (answer) {
+        newAnswers[getQuestionKey(sectionIndex, index)] = answer;
+      } else {
+        delete newAnswers[getQuestionKey(sectionIndex, index)];
+      }
+    });
+    
+    setAnswers(newAnswers);
+    setQuestions(newQuestions);
+    localStorage.setItem('accountant-questions', JSON.stringify(newQuestions));
+  };
+
   const resetQuestions = () => {
     setQuestions(defaultQuestions);
     localStorage.setItem('accountant-questions', JSON.stringify(defaultQuestions));
@@ -281,64 +337,98 @@ const Accountant = () => {
                   <p className="text-sm text-muted-foreground italic">Goal: {section.goal}</p>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {section.questions.map((question, questionIndex) => {
-                    const key = getQuestionKey(sectionIndex, questionIndex);
-                    const isEditing = editingQuestion?.sectionIndex === sectionIndex && 
-                                     editingQuestion?.questionIndex === questionIndex;
-                    
-                    return (
-                      <div key={questionIndex} className="space-y-2">
-                        {isEditing ? (
-                          <div className="flex gap-2">
-                            <Input
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              className="flex-1"
-                            />
-                            <Button size="icon" variant="ghost" onClick={saveEditQuestion}>
-                              <Check className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={cancelEditQuestion}>
-                              <X className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-start gap-2">
-                            <Label htmlFor={key} className="text-sm font-medium flex-1">
-                              {question}
-                            </Label>
-                            {isEditMode && (
-                              <div className="flex gap-1">
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-6 w-6"
-                                  onClick={() => startEditQuestion(sectionIndex, questionIndex)}
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-6 w-6 text-destructive"
-                                  onClick={() => deleteQuestion(sectionIndex, questionIndex)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        <Textarea
-                          id={key}
-                          placeholder="Type your answer here..."
-                          value={answers[key] || ''}
-                          onChange={(e) => handleAnswerChange(key, e.target.value)}
-                          className="min-h-[80px]"
-                        />
-                      </div>
-                    );
-                  })}
+                  <DragDropContext onDragEnd={(result) => handleDragEnd(result, sectionIndex)}>
+                    <Droppable droppableId={`section-${sectionIndex}`}>
+                      {(provided) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="space-y-4"
+                        >
+                          {section.questions.map((question, questionIndex) => {
+                            const key = getQuestionKey(sectionIndex, questionIndex);
+                            const isEditing = editingQuestion?.sectionIndex === sectionIndex && 
+                                             editingQuestion?.questionIndex === questionIndex;
+                            
+                            return (
+                              <Draggable
+                                key={`${sectionIndex}-${questionIndex}`}
+                                draggableId={`${sectionIndex}-${questionIndex}`}
+                                index={questionIndex}
+                                isDragDisabled={!isEditMode}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`space-y-2 ${snapshot.isDragging ? 'bg-muted rounded-lg p-2' : ''}`}
+                                  >
+                                    {isEditing ? (
+                                      <div className="flex gap-2">
+                                        <Input
+                                          value={editValue}
+                                          onChange={(e) => setEditValue(e.target.value)}
+                                          className="flex-1"
+                                        />
+                                        <Button size="icon" variant="ghost" onClick={saveEditQuestion}>
+                                          <Check className="h-4 w-4 text-green-600" />
+                                        </Button>
+                                        <Button size="icon" variant="ghost" onClick={cancelEditQuestion}>
+                                          <X className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-start gap-2">
+                                        {isEditMode && (
+                                          <div
+                                            {...provided.dragHandleProps}
+                                            className="cursor-grab active:cursor-grabbing pt-0.5"
+                                          >
+                                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                          </div>
+                                        )}
+                                        <Label htmlFor={key} className="text-sm font-medium flex-1">
+                                          {question}
+                                        </Label>
+                                        {isEditMode && (
+                                          <div className="flex gap-1">
+                                            <Button 
+                                              size="icon" 
+                                              variant="ghost" 
+                                              className="h-6 w-6"
+                                              onClick={() => startEditQuestion(sectionIndex, questionIndex)}
+                                            >
+                                              <Pencil className="h-3 w-3" />
+                                            </Button>
+                                            <Button 
+                                              size="icon" 
+                                              variant="ghost" 
+                                              className="h-6 w-6 text-destructive"
+                                              onClick={() => deleteQuestion(sectionIndex, questionIndex)}
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    <Textarea
+                                      id={key}
+                                      placeholder="Type your answer here..."
+                                      value={answers[key] || ''}
+                                      onChange={(e) => handleAnswerChange(key, e.target.value)}
+                                      className="min-h-[80px]"
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                   {isEditMode && (
                     <Button 
                       variant="outline" 
