@@ -20,7 +20,8 @@ import {
   Bell,
   MessageSquare,
   Droplets,
-  MapPin
+  MapPin,
+  Calculator
 } from 'lucide-react';
 
 
@@ -147,6 +148,13 @@ const Menu = () => {
           icon: TrendingUp,
           color: "bg-emerald-500",
           action: () => navigate('/cleaning-forecast'),
+        },
+        {
+          title: "Accountant",
+          description: "Track accountant questions and answers",
+          icon: Calculator,
+          color: "bg-violet-500",
+          action: () => navigate('/accountant'),
         },
       ]
     }
