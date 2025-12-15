@@ -19,6 +19,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ServiceRecordWizard } from '@/components/ServiceRecordWizard';
 import { Toggle } from '@/components/ui/toggle';
 import { useServiceRecordDraft } from '@/hooks/useServiceRecordDraft';
+import { ChemicalReadingSlider } from '@/components/ChemicalReadingSlider';
 
 interface PartUsed {
   inventoryItemId: string;
@@ -490,63 +491,66 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
                   <CardHeader>
                     <CardTitle className="text-sm">Pool Before Readings</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="before_total_hardness">Total Hardness</Label>
-                        <Input
-                          id="before_total_hardness"
-                          value={formData.before_readings.total_hardness}
-                          onChange={(e) => updateReadings('before_readings', 'total_hardness', e.target.value)}
-                          placeholder="200"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="before_total_chlorine_bromine">Total Chlorine / Bromine</Label>
-                        <Input
-                          id="before_total_chlorine_bromine"
-                          value={formData.before_readings.total_chlorine_bromine}
-                          onChange={(e) => updateReadings('before_readings', 'total_chlorine_bromine', e.target.value)}
-                          placeholder="3.0"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="before_free_chlorine">Free Chlorine</Label>
-                        <Input
-                          id="before_free_chlorine"
-                          value={formData.before_readings.free_chlorine}
-                          onChange={(e) => updateReadings('before_readings', 'free_chlorine', e.target.value)}
-                          placeholder="1.5"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="before_ph">pH</Label>
-                        <Input
-                          id="before_ph"
-                          value={formData.before_readings.ph}
-                          onChange={(e) => updateReadings('before_readings', 'ph', e.target.value)}
-                          placeholder="7.2"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="before_total_alkalinity">Total Alkalinity</Label>
-                        <Input
-                          id="before_total_alkalinity"
-                          value={formData.before_readings.total_alkalinity}
-                          onChange={(e) => updateReadings('before_readings', 'total_alkalinity', e.target.value)}
-                          placeholder="120"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="before_cyanuric">Cyanuric Acid</Label>
-                        <Input
-                          id="before_cyanuric"
-                          value={formData.before_readings.cyanuric_acid}
-                          onChange={(e) => updateReadings('before_readings', 'cyanuric_acid', e.target.value)}
-                          placeholder="30"
-                        />
-                      </div>
-                    </div>
+                  <CardContent className="space-y-4">
+                    <ChemicalReadingSlider
+                      id="before_total_hardness"
+                      label="Total Hardness"
+                      value={formData.before_readings.total_hardness}
+                      onChange={(value) => updateReadings('before_readings', 'total_hardness', value)}
+                      min={0}
+                      max={1000}
+                      step={25}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="before_total_chlorine_bromine"
+                      label="Total Chlorine / Bromine"
+                      value={formData.before_readings.total_chlorine_bromine}
+                      onChange={(value) => updateReadings('before_readings', 'total_chlorine_bromine', value)}
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="before_free_chlorine"
+                      label="Free Chlorine"
+                      value={formData.before_readings.free_chlorine}
+                      onChange={(value) => updateReadings('before_readings', 'free_chlorine', value)}
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="before_ph"
+                      label="pH"
+                      value={formData.before_readings.ph}
+                      onChange={(value) => updateReadings('before_readings', 'ph', value)}
+                      min={6.0}
+                      max={8.5}
+                      step={0.1}
+                    />
+                    <ChemicalReadingSlider
+                      id="before_total_alkalinity"
+                      label="Total Alkalinity"
+                      value={formData.before_readings.total_alkalinity}
+                      onChange={(value) => updateReadings('before_readings', 'total_alkalinity', value)}
+                      min={0}
+                      max={300}
+                      step={10}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="before_cyanuric_acid"
+                      label="Cyanuric Acid"
+                      value={formData.before_readings.cyanuric_acid}
+                      onChange={(value) => updateReadings('before_readings', 'cyanuric_acid', value)}
+                      min={0}
+                      max={200}
+                      step={5}
+                      unit=" ppm"
+                    />
                   </CardContent>
                 </Card>
 
@@ -554,63 +558,66 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
                   <CardHeader>
                     <CardTitle className="text-sm">Pool After Readings</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="after_total_hardness">Total Hardness</Label>
-                        <Input
-                          id="after_total_hardness"
-                          value={formData.after_readings.total_hardness}
-                          onChange={(e) => updateReadings('after_readings', 'total_hardness', e.target.value)}
-                          placeholder="200"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="after_total_chlorine_bromine">Total Chlorine / Bromine</Label>
-                        <Input
-                          id="after_total_chlorine_bromine"
-                          value={formData.after_readings.total_chlorine_bromine}
-                          onChange={(e) => updateReadings('after_readings', 'total_chlorine_bromine', e.target.value)}
-                          placeholder="3.0"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="after_free_chlorine">Free Chlorine</Label>
-                        <Input
-                          id="after_free_chlorine"
-                          value={formData.after_readings.free_chlorine}
-                          onChange={(e) => updateReadings('after_readings', 'free_chlorine', e.target.value)}
-                          placeholder="2.0"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="after_ph">pH</Label>
-                        <Input
-                          id="after_ph"
-                          value={formData.after_readings.ph}
-                          onChange={(e) => updateReadings('after_readings', 'ph', e.target.value)}
-                          placeholder="7.4"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="after_total_alkalinity">Total Alkalinity</Label>
-                        <Input
-                          id="after_total_alkalinity"
-                          value={formData.after_readings.total_alkalinity}
-                          onChange={(e) => updateReadings('after_readings', 'total_alkalinity', e.target.value)}
-                          placeholder="125"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="after_cyanuric">Cyanuric Acid</Label>
-                        <Input
-                          id="after_cyanuric"
-                          value={formData.after_readings.cyanuric_acid}
-                          onChange={(e) => updateReadings('after_readings', 'cyanuric_acid', e.target.value)}
-                          placeholder="35"
-                        />
-                      </div>
-                    </div>
+                  <CardContent className="space-y-4">
+                    <ChemicalReadingSlider
+                      id="after_total_hardness"
+                      label="Total Hardness"
+                      value={formData.after_readings.total_hardness}
+                      onChange={(value) => updateReadings('after_readings', 'total_hardness', value)}
+                      min={0}
+                      max={1000}
+                      step={25}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="after_total_chlorine_bromine"
+                      label="Total Chlorine / Bromine"
+                      value={formData.after_readings.total_chlorine_bromine}
+                      onChange={(value) => updateReadings('after_readings', 'total_chlorine_bromine', value)}
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="after_free_chlorine"
+                      label="Free Chlorine"
+                      value={formData.after_readings.free_chlorine}
+                      onChange={(value) => updateReadings('after_readings', 'free_chlorine', value)}
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="after_ph"
+                      label="pH"
+                      value={formData.after_readings.ph}
+                      onChange={(value) => updateReadings('after_readings', 'ph', value)}
+                      min={6.0}
+                      max={8.5}
+                      step={0.1}
+                    />
+                    <ChemicalReadingSlider
+                      id="after_total_alkalinity"
+                      label="Total Alkalinity"
+                      value={formData.after_readings.total_alkalinity}
+                      onChange={(value) => updateReadings('after_readings', 'total_alkalinity', value)}
+                      min={0}
+                      max={300}
+                      step={10}
+                      unit=" ppm"
+                    />
+                    <ChemicalReadingSlider
+                      id="after_cyanuric_acid"
+                      label="Cyanuric Acid"
+                      value={formData.after_readings.cyanuric_acid}
+                      onChange={(value) => updateReadings('after_readings', 'cyanuric_acid', value)}
+                      min={0}
+                      max={200}
+                      step={5}
+                      unit=" ppm"
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -621,63 +628,66 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
                     <CardHeader>
                       <CardTitle className="text-sm text-purple-700 dark:text-purple-300">Spa Before Readings</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="spa_before_total_hardness">Total Hardness</Label>
-                          <Input
-                            id="spa_before_total_hardness"
-                            value={formData.spa_before_readings.total_hardness}
-                            onChange={(e) => updateReadings('spa_before_readings', 'total_hardness', e.target.value)}
-                            placeholder="200"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_before_total_chlorine_bromine">Total Chlorine / Bromine</Label>
-                          <Input
-                            id="spa_before_total_chlorine_bromine"
-                            value={formData.spa_before_readings.total_chlorine_bromine}
-                            onChange={(e) => updateReadings('spa_before_readings', 'total_chlorine_bromine', e.target.value)}
-                            placeholder="3.0"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_before_free_chlorine">Free Chlorine</Label>
-                          <Input
-                            id="spa_before_free_chlorine"
-                            value={formData.spa_before_readings.free_chlorine}
-                            onChange={(e) => updateReadings('spa_before_readings', 'free_chlorine', e.target.value)}
-                            placeholder="1.5"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_before_ph">pH</Label>
-                          <Input
-                            id="spa_before_ph"
-                            value={formData.spa_before_readings.ph}
-                            onChange={(e) => updateReadings('spa_before_readings', 'ph', e.target.value)}
-                            placeholder="7.2"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_before_total_alkalinity">Total Alkalinity</Label>
-                          <Input
-                            id="spa_before_total_alkalinity"
-                            value={formData.spa_before_readings.total_alkalinity}
-                            onChange={(e) => updateReadings('spa_before_readings', 'total_alkalinity', e.target.value)}
-                            placeholder="120"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_before_cyanuric">Cyanuric Acid</Label>
-                          <Input
-                            id="spa_before_cyanuric"
-                            value={formData.spa_before_readings.cyanuric_acid}
-                            onChange={(e) => updateReadings('spa_before_readings', 'cyanuric_acid', e.target.value)}
-                            placeholder="30"
-                          />
-                        </div>
-                      </div>
+                    <CardContent className="space-y-4">
+                      <ChemicalReadingSlider
+                        id="spa_before_total_hardness"
+                        label="Total Hardness"
+                        value={formData.spa_before_readings.total_hardness}
+                        onChange={(value) => updateReadings('spa_before_readings', 'total_hardness', value)}
+                        min={0}
+                        max={1000}
+                        step={25}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_before_total_chlorine_bromine"
+                        label="Total Chlorine / Bromine"
+                        value={formData.spa_before_readings.total_chlorine_bromine}
+                        onChange={(value) => updateReadings('spa_before_readings', 'total_chlorine_bromine', value)}
+                        min={0}
+                        max={10}
+                        step={0.5}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_before_free_chlorine"
+                        label="Free Chlorine"
+                        value={formData.spa_before_readings.free_chlorine}
+                        onChange={(value) => updateReadings('spa_before_readings', 'free_chlorine', value)}
+                        min={0}
+                        max={10}
+                        step={0.5}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_before_ph"
+                        label="pH"
+                        value={formData.spa_before_readings.ph}
+                        onChange={(value) => updateReadings('spa_before_readings', 'ph', value)}
+                        min={6.0}
+                        max={8.5}
+                        step={0.1}
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_before_total_alkalinity"
+                        label="Total Alkalinity"
+                        value={formData.spa_before_readings.total_alkalinity}
+                        onChange={(value) => updateReadings('spa_before_readings', 'total_alkalinity', value)}
+                        min={0}
+                        max={300}
+                        step={10}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_before_cyanuric_acid"
+                        label="Cyanuric Acid"
+                        value={formData.spa_before_readings.cyanuric_acid}
+                        onChange={(value) => updateReadings('spa_before_readings', 'cyanuric_acid', value)}
+                        min={0}
+                        max={200}
+                        step={5}
+                        unit=" ppm"
+                      />
                     </CardContent>
                   </Card>
 
@@ -685,63 +695,66 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
                     <CardHeader>
                       <CardTitle className="text-sm text-purple-700 dark:text-purple-300">Spa After Readings</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="spa_after_total_hardness">Total Hardness</Label>
-                          <Input
-                            id="spa_after_total_hardness"
-                            value={formData.spa_after_readings.total_hardness}
-                            onChange={(e) => updateReadings('spa_after_readings', 'total_hardness', e.target.value)}
-                            placeholder="200"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_after_total_chlorine_bromine">Total Chlorine / Bromine</Label>
-                          <Input
-                            id="spa_after_total_chlorine_bromine"
-                            value={formData.spa_after_readings.total_chlorine_bromine}
-                            onChange={(e) => updateReadings('spa_after_readings', 'total_chlorine_bromine', e.target.value)}
-                            placeholder="3.0"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_after_free_chlorine">Free Chlorine</Label>
-                          <Input
-                            id="spa_after_free_chlorine"
-                            value={formData.spa_after_readings.free_chlorine}
-                            onChange={(e) => updateReadings('spa_after_readings', 'free_chlorine', e.target.value)}
-                            placeholder="2.0"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_after_ph">pH</Label>
-                          <Input
-                            id="spa_after_ph"
-                            value={formData.spa_after_readings.ph}
-                            onChange={(e) => updateReadings('spa_after_readings', 'ph', e.target.value)}
-                            placeholder="7.4"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_after_total_alkalinity">Total Alkalinity</Label>
-                          <Input
-                            id="spa_after_total_alkalinity"
-                            value={formData.spa_after_readings.total_alkalinity}
-                            onChange={(e) => updateReadings('spa_after_readings', 'total_alkalinity', e.target.value)}
-                            placeholder="125"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="spa_after_cyanuric">Cyanuric Acid</Label>
-                          <Input
-                            id="spa_after_cyanuric"
-                            value={formData.spa_after_readings.cyanuric_acid}
-                            onChange={(e) => updateReadings('spa_after_readings', 'cyanuric_acid', e.target.value)}
-                            placeholder="35"
-                          />
-                        </div>
-                      </div>
+                    <CardContent className="space-y-4">
+                      <ChemicalReadingSlider
+                        id="spa_after_total_hardness"
+                        label="Total Hardness"
+                        value={formData.spa_after_readings.total_hardness}
+                        onChange={(value) => updateReadings('spa_after_readings', 'total_hardness', value)}
+                        min={0}
+                        max={1000}
+                        step={25}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_after_total_chlorine_bromine"
+                        label="Total Chlorine / Bromine"
+                        value={formData.spa_after_readings.total_chlorine_bromine}
+                        onChange={(value) => updateReadings('spa_after_readings', 'total_chlorine_bromine', value)}
+                        min={0}
+                        max={10}
+                        step={0.5}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_after_free_chlorine"
+                        label="Free Chlorine"
+                        value={formData.spa_after_readings.free_chlorine}
+                        onChange={(value) => updateReadings('spa_after_readings', 'free_chlorine', value)}
+                        min={0}
+                        max={10}
+                        step={0.5}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_after_ph"
+                        label="pH"
+                        value={formData.spa_after_readings.ph}
+                        onChange={(value) => updateReadings('spa_after_readings', 'ph', value)}
+                        min={6.0}
+                        max={8.5}
+                        step={0.1}
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_after_total_alkalinity"
+                        label="Total Alkalinity"
+                        value={formData.spa_after_readings.total_alkalinity}
+                        onChange={(value) => updateReadings('spa_after_readings', 'total_alkalinity', value)}
+                        min={0}
+                        max={300}
+                        step={10}
+                        unit=" ppm"
+                      />
+                      <ChemicalReadingSlider
+                        id="spa_after_cyanuric_acid"
+                        label="Cyanuric Acid"
+                        value={formData.spa_after_readings.cyanuric_acid}
+                        onChange={(value) => updateReadings('spa_after_readings', 'cyanuric_acid', value)}
+                        min={0}
+                        max={200}
+                        step={5}
+                        unit=" ppm"
+                      />
                     </CardContent>
                   </Card>
                 </div>
