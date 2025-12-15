@@ -34,18 +34,18 @@ const Menu = () => {
       description: "Day-to-day business operations and management",
       items: [
         {
-          title: "Inventory",
-          description: "Track products, parts, and supplies",
-          icon: Package,
-          color: "bg-orange-500",
-          action: () => navigate('/inventory'),
-        },
-        {
           title: "Appointment Calendar",
           description: "Schedule and manage appointments",
           icon: Calendar,
           color: "bg-red-500",
           action: () => navigate('/calendar'),
+        },
+        {
+          title: "Inventory",
+          description: "Track products, parts, and supplies",
+          icon: Package,
+          color: "bg-orange-500",
+          action: () => navigate('/inventory'),
         },
         {
           title: "Service Records",
