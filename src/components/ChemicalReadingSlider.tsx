@@ -25,11 +25,16 @@ interface ChemicalReadingSliderProps {
 // Default color zones for common pool chemicals
 const DEFAULT_COLOR_ZONES: Record<string, ColorZone> = {
   'total_hardness': { idealMin: 200, idealMax: 400, acceptableMin: 150, acceptableMax: 500 },
+  'th': { idealMin: 200, idealMax: 400, acceptableMin: 150, acceptableMax: 500 },
   'total_chlorine_bromine': { idealMin: 1, idealMax: 3, acceptableMin: 0.5, acceptableMax: 5 },
+  'tcb': { idealMin: 1, idealMax: 3, acceptableMin: 0.5, acceptableMax: 5 },
   'free_chlorine': { idealMin: 1, idealMax: 3, acceptableMin: 0.5, acceptableMax: 5 },
+  'fc': { idealMin: 1, idealMax: 3, acceptableMin: 0.5, acceptableMax: 5 },
   'ph': { idealMin: 7.2, idealMax: 7.6, acceptableMin: 7.0, acceptableMax: 7.8 },
   'total_alkalinity': { idealMin: 80, idealMax: 120, acceptableMin: 60, acceptableMax: 150 },
+  'ta': { idealMin: 80, idealMax: 120, acceptableMin: 60, acceptableMax: 150 },
   'cyanuric_acid': { idealMin: 30, idealMax: 50, acceptableMin: 20, acceptableMax: 80 },
+  'cya': { idealMin: 30, idealMax: 50, acceptableMin: 20, acceptableMax: 80 },
 };
 
 export const ChemicalReadingSlider: React.FC<ChemicalReadingSliderProps> = ({
