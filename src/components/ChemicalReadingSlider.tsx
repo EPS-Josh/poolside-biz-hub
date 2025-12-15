@@ -1,6 +1,7 @@
 import React from 'react';
-import { Slider } from '@/components/ui/slider';
+import * as SliderPrimitive from '@radix-ui/react-slider';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface ColorZone {
   idealMin: number;
@@ -72,7 +73,7 @@ export const ChemicalReadingSlider: React.FC<ChemicalReadingSliderProps> = ({
 
   // Build gradient for the track background
   const buildGradient = () => {
-    if (!zone) return 'bg-secondary';
+    if (!zone) return 'hsl(var(--secondary))';
     
     const acceptableMinPct = Math.max(0, getPercentage(zone.acceptableMin));
     const idealMinPct = getPercentage(zone.idealMin);
@@ -101,22 +102,23 @@ export const ChemicalReadingSlider: React.FC<ChemicalReadingSliderProps> = ({
           {value || min}{unit}
         </span>
       </div>
-      <div className="relative">
-        {/* Color zone background */}
-        <div 
-          className="absolute inset-0 h-2 rounded-full top-1/2 -translate-y-1/2 opacity-40"
+      <SliderPrimitive.Root
+        id={id}
+        value={[numericValue]}
+        onValueChange={handleSliderChange}
+        min={min}
+        max={max}
+        step={step}
+        className="relative flex w-full touch-none select-none items-center"
+      >
+        <SliderPrimitive.Track 
+          className="relative h-3 w-full grow overflow-hidden rounded-full"
           style={{ background: buildGradient() }}
-        />
-        <Slider
-          id={id}
-          value={[numericValue]}
-          onValueChange={handleSliderChange}
-          min={min}
-          max={max}
-          step={step}
-          className="w-full relative z-10"
-        />
-      </div>
+        >
+          <SliderPrimitive.Range className="absolute h-full bg-transparent" />
+        </SliderPrimitive.Track>
+        <SliderPrimitive.Thumb className="block h-6 w-6 rounded-full border-2 border-primary bg-background shadow-lg ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+      </SliderPrimitive.Root>
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>{min}{unit}</span>
         {zone && (
