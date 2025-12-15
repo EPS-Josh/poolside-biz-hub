@@ -2,6 +2,13 @@ import React from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 
+interface ColorZone {
+  idealMin: number;
+  idealMax: number;
+  acceptableMin: number;
+  acceptableMax: number;
+}
+
 interface ChemicalReadingSliderProps {
   id: string;
   label: string;
@@ -11,7 +18,18 @@ interface ChemicalReadingSliderProps {
   max: number;
   step: number;
   unit?: string;
+  colorZone?: ColorZone;
 }
+
+// Default color zones for common pool chemicals
+const DEFAULT_COLOR_ZONES: Record<string, ColorZone> = {
+  'total_hardness': { idealMin: 200, idealMax: 400, acceptableMin: 150, acceptableMax: 500 },
+  'total_chlorine_bromine': { idealMin: 1, idealMax: 3, acceptableMin: 0.5, acceptableMax: 5 },
+  'free_chlorine': { idealMin: 1, idealMax: 3, acceptableMin: 0.5, acceptableMax: 5 },
+  'ph': { idealMin: 7.2, idealMax: 7.6, acceptableMin: 7.0, acceptableMax: 7.8 },
+  'total_alkalinity': { idealMin: 80, idealMax: 120, acceptableMin: 60, acceptableMax: 150 },
+  'cyanuric_acid': { idealMin: 30, idealMax: 50, acceptableMin: 20, acceptableMax: 80 },
+};
 
 export const ChemicalReadingSlider: React.FC<ChemicalReadingSliderProps> = ({
   id,
@@ -22,32 +40,90 @@ export const ChemicalReadingSlider: React.FC<ChemicalReadingSliderProps> = ({
   max,
   step,
   unit = '',
+  colorZone,
 }) => {
   const numericValue = parseFloat(value) || min;
   
+  // Determine color zone based on field name from id
+  const fieldName = id.split('_').slice(-2).join('_').replace('wizard_', '').replace('before_', '').replace('after_', '').replace('spa_', '');
+  const zone = colorZone || DEFAULT_COLOR_ZONES[fieldName];
+  
   const handleSliderChange = (values: number[]) => {
     onChange(values[0].toString());
+  };
+
+  // Calculate percentage positions for color zones
+  const getPercentage = (val: number) => ((val - min) / (max - min)) * 100;
+  
+  const getValueStatus = (): 'ideal' | 'acceptable' | 'danger' => {
+    if (!zone || !value) return 'acceptable';
+    const num = parseFloat(value);
+    if (num >= zone.idealMin && num <= zone.idealMax) return 'ideal';
+    if (num >= zone.acceptableMin && num <= zone.acceptableMax) return 'acceptable';
+    return 'danger';
+  };
+
+  const status = getValueStatus();
+  const statusColors = {
+    ideal: 'bg-green-500 text-green-950',
+    acceptable: 'bg-yellow-500 text-yellow-950',
+    danger: 'bg-red-500 text-red-950',
+  };
+
+  // Build gradient for the track background
+  const buildGradient = () => {
+    if (!zone) return 'bg-secondary';
+    
+    const acceptableMinPct = Math.max(0, getPercentage(zone.acceptableMin));
+    const idealMinPct = getPercentage(zone.idealMin);
+    const idealMaxPct = getPercentage(zone.idealMax);
+    const acceptableMaxPct = Math.min(100, getPercentage(zone.acceptableMax));
+
+    return `linear-gradient(to right, 
+      hsl(0, 70%, 50%) 0%, 
+      hsl(0, 70%, 50%) ${acceptableMinPct}%, 
+      hsl(45, 90%, 50%) ${acceptableMinPct}%, 
+      hsl(45, 90%, 50%) ${idealMinPct}%, 
+      hsl(120, 60%, 45%) ${idealMinPct}%, 
+      hsl(120, 60%, 45%) ${idealMaxPct}%, 
+      hsl(45, 90%, 50%) ${idealMaxPct}%, 
+      hsl(45, 90%, 50%) ${acceptableMaxPct}%, 
+      hsl(0, 70%, 50%) ${acceptableMaxPct}%, 
+      hsl(0, 70%, 50%) 100%
+    )`;
   };
 
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
         <Label htmlFor={id} className="text-sm font-medium">{label}</Label>
-        <span className="text-sm font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
+        <span className={`text-sm font-semibold px-2 py-0.5 rounded ${statusColors[status]}`}>
           {value || min}{unit}
         </span>
       </div>
-      <Slider
-        id={id}
-        value={[numericValue]}
-        onValueChange={handleSliderChange}
-        min={min}
-        max={max}
-        step={step}
-        className="w-full"
-      />
+      <div className="relative">
+        {/* Color zone background */}
+        <div 
+          className="absolute inset-0 h-2 rounded-full top-1/2 -translate-y-1/2 opacity-40"
+          style={{ background: buildGradient() }}
+        />
+        <Slider
+          id={id}
+          value={[numericValue]}
+          onValueChange={handleSliderChange}
+          min={min}
+          max={max}
+          step={step}
+          className="w-full relative z-10"
+        />
+      </div>
       <div className="flex justify-between text-xs text-muted-foreground">
         <span>{min}{unit}</span>
+        {zone && (
+          <span className="text-green-600 dark:text-green-400 font-medium">
+            Ideal: {zone.idealMin}-{zone.idealMax}{unit}
+          </span>
+        )}
         <span>{max}{unit}</span>
       </div>
     </div>
