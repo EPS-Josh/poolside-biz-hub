@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Car, Calculator, DollarSign, Trash2, Plus, MapPin, Loader2, Download, Calendar } from 'lucide-react';
+import { Car, Calculator, DollarSign, Trash2, Plus, MapPin, Loader2, Download, Calendar, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
@@ -21,6 +21,7 @@ interface MileageEntry {
 
 interface DayRoute {
   date: string;
+  technician: string;
   totalMiles: number;
   stops: { name: string; address: string }[];
   legs: { from: string; to: string; distanceMiles: number }[];
@@ -146,20 +147,49 @@ const MileageCalculator = () => {
         return;
       }
 
-      // Group appointments by date
-      const appointmentsByDate: Record<string, any[]> = {};
+      // Fetch service records to get technician names
+      const customerIds = [...new Set(appointments.map(a => a.customer_id).filter(Boolean))];
+      const appointmentDates = [...new Set(appointments.map(a => a.appointment_date))];
+      
+      const { data: serviceRecords, error: srError } = await supabase
+        .from('service_records')
+        .select('customer_id, service_date, technician_name')
+        .in('customer_id', customerIds)
+        .in('service_date', appointmentDates);
+
+      if (srError) {
+        console.error('Error fetching service records:', srError);
+      }
+
+      // Create a lookup map for technician by customer_id + date
+      const technicianMap = new Map<string, string>();
+      serviceRecords?.forEach(sr => {
+        const key = `${sr.customer_id}-${sr.service_date}`;
+        if (sr.technician_name) {
+          technicianMap.set(key, sr.technician_name);
+        }
+      });
+
+      // Group appointments by date AND technician
+      const appointmentsByDateTech: Record<string, any[]> = {};
       appointments.forEach(apt => {
         const date = apt.appointment_date;
-        if (!appointmentsByDate[date]) {
-          appointmentsByDate[date] = [];
+        const techKey = `${apt.customer_id}-${date}`;
+        const technician = technicianMap.get(techKey) || 'Unassigned';
+        const groupKey = `${date}|${technician}`;
+        
+        if (!appointmentsByDateTech[groupKey]) {
+          appointmentsByDateTech[groupKey] = [];
         }
-        appointmentsByDate[date].push(apt);
+        appointmentsByDateTech[groupKey].push(apt);
       });
 
       const routes: DayRoute[] = [];
       
-      // Process each day
-      for (const [date, dayAppointments] of Object.entries(appointmentsByDate)) {
+      // Process each day/technician group
+      for (const [groupKey, dayAppointments] of Object.entries(appointmentsByDateTech)) {
+        const [date, technician] = groupKey.split('|');
+        
         // Filter appointments with valid coordinates
         const validAppointments = dayAppointments.filter(apt => 
           apt.customers?.latitude && apt.customers?.longitude
@@ -189,25 +219,32 @@ const MileageCalculator = () => {
           );
 
           if (routeError) {
-            console.error(`Error calculating route for ${date}:`, routeError);
+            console.error(`Error calculating route for ${date} (${technician}):`, routeError);
             continue;
           }
 
           routes.push({
             date,
+            technician,
             totalMiles: routeData.totalDistanceMiles,
             stops: stops.map(s => ({ name: s.name, address: s.address || '' })),
             legs: routeData.legs || []
           });
         } catch (err) {
-          console.error(`Failed to calculate route for ${date}:`, err);
+          console.error(`Failed to calculate route for ${date} (${technician}):`, err);
         }
       }
+
+      // Sort routes by date then technician
+      routes.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.technician.localeCompare(b.technician);
+      });
 
       setCalculatedRoutes(routes);
       
       if (routes.length > 0) {
-        toast.success(`Calculated mileage for ${routes.length} days`);
+        toast.success(`Calculated mileage for ${routes.length} routes`);
       } else {
         toast.warning('No routes could be calculated. Make sure customers have geocoded addresses.');
       }
@@ -221,26 +258,27 @@ const MileageCalculator = () => {
   };
 
   const importCalculatedRoute = (route: DayRoute) => {
-    // Check if already imported
+    // Check if already imported (by date + technician)
+    const routeKey = `${route.date}-${route.technician}`;
     const existingEntry = entries.find(e => 
-      e.date === route.date && e.description.includes('Auto-calculated from appointments')
+      e.date === route.date && e.description.includes(route.technician) && e.description.includes('Auto-calculated')
     );
     
     if (existingEntry) {
-      toast.error('This day has already been imported');
+      toast.error('This route has already been imported');
       return;
     }
 
     const entry: MileageEntry = {
       id: crypto.randomUUID(),
       date: route.date,
-      description: `Auto-calculated from appointments (${route.stops.length - 2} stops)`,
+      description: `Auto-calculated: ${route.technician} (${route.stops.length - 2} stops)`,
       startMiles: 0,
       endMiles: route.totalMiles,
     };
 
     setEntries([...entries, entry]);
-    toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${format(parseISO(route.date), 'MMM d, yyyy')}`);
+    toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${route.technician} on ${format(parseISO(route.date), 'MMM d, yyyy')}`);
   };
 
   const importAllRoutes = () => {
@@ -249,14 +287,14 @@ const MileageCalculator = () => {
     
     calculatedRoutes.forEach(route => {
       const existingEntry = entries.find(e => 
-        e.date === route.date && e.description.includes('Auto-calculated from appointments')
+        e.date === route.date && e.description.includes(route.technician) && e.description.includes('Auto-calculated')
       );
       
       if (!existingEntry) {
         newEntries.push({
           id: crypto.randomUUID(),
           date: route.date,
-          description: `Auto-calculated from appointments (${route.stops.length - 2} stops)`,
+          description: `Auto-calculated: ${route.technician} (${route.stops.length - 2} stops)`,
           startMiles: 0,
           endMiles: route.totalMiles,
         });
@@ -266,7 +304,7 @@ const MileageCalculator = () => {
 
     if (newEntries.length > 0) {
       setEntries([...entries, ...newEntries]);
-      toast.success(`Imported ${imported} days of mileage`);
+      toast.success(`Imported ${imported} routes`);
     } else {
       toast.info('All routes have already been imported');
     }
@@ -374,7 +412,7 @@ const MileageCalculator = () => {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">
-                      Found {calculatedRoutes.length} days · {calculatedTotal.toFixed(1)} total miles · ${(calculatedTotal * ratePerMile).toFixed(2)}
+                      Found {calculatedRoutes.length} routes · {calculatedTotal.toFixed(1)} total miles · ${(calculatedTotal * ratePerMile).toFixed(2)}
                     </p>
                     <Button variant="outline" size="sm" onClick={importAllRoutes}>
                       <Download className="h-4 w-4 mr-2" />
@@ -385,14 +423,18 @@ const MileageCalculator = () => {
                   <div className="max-h-64 overflow-y-auto space-y-2">
                     {calculatedRoutes.map(route => (
                       <div 
-                        key={route.date} 
+                        key={`${route.date}-${route.technician}`} 
                         className="p-3 bg-background rounded-lg border flex items-center justify-between"
                       >
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">
                               {format(parseISO(route.date), 'EEE, MMM d, yyyy')}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                              <User className="h-3 w-3" />
+                              {route.technician}
                             </span>
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
