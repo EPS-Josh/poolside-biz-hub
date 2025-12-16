@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
@@ -18,11 +19,21 @@ import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 type ViewType = 'month' | 'week' | 'day' | 'list' | 'routes';
 
 const Calendar = () => {
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewType, setViewType] = useState<ViewType>('month');
+  const [viewType, setViewType] = useState<ViewType>('week');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [hasSetInitialView, setHasSetInitialView] = useState(false);
   const navigate = useNavigate();
+
+  // Set initial view based on device type
+  useEffect(() => {
+    if (!hasSetInitialView && isMobile !== undefined) {
+      setViewType(isMobile ? 'day' : 'week');
+      setHasSetInitialView(true);
+    }
+  }, [isMobile, hasSetInitialView]);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
