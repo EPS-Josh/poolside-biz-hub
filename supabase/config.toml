@@ -23,7 +23,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.geocode-customer]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-customer-invitation]
 verify_jwt = true
@@ -34,11 +34,11 @@ verify_jwt = true
 [functions.ha-appointments]
 verify_jwt = true
 
-[functions.geocode-customer]
-verify_jwt = true
-
 [functions.send-sms]
 verify_jwt = true
 
 [functions.sms-webhook]
 verify_jwt = false
+
+[functions.calculate-route-distance]
+verify_jwt = true

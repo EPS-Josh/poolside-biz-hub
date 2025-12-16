@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Car, Calculator, DollarSign, Trash2, Plus } from 'lucide-react';
+import { Car, Calculator, DollarSign, Trash2, Plus, MapPin, Loader2, Download, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { format, parseISO } from 'date-fns';
 
 interface MileageEntry {
   id: string;
@@ -16,6 +18,19 @@ interface MileageEntry {
   startMiles: number;
   endMiles: number;
 }
+
+interface DayRoute {
+  date: string;
+  totalMiles: number;
+  stops: { name: string; address: string }[];
+  legs: { from: string; to: string; distanceMiles: number }[];
+}
+
+const HOME_BASE = {
+  name: 'Home Base',
+  address: '731 E 39th St, Tucson, AZ',
+  coordinate: { lat: 32.1976, lng: -110.9568 }
+};
 
 const MileageCalculator = () => {
   const [entries, setEntries] = useState<MileageEntry[]>(() => {
@@ -34,6 +49,10 @@ const MileageCalculator = () => {
     startMiles: '',
     endMiles: '',
   });
+
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
+  const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('mileageEntries', JSON.stringify(entries));
@@ -87,18 +106,185 @@ const MileageCalculator = () => {
     }
   };
 
+  const fetchAndCalculateAppointmentMileage = async () => {
+    setIsLoadingAppointments(true);
+    setIsCalculating(true);
+    setCalculatedRoutes([]);
+    
+    try {
+      // Fetch completed appointments with customer data
+      const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          appointment_date,
+          appointment_time,
+          service_type,
+          customer_id,
+          customers (
+            id,
+            first_name,
+            last_name,
+            address,
+            city,
+            state,
+            zip_code,
+            latitude,
+            longitude
+          )
+        `)
+        .eq('status', 'completed')
+        .order('appointment_date', { ascending: true })
+        .order('appointment_time', { ascending: true });
+
+      if (error) throw error;
+
+      if (!appointments || appointments.length === 0) {
+        toast.info('No completed appointments found');
+        setIsLoadingAppointments(false);
+        setIsCalculating(false);
+        return;
+      }
+
+      // Group appointments by date
+      const appointmentsByDate: Record<string, any[]> = {};
+      appointments.forEach(apt => {
+        const date = apt.appointment_date;
+        if (!appointmentsByDate[date]) {
+          appointmentsByDate[date] = [];
+        }
+        appointmentsByDate[date].push(apt);
+      });
+
+      const routes: DayRoute[] = [];
+      
+      // Process each day
+      for (const [date, dayAppointments] of Object.entries(appointmentsByDate)) {
+        // Filter appointments with valid coordinates
+        const validAppointments = dayAppointments.filter(apt => 
+          apt.customers?.latitude && apt.customers?.longitude
+        );
+
+        if (validAppointments.length === 0) continue;
+
+        // Build stops array: Home -> Appointments -> Home
+        const stops = [
+          HOME_BASE,
+          ...validAppointments.map(apt => ({
+            name: `${apt.customers.first_name} ${apt.customers.last_name}`,
+            address: `${apt.customers.address || ''}, ${apt.customers.city || ''}, ${apt.customers.state || ''}`.trim(),
+            coordinate: {
+              lat: parseFloat(apt.customers.latitude),
+              lng: parseFloat(apt.customers.longitude)
+            }
+          })),
+          HOME_BASE
+        ];
+
+        // Calculate route using edge function
+        try {
+          const { data: routeData, error: routeError } = await supabase.functions.invoke(
+            'calculate-route-distance',
+            { body: { stops } }
+          );
+
+          if (routeError) {
+            console.error(`Error calculating route for ${date}:`, routeError);
+            continue;
+          }
+
+          routes.push({
+            date,
+            totalMiles: routeData.totalDistanceMiles,
+            stops: stops.map(s => ({ name: s.name, address: s.address || '' })),
+            legs: routeData.legs || []
+          });
+        } catch (err) {
+          console.error(`Failed to calculate route for ${date}:`, err);
+        }
+      }
+
+      setCalculatedRoutes(routes);
+      
+      if (routes.length > 0) {
+        toast.success(`Calculated mileage for ${routes.length} days`);
+      } else {
+        toast.warning('No routes could be calculated. Make sure customers have geocoded addresses.');
+      }
+    } catch (error: any) {
+      console.error('Error fetching appointments:', error);
+      toast.error('Failed to fetch appointments: ' + error.message);
+    } finally {
+      setIsLoadingAppointments(false);
+      setIsCalculating(false);
+    }
+  };
+
+  const importCalculatedRoute = (route: DayRoute) => {
+    // Check if already imported
+    const existingEntry = entries.find(e => 
+      e.date === route.date && e.description.includes('Auto-calculated from appointments')
+    );
+    
+    if (existingEntry) {
+      toast.error('This day has already been imported');
+      return;
+    }
+
+    const entry: MileageEntry = {
+      id: crypto.randomUUID(),
+      date: route.date,
+      description: `Auto-calculated from appointments (${route.stops.length - 2} stops)`,
+      startMiles: 0,
+      endMiles: route.totalMiles,
+    };
+
+    setEntries([...entries, entry]);
+    toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${format(parseISO(route.date), 'MMM d, yyyy')}`);
+  };
+
+  const importAllRoutes = () => {
+    let imported = 0;
+    const newEntries: MileageEntry[] = [];
+    
+    calculatedRoutes.forEach(route => {
+      const existingEntry = entries.find(e => 
+        e.date === route.date && e.description.includes('Auto-calculated from appointments')
+      );
+      
+      if (!existingEntry) {
+        newEntries.push({
+          id: crypto.randomUUID(),
+          date: route.date,
+          description: `Auto-calculated from appointments (${route.stops.length - 2} stops)`,
+          startMiles: 0,
+          endMiles: route.totalMiles,
+        });
+        imported++;
+      }
+    });
+
+    if (newEntries.length > 0) {
+      setEntries([...entries, ...newEntries]);
+      toast.success(`Imported ${imported} days of mileage`);
+    } else {
+      toast.info('All routes have already been imported');
+    }
+  };
+
   const totalMiles = entries.reduce((sum, e) => sum + (e.endMiles - e.startMiles), 0);
   const totalReimbursement = totalMiles * ratePerMile;
 
   // Group entries by month
   const entriesByMonth = entries.reduce((acc, entry) => {
-    const monthKey = entry.date.substring(0, 7); // YYYY-MM
+    const monthKey = entry.date.substring(0, 7);
     if (!acc[monthKey]) acc[monthKey] = [];
     acc[monthKey].push(entry);
     return acc;
   }, {} as Record<string, MileageEntry[]>);
 
   const sortedMonths = Object.keys(entriesByMonth).sort().reverse();
+  const calculatedTotal = calculatedRoutes.reduce((sum, r) => sum + r.totalMiles, 0);
 
   return (
     <ProtectedRoute>
@@ -153,12 +339,90 @@ const MileageCalculator = () => {
             </Card>
           </div>
 
+          {/* Calculate from Appointments */}
+          <Card className="mb-6 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                Calculate from Appointments
+              </CardTitle>
+              <CardDescription>
+                Automatically calculate mileage from completed appointments. 
+                Routes start and end at 731 E 39th St, Tucson, AZ.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={fetchAndCalculateAppointmentMileage}
+                disabled={isLoadingAppointments}
+                className="mb-4"
+              >
+                {isLoadingAppointments ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isCalculating ? 'Calculating Routes...' : 'Loading Appointments...'}
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Calculate Historical Mileage
+                  </>
+                )}
+              </Button>
+
+              {calculatedRoutes.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      Found {calculatedRoutes.length} days · {calculatedTotal.toFixed(1)} total miles · ${(calculatedTotal * ratePerMile).toFixed(2)}
+                    </p>
+                    <Button variant="outline" size="sm" onClick={importAllRoutes}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Import All
+                    </Button>
+                  </div>
+                  
+                  <div className="max-h-64 overflow-y-auto space-y-2">
+                    {calculatedRoutes.map(route => (
+                      <div 
+                        key={route.date} 
+                        className="p-3 bg-background rounded-lg border flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {format(parseISO(route.date), 'EEE, MMM d, yyyy')}
+                            </span>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {route.stops.length - 2} stops · {route.totalMiles.toFixed(1)} miles
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {route.stops.slice(1, -1).map(s => s.name).join(' → ')}
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => importCalculatedRoute(route)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Add Entry Form */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Add Mileage Entry
+                Add Manual Entry
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -226,7 +490,7 @@ const MileageCalculator = () => {
             <CardContent>
               {entries.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  No mileage entries yet. Add your first entry above.
+                  No mileage entries yet. Add your first entry above or calculate from appointments.
                 </p>
               ) : (
                 <div className="space-y-6">
@@ -269,9 +533,11 @@ const MileageCalculator = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-xs text-muted-foreground mt-1">
-                                    {entry.startMiles.toLocaleString()} → {entry.endMiles.toLocaleString()}
-                                  </div>
+                                  {entry.startMiles > 0 && (
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {entry.startMiles.toLocaleString()} → {entry.endMiles.toLocaleString()}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-4">
                                   <div className="text-right">
