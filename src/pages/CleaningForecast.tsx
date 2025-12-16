@@ -692,34 +692,16 @@ const CleaningForecast = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
                     {potentialCustomers?.map((customer: any) => (
-                      <div 
+                      <Badge 
                         key={customer.id} 
-                        className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                        variant="outline"
+                        className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors cursor-pointer text-sm"
                         onClick={() => navigate(`/customer/${customer.id}`)}
                       >
-                        <div className="font-medium">
-                          {customer.firstName} {customer.lastName}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          {customer.proposedRate && (
-                            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-                              ${customer.proposedRate}/week
-                            </span>
-                          )}
-                          {customer.acquisitionSource && (
-                            <Badge variant="outline" className="text-xs">
-                              {customer.acquisitionSource}
-                            </Badge>
-                          )}
-                        </div>
-                        {customer.notes && (
-                          <div className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                            {customer.notes}
-                          </div>
-                        )}
-                      </div>
+                        {customer.firstName} {customer.lastName}
+                      </Badge>
                     ))}
                   </div>
                 </CardContent>
