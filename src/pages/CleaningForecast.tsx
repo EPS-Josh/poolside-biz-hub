@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle, DollarSign, UserPlus, FileDown } from 'lucide-react';
+import { Users, Calendar, TrendingUp, AlertTriangle, CheckCircle, DollarSign, UserPlus, FileDown, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { MetricsCard } from '@/components/MetricsCard';
 import { useNavigate } from 'react-router-dom';
@@ -225,6 +226,44 @@ const CleaningForecast = () => {
     });
 
     doc.save('potential-cleaning-customers.pdf');
+  };
+
+  const exportPotentialCustomersSimplePdf = () => {
+    if (!potentialCustomers || potentialCustomers.length === 0) return;
+
+    const doc = new jsPDF();
+    const margin = 20;
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Potential Cleaning Customers', margin, yPos);
+    yPos += 10;
+
+    // Summary
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total: ${potentialCustomerCount} customers`, margin, yPos);
+    yPos += 5;
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, yPos);
+    yPos += 15;
+
+    // Simple list of names
+    doc.setFontSize(11);
+    potentialCustomers.forEach((customer, index) => {
+      // Check if we need a new page
+      if (yPos > 280) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      const name = `${index + 1}. ${customer.firstName} ${customer.lastName}`;
+      doc.text(name, margin, yPos);
+      yPos += 8;
+    });
+
+    doc.save('potential-customers-simple.pdf');
   };
 
   const calculateForecast = () => {
@@ -680,28 +719,58 @@ const CleaningForecast = () => {
                         Customers marked as potential acquisitions
                       </CardDescription>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={exportPotentialCustomersPdf}
-                      className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900"
-                    >
-                      <FileDown className="h-4 w-4 mr-2" />
-                      Export PDF
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900"
+                        >
+                          <FileDown className="h-4 w-4 mr-2" />
+                          Export PDF
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={exportPotentialCustomersSimplePdf}>
+                          Names Only
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={exportPotentialCustomersPdf}>
+                          Full Details
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
                     {potentialCustomers?.map((customer: any) => (
-                      <Badge 
+                      <div 
                         key={customer.id} 
-                        variant="outline"
-                        className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors cursor-pointer text-sm"
+                        className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
                         onClick={() => navigate(`/customer/${customer.id}`)}
                       >
-                        {customer.firstName} {customer.lastName}
-                      </Badge>
+                        <div className="font-medium">
+                          {customer.firstName} {customer.lastName}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {customer.proposedRate && (
+                            <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">
+                              ${customer.proposedRate}/week
+                            </span>
+                          )}
+                          {customer.acquisitionSource && (
+                            <Badge variant="outline" className="text-xs">
+                              {customer.acquisitionSource}
+                            </Badge>
+                          )}
+                        </div>
+                        {customer.notes && (
+                          <div className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                            {customer.notes}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </CardContent>
