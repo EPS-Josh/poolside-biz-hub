@@ -21,7 +21,8 @@ import {
   MessageSquare,
   Droplets,
   MapPin,
-  Calculator
+  Calculator,
+  Car
 } from 'lucide-react';
 
 
@@ -155,6 +156,13 @@ const Menu = () => {
           icon: Calculator,
           color: "bg-violet-500",
           action: () => navigate('/accountant'),
+        },
+        {
+          title: "Mileage Calculator",
+          description: "Track business mileage for tax deductions",
+          icon: Car,
+          color: "bg-amber-500",
+          action: () => navigate('/mileage-calculator'),
         },
       ]
     }
