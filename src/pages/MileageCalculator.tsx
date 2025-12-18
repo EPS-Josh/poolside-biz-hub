@@ -35,7 +35,7 @@ const HOME_BASE = {
   coordinate: { lat: 32.1976, lng: -110.9568 }
 };
 
-const DEFAULT_EMPLOYEES = ['John', 'Mike', 'Sarah', 'Unassigned'];
+const DEFAULT_EMPLOYEES = ['Josh W', 'Lance C', 'Scott A'];
 
 const MileageCalculator = () => {
   const [entries, setEntries] = useState<MileageEntry[]>(() => {
