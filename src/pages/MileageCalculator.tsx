@@ -59,18 +59,30 @@ const MileageCalculator = () => {
   const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Fetch employees from profiles table
+  // Fetch employees with technician role from profiles/user_roles
   useEffect(() => {
     const fetchEmployees = async () => {
-      const { data } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .not('full_name', 'is', null)
-        .order('full_name');
+      // Get user_ids with technician role
+      const { data: technicianRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'technician');
       
-      if (data) {
-        const names = data.map(p => p.full_name).filter(Boolean) as string[];
-        setEmployees(names);
+      if (technicianRoles && technicianRoles.length > 0) {
+        const userIds = technicianRoles.map(r => r.user_id);
+        
+        // Get profiles for those users
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .in('id', userIds)
+          .not('full_name', 'is', null)
+          .order('full_name');
+        
+        if (profiles) {
+          const names = profiles.map(p => p.full_name).filter(Boolean) as string[];
+          setEmployees(names);
+        }
       }
     };
     fetchEmployees();
