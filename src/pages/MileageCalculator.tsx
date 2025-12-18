@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Car, DollarSign, Trash2, Plus, Loader2, User, History } from 'lucide-react';
+import { Car, DollarSign, Trash2, Plus, Loader2, User, History, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -399,7 +400,7 @@ const MileageCalculator = () => {
                     }, {} as Record<string, { miles: number; reimbursement: number }>);
 
                     return (
-                      <div key={month}>
+                      <Collapsible key={month} defaultOpen={false}>
                         <div className="mb-3">
                           <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-foreground">{monthName}</h3>
@@ -414,65 +415,73 @@ const MileageCalculator = () => {
                               </div>
                             ))}
                           </div>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs text-muted-foreground">
+                              <ChevronDown className="h-3 w-3 mr-1 transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+                              Show {monthEntries.length} entries
+                            </Button>
+                          </CollapsibleTrigger>
                         </div>
-                        <div className="space-y-2">
-                          {monthEntries.map(entry => {
-                            const miles = entry.endMiles - entry.startMiles;
-                            return (
-                              <div 
-                                key={entry.id} 
-                                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                              >
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 flex-wrap">
-                                    <span className="text-sm font-medium">
-                                      {(() => {
-                                        const [y, m, d] = entry.date.split('-');
-                                        return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).toLocaleDateString('en-US', { 
-                                          month: 'short', 
-                                          day: 'numeric' 
-                                        });
-                                      })()}
-                                    </span>
-                                    {entry.employee && (
-                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                                        <User className="h-3 w-3" />
-                                        {entry.employee}
+                        <CollapsibleContent>
+                          <div className="space-y-2">
+                            {monthEntries.map(entry => {
+                              const miles = entry.endMiles - entry.startMiles;
+                              return (
+                                <div 
+                                  key={entry.id} 
+                                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                                >
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                      <span className="text-sm font-medium">
+                                        {(() => {
+                                          const [y, m, d] = entry.date.split('-');
+                                          return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).toLocaleDateString('en-US', { 
+                                            month: 'short', 
+                                            day: 'numeric' 
+                                          });
+                                        })()}
                                       </span>
-                                    )}
-                                    {entry.description && (
-                                      <span className="text-sm text-muted-foreground">
-                                        {entry.description}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {entry.startMiles > 0 && (
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                      {entry.startMiles.toLocaleString()} → {entry.endMiles.toLocaleString()}
+                                      {entry.employee && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                          <User className="h-3 w-3" />
+                                          {entry.employee}
+                                        </span>
+                                      )}
+                                      {entry.description && (
+                                        <span className="text-sm text-muted-foreground">
+                                          {entry.description}
+                                        </span>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <div className="text-right">
-                                    <p className="font-medium">{miles.toFixed(1)} mi</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      ${(miles * ratePerMile).toFixed(2)}
-                                    </p>
+                                    {entry.startMiles > 0 && (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {entry.startMiles.toLocaleString()} → {entry.endMiles.toLocaleString()}
+                                      </div>
+                                    )}
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDeleteEntry(entry.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                                  </Button>
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                      <p className="font-medium">{miles.toFixed(1)} mi</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        ${(miles * ratePerMile).toFixed(2)}
+                                      </p>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleDeleteEntry(entry.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
                         <Separator className="mt-4" />
-                      </div>
+                      </Collapsible>
                     );
                   })}
                 </div>
