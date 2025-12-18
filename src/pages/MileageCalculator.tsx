@@ -383,8 +383,8 @@ const MileageCalculator = () => {
                     );
                     const monthMiles = monthEntries.reduce((sum, e) => sum + (e.endMiles - e.startMiles), 0);
                     const monthReimbursement = monthMiles * ratePerMile;
-                    const monthDate = new Date(month + '-01');
-                    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    const [year, monthNum] = month.split('-');
+                    const monthName = new Date(parseInt(year), parseInt(monthNum) - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
                     return (
                       <div key={month}>
