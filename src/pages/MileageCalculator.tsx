@@ -175,25 +175,6 @@ const MileageCalculator = () => {
     toast.success('Entry deleted');
   };
 
-  const handleClearAll = async () => {
-    if (confirm('Are you sure you want to clear all entries? This cannot be undone.')) {
-      const { error } = await supabase
-        .from('mileage_entries')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-
-      if (error) {
-        console.error('Error clearing mileage entries:', error);
-        toast.error('Failed to clear entries');
-        return;
-      }
-
-      setEntries([]);
-      toast.success('All entries cleared');
-    }
-  };
-
-
   const totalMiles = entries.reduce((sum, e) => sum + (e.endMiles - e.startMiles), 0);
   const totalReimbursement = totalMiles * ratePerMile;
 
@@ -359,12 +340,6 @@ const MileageCalculator = () => {
                 <CardTitle className="text-lg">Mileage Log</CardTitle>
                 <CardDescription>{entries.length} entries</CardDescription>
               </div>
-              {entries.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleClearAll}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear All
-                </Button>
-              )}
             </CardHeader>
             <CardContent>
               {isLoadingEntries ? (
