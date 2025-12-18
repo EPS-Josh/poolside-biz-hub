@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Car, Calculator, DollarSign, Trash2, Plus, MapPin, Loader2, Download, Calendar, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ interface MileageEntry {
   description: string;
   startMiles: number;
   endMiles: number;
+  employee?: string;
 }
 
 interface DayRoute {
@@ -32,6 +34,8 @@ const HOME_BASE = {
   address: '731 E 39th St, Tucson, AZ',
   coordinate: { lat: 32.1976, lng: -110.9568 }
 };
+
+const DEFAULT_EMPLOYEES = ['John', 'Mike', 'Sarah', 'Unassigned'];
 
 const MileageCalculator = () => {
   const [entries, setEntries] = useState<MileageEntry[]>(() => {
@@ -49,11 +53,31 @@ const MileageCalculator = () => {
     description: '',
     startMiles: '',
     endMiles: '',
+    employee: '',
   });
 
+  const [employees, setEmployees] = useState<string[]>(DEFAULT_EMPLOYEES);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Fetch unique technicians from service records
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      const { data } = await supabase
+        .from('service_records')
+        .select('technician_name')
+        .not('technician_name', 'is', null);
+      
+      if (data) {
+        const uniqueNames = [...new Set(data.map(r => r.technician_name).filter(Boolean))] as string[];
+        if (uniqueNames.length > 0) {
+          setEmployees([...uniqueNames, 'Unassigned']);
+        }
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('mileageEntries', JSON.stringify(entries));
@@ -83,6 +107,7 @@ const MileageCalculator = () => {
       description: newEntry.description,
       startMiles: start,
       endMiles: end,
+      employee: newEntry.employee || undefined,
     };
 
     setEntries([...entries, entry]);
@@ -91,6 +116,7 @@ const MileageCalculator = () => {
       description: '',
       startMiles: '',
       endMiles: '',
+      employee: newEntry.employee, // Keep the same employee selected
     });
     toast.success('Mileage entry added');
   };
@@ -258,10 +284,9 @@ const MileageCalculator = () => {
   };
 
   const importCalculatedRoute = (route: DayRoute) => {
-    // Check if already imported (by date + technician)
-    const routeKey = `${route.date}-${route.technician}`;
+    // Check if already imported (by date + employee)
     const existingEntry = entries.find(e => 
-      e.date === route.date && e.description.includes(route.technician) && e.description.includes('Auto-calculated')
+      e.date === route.date && e.employee === route.technician && e.description.includes('Auto-calculated')
     );
     
     if (existingEntry) {
@@ -272,9 +297,10 @@ const MileageCalculator = () => {
     const entry: MileageEntry = {
       id: crypto.randomUUID(),
       date: route.date,
-      description: `Auto-calculated: ${route.technician} (${route.stops.length - 2} stops)`,
+      description: `Auto-calculated (${route.stops.length - 2} stops)`,
       startMiles: 0,
       endMiles: route.totalMiles,
+      employee: route.technician,
     };
 
     setEntries([...entries, entry]);
@@ -287,16 +313,17 @@ const MileageCalculator = () => {
     
     calculatedRoutes.forEach(route => {
       const existingEntry = entries.find(e => 
-        e.date === route.date && e.description.includes(route.technician) && e.description.includes('Auto-calculated')
+        e.date === route.date && e.employee === route.technician && e.description.includes('Auto-calculated')
       );
       
       if (!existingEntry) {
         newEntries.push({
           id: crypto.randomUUID(),
           date: route.date,
-          description: `Auto-calculated: ${route.technician} (${route.stops.length - 2} stops)`,
+          description: `Auto-calculated (${route.stops.length - 2} stops)`,
           startMiles: 0,
           endMiles: route.totalMiles,
+          employee: route.technician,
         });
         imported++;
       }
@@ -468,7 +495,23 @@ const MileageCalculator = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div>
+                  <Label htmlFor="employee">Employee</Label>
+                  <Select 
+                    value={newEntry.employee} 
+                    onValueChange={(value) => setNewEntry({ ...newEntry, employee: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map(emp => (
+                        <SelectItem key={emp} value={emp}>{emp}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div>
                   <Label htmlFor="date">Date</Label>
                   <Input
@@ -562,13 +605,19 @@ const MileageCalculator = () => {
                                 className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                               >
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-3 flex-wrap">
                                     <span className="text-sm font-medium">
                                       {new Date(entry.date).toLocaleDateString('en-US', { 
                                         month: 'short', 
                                         day: 'numeric' 
                                       })}
                                     </span>
+                                    {entry.employee && (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                        <User className="h-3 w-3" />
+                                        {entry.employee}
+                                      </span>
+                                    )}
                                     {entry.description && (
                                       <span className="text-sm text-muted-foreground">
                                         {entry.description}
