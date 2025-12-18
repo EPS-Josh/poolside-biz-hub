@@ -56,28 +56,10 @@ const MileageCalculator = () => {
     employee: '',
   });
 
-  const [employees, setEmployees] = useState<string[]>(DEFAULT_EMPLOYEES);
+  const employees = DEFAULT_EMPLOYEES;
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
-
-  // Fetch unique technicians from service records
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      const { data } = await supabase
-        .from('service_records')
-        .select('technician_name')
-        .not('technician_name', 'is', null);
-      
-      if (data) {
-        const uniqueNames = [...new Set(data.map(r => r.technician_name).filter(Boolean))] as string[];
-        if (uniqueNames.length > 0) {
-          setEmployees([...uniqueNames, 'Unassigned']);
-        }
-      }
-    };
-    fetchEmployees();
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('mileageEntries', JSON.stringify(entries));
