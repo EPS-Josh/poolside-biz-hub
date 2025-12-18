@@ -47,6 +47,7 @@ import Pool360Import from "./pages/Pool360Import";
 import CleaningPricing from "./pages/CleaningPricing";
 import Accountant from "./pages/Accountant";
 import MileageCalculator from "./pages/MileageCalculator";
+import HistoricalMileage from "./pages/HistoricalMileage";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +125,11 @@ const App = () => (
             <Route path="/mileage-calculator" element={
               <ProtectedRoute excludedRoles={['guest']}>
                 <MileageCalculator />
+              </ProtectedRoute>
+            } />
+            <Route path="/historical-mileage" element={
+              <ProtectedRoute excludedRoles={['guest']}>
+                <HistoricalMileage />
               </ProtectedRoute>
             } />
             <Route path="/sms-opt-in" element={

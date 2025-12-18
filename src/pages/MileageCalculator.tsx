@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,10 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Car, Calculator, DollarSign, Trash2, Plus, MapPin, Loader2, Download, Calendar, User } from 'lucide-react';
+import { Car, DollarSign, Trash2, Plus, Loader2, User, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { format, parseISO } from 'date-fns';
 
 interface MileageEntry {
   id: string;
@@ -21,21 +21,8 @@ interface MileageEntry {
   employee?: string;
 }
 
-interface DayRoute {
-  date: string;
-  technician: string;
-  totalMiles: number;
-  stops: { name: string; address: string }[];
-  legs: { from: string; to: string; distanceMiles: number }[];
-}
-
-const HOME_BASE = {
-  name: 'Home Base',
-  address: '731 E 39th St, Tucson, AZ',
-  coordinate: { lat: 32.1976, lng: -110.9568 }
-};
-
 const MileageCalculator = () => {
+  const navigate = useNavigate();
   const [entries, setEntries] = useState<MileageEntry[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(true);
   
@@ -53,10 +40,6 @@ const MileageCalculator = () => {
   });
 
   const [employees, setEmployees] = useState<string[]>([]);
-  const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
-  const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
-  const [routeEmployeeOverrides, setRouteEmployeeOverrides] = useState<Record<string, string>>({});
-  const [isCalculating, setIsCalculating] = useState(false);
 
   // Fetch mileage entries from database
   const fetchEntries = async () => {
@@ -209,268 +192,6 @@ const MileageCalculator = () => {
     }
   };
 
-  const fetchAndCalculateAppointmentMileage = async () => {
-    setIsLoadingAppointments(true);
-    setIsCalculating(true);
-    setCalculatedRoutes([]);
-    
-    try {
-      // Fetch completed appointments with customer data
-      const { data: appointments, error } = await supabase
-        .from('appointments')
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          service_type,
-          customer_id,
-          customers (
-            id,
-            first_name,
-            last_name,
-            address,
-            city,
-            state,
-            zip_code,
-            latitude,
-            longitude
-          )
-        `)
-        .eq('status', 'completed')
-        .order('appointment_date', { ascending: true })
-        .order('appointment_time', { ascending: true });
-
-      if (error) throw error;
-
-      if (!appointments || appointments.length === 0) {
-        toast.info('No completed appointments found');
-        setIsLoadingAppointments(false);
-        setIsCalculating(false);
-        return;
-      }
-
-      // Fetch service records to get technician names
-      const customerIds = [...new Set(appointments.map(a => a.customer_id).filter(Boolean))];
-      const appointmentDates = [...new Set(appointments.map(a => a.appointment_date))];
-      
-      const { data: serviceRecords, error: srError } = await supabase
-        .from('service_records')
-        .select('customer_id, service_date, technician_name')
-        .in('customer_id', customerIds)
-        .in('service_date', appointmentDates);
-
-      if (srError) {
-        console.error('Error fetching service records:', srError);
-      }
-
-      // Create a lookup map for technician by customer_id + date
-      const technicianMap = new Map<string, string>();
-      serviceRecords?.forEach(sr => {
-        const key = `${sr.customer_id}-${sr.service_date}`;
-        if (sr.technician_name) {
-          technicianMap.set(key, sr.technician_name);
-        }
-      });
-
-      // Group appointments by date AND technician
-      const appointmentsByDateTech: Record<string, any[]> = {};
-      appointments.forEach(apt => {
-        const date = apt.appointment_date;
-        const techKey = `${apt.customer_id}-${date}`;
-        const technician = technicianMap.get(techKey) || 'Unassigned';
-        const groupKey = `${date}|${technician}`;
-        
-        if (!appointmentsByDateTech[groupKey]) {
-          appointmentsByDateTech[groupKey] = [];
-        }
-        appointmentsByDateTech[groupKey].push(apt);
-      });
-
-      const routes: DayRoute[] = [];
-      
-      // Process each day/technician group
-      for (const [groupKey, dayAppointments] of Object.entries(appointmentsByDateTech)) {
-        const [date, technician] = groupKey.split('|');
-        
-        // Filter appointments with valid coordinates
-        const validAppointments = dayAppointments.filter(apt => 
-          apt.customers?.latitude && apt.customers?.longitude
-        );
-
-        if (validAppointments.length === 0) continue;
-
-        // Build stops array: Home -> Appointments -> Home
-        const stops = [
-          HOME_BASE,
-          ...validAppointments.map(apt => ({
-            name: `${apt.customers.first_name} ${apt.customers.last_name}`,
-            address: `${apt.customers.address || ''}, ${apt.customers.city || ''}, ${apt.customers.state || ''}`.trim(),
-            coordinate: {
-              lat: parseFloat(apt.customers.latitude),
-              lng: parseFloat(apt.customers.longitude)
-            }
-          })),
-          HOME_BASE
-        ];
-
-        // Calculate route using edge function
-        try {
-          const { data: routeData, error: routeError } = await supabase.functions.invoke(
-            'calculate-route-distance',
-            { body: { stops } }
-          );
-
-          if (routeError) {
-            console.error(`Error calculating route for ${date} (${technician}):`, routeError);
-            continue;
-          }
-
-          routes.push({
-            date,
-            technician,
-            totalMiles: routeData.totalDistanceMiles,
-            stops: stops.map(s => ({ name: s.name, address: s.address || '' })),
-            legs: routeData.legs || []
-          });
-        } catch (err) {
-          console.error(`Failed to calculate route for ${date} (${technician}):`, err);
-        }
-      }
-
-      // Sort routes by date then technician
-      routes.sort((a, b) => {
-        if (a.date !== b.date) return a.date.localeCompare(b.date);
-        return a.technician.localeCompare(b.technician);
-      });
-
-      setCalculatedRoutes(routes);
-      
-      if (routes.length > 0) {
-        toast.success(`Calculated mileage for ${routes.length} routes`);
-      } else {
-        toast.warning('No routes could be calculated. Make sure customers have geocoded addresses.');
-      }
-    } catch (error: any) {
-      console.error('Error fetching appointments:', error);
-      toast.error('Failed to fetch appointments: ' + error.message);
-    } finally {
-      setIsLoadingAppointments(false);
-      setIsCalculating(false);
-    }
-  };
-
-  const importCalculatedRoute = async (route: DayRoute) => {
-    const routeKey = `${route.date}-${route.technician}`;
-    const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
-    
-    // Check if already imported (by date + assigned employee)
-    const existingEntry = entries.find(e => 
-      e.date === route.date && e.employee === assignedEmployee && e.description.includes('Auto-calculated')
-    );
-    
-    if (existingEntry) {
-      toast.error('This route has already been imported for this employee');
-      return;
-    }
-
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      toast.error('You must be logged in to import routes');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('mileage_entries')
-      .insert({
-        user_id: userData.user.id,
-        date: route.date,
-        description: `Auto-calculated (${route.stops.length - 2} stops)`,
-        start_miles: 0,
-        end_miles: route.totalMiles,
-        employee: assignedEmployee,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error importing route:', error);
-      toast.error('Failed to import route');
-      return;
-    }
-
-    setEntries([{
-      id: data.id,
-      date: data.date,
-      description: data.description || '',
-      startMiles: Number(data.start_miles),
-      endMiles: Number(data.end_miles),
-      employee: data.employee || undefined,
-    }, ...entries]);
-    
-    toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${assignedEmployee} on ${format(parseISO(route.date), 'MMM d, yyyy')}`);
-  };
-
-  const updateRouteEmployee = (routeKey: string, employee: string) => {
-    setRouteEmployeeOverrides(prev => ({ ...prev, [routeKey]: employee }));
-  };
-
-  const importAllRoutes = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      toast.error('You must be logged in to import routes');
-      return;
-    }
-
-    const toImport: { date: string; description: string; start_miles: number; end_miles: number; employee: string; user_id: string }[] = [];
-    
-    calculatedRoutes.forEach(route => {
-      const routeKey = `${route.date}-${route.technician}`;
-      const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
-      
-      const existingEntry = entries.find(e => 
-        e.date === route.date && e.employee === assignedEmployee && e.description.includes('Auto-calculated')
-      );
-      
-      if (!existingEntry) {
-        toImport.push({
-          user_id: userData.user!.id,
-          date: route.date,
-          description: `Auto-calculated (${route.stops.length - 2} stops)`,
-          start_miles: 0,
-          end_miles: route.totalMiles,
-          employee: assignedEmployee,
-        });
-      }
-    });
-
-    if (toImport.length === 0) {
-      toast.info('All routes have already been imported');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('mileage_entries')
-      .insert(toImport)
-      .select();
-
-    if (error) {
-      console.error('Error importing routes:', error);
-      toast.error('Failed to import routes');
-      return;
-    }
-
-    const newEntries = data.map(e => ({
-      id: e.id,
-      date: e.date,
-      description: e.description || '',
-      startMiles: Number(e.start_miles),
-      endMiles: Number(e.end_miles),
-      employee: e.employee || undefined,
-    }));
-
-    setEntries([...newEntries, ...entries]);
-    toast.success(`Imported ${toImport.length} routes`);
-  };
 
   const totalMiles = entries.reduce((sum, e) => sum + (e.endMiles - e.startMiles), 0);
   const totalReimbursement = totalMiles * ratePerMile;
@@ -484,7 +205,6 @@ const MileageCalculator = () => {
   }, {} as Record<string, MileageEntry[]>);
 
   const sortedMonths = Object.keys(entriesByMonth).sort().reverse();
-  const calculatedTotal = calculatedRoutes.reduce((sum, r) => sum + r.totalMiles, 0);
 
   return (
     <ProtectedRoute>
@@ -539,100 +259,23 @@ const MileageCalculator = () => {
             </Card>
           </div>
 
-          {/* Calculate from Appointments */}
+          {/* Historical Mileage Link */}
           <Card className="mb-6 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-blue-600" />
-                Calculate from Appointments
-              </CardTitle>
-              <CardDescription>
-                Automatically calculate mileage from completed appointments. 
-                Routes start and end at 731 E 39th St, Tucson, AZ.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={fetchAndCalculateAppointmentMileage}
-                disabled={isLoadingAppointments}
-                className="mb-4"
-              >
-                {isLoadingAppointments ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isCalculating ? 'Calculating Routes...' : 'Loading Appointments...'}
-                  </>
-                ) : (
-                  <>
-                    <Calculator className="h-4 w-4 mr-2" />
-                    Calculate Historical Mileage
-                  </>
-                )}
-              </Button>
-
-              {calculatedRoutes.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      Found {calculatedRoutes.length} routes · {calculatedTotal.toFixed(1)} total miles · ${(calculatedTotal * ratePerMile).toFixed(2)}
-                    </p>
-                    <Button variant="outline" size="sm" onClick={importAllRoutes}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Import All
-                    </Button>
-                  </div>
-                  
-                  <div className="max-h-64 overflow-y-auto space-y-2">
-                    {calculatedRoutes.map(route => (
-                      <div 
-                        key={`${route.date}-${route.technician}`} 
-                        className="p-3 bg-background rounded-lg border space-y-2"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {format(parseISO(route.date), 'EEE, MMM d, yyyy')}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              (from: {route.technician})
-                            </span>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => importCalculatedRoute(route)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Label className="text-xs whitespace-nowrap">Assign to:</Label>
-                          <Select 
-                            value={routeEmployeeOverrides[`${route.date}-${route.technician}`] || route.technician} 
-                            onValueChange={(value) => updateRouteEmployee(`${route.date}-${route.technician}`, value)}
-                          >
-                            <SelectTrigger className="h-8 text-xs flex-1">
-                              <SelectValue placeholder="Select employee..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {employees.map(emp => (
-                                <SelectItem key={emp} value={emp}>{emp}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {route.stops.length - 2} stops · {route.totalMiles.toFixed(1)} miles
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {route.stops.slice(1, -1).map(s => s.name).join(' → ')}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium flex items-center gap-2">
+                    <History className="h-5 w-5 text-blue-600" />
+                    Historical Mileage Calculator
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Calculate and import mileage from completed appointments
+                  </p>
                 </div>
-              )}
+                <Button variant="outline" onClick={() => navigate('/historical-mileage')}>
+                  Open Calculator
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
