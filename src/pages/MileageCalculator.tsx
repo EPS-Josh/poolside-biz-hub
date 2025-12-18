@@ -405,10 +405,13 @@ const MileageCalculator = () => {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 flex-wrap">
                                     <span className="text-sm font-medium">
-                                      {new Date(entry.date).toLocaleDateString('en-US', { 
-                                        month: 'short', 
-                                        day: 'numeric' 
-                                      })}
+                                      {(() => {
+                                        const [y, m, d] = entry.date.split('-');
+                                        return new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).toLocaleDateString('en-US', { 
+                                          month: 'short', 
+                                          day: 'numeric' 
+                                        });
+                                      })()}
                                     </span>
                                     {entry.employee && (
                                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
