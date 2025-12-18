@@ -35,8 +35,6 @@ const HOME_BASE = {
   coordinate: { lat: 32.1976, lng: -110.9568 }
 };
 
-const DEFAULT_EMPLOYEES = ['Josh W', 'Lance C', 'Scott A'];
-
 const MileageCalculator = () => {
   const [entries, setEntries] = useState<MileageEntry[]>(() => {
     const saved = localStorage.getItem('mileageEntries');
@@ -56,10 +54,27 @@ const MileageCalculator = () => {
     employee: '',
   });
 
-  const employees = DEFAULT_EMPLOYEES;
+  const [employees, setEmployees] = useState<string[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Fetch employees from profiles table
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .not('full_name', 'is', null)
+        .order('full_name');
+      
+      if (data) {
+        const names = data.map(p => p.full_name).filter(Boolean) as string[];
+        setEmployees(names);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('mileageEntries', JSON.stringify(entries));
