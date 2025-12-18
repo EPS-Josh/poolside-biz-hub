@@ -377,7 +377,7 @@ const MileageCalculator = () => {
                 </p>
               ) : (
                 <div className="space-y-6">
-                  {sortedMonths.map(month => {
+                {sortedMonths.map(month => {
                     const monthEntries = entriesByMonth[month].sort((a, b) => 
                       new Date(b.date).getTime() - new Date(a.date).getTime()
                     );
@@ -385,13 +385,34 @@ const MileageCalculator = () => {
                     const monthReimbursement = monthMiles * ratePerMile;
                     const [year, monthNum] = month.split('-');
                     const monthName = new Date(parseInt(year), parseInt(monthNum) - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    
+                    // Calculate totals by employee
+                    const employeeTotals = monthEntries.reduce((acc, entry) => {
+                      const emp = entry.employee || 'Unassigned';
+                      const miles = entry.endMiles - entry.startMiles;
+                      if (!acc[emp]) {
+                        acc[emp] = { miles: 0, reimbursement: 0 };
+                      }
+                      acc[emp].miles += miles;
+                      acc[emp].reimbursement += miles * ratePerMile;
+                      return acc;
+                    }, {} as Record<string, { miles: number; reimbursement: number }>);
 
                     return (
                       <div key={month}>
-                        <div className="flex justify-between items-center mb-3">
-                          <h3 className="font-semibold text-foreground">{monthName}</h3>
-                          <div className="text-sm text-muted-foreground">
-                            {monthMiles.toFixed(1)} mi · ${monthReimbursement.toFixed(2)}
+                        <div className="mb-3">
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-semibold text-foreground">{monthName}</h3>
+                            <div className="text-sm font-medium text-foreground">
+                              {monthMiles.toFixed(1)} mi · ${monthReimbursement.toFixed(2)}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                            {Object.entries(employeeTotals).map(([emp, totals]) => (
+                              <div key={emp} className="text-xs text-muted-foreground">
+                                <span className="font-medium">{emp}:</span> {totals.miles.toFixed(1)} mi · ${totals.reimbursement.toFixed(2)}
+                              </div>
+                            ))}
                           </div>
                         </div>
                         <div className="space-y-2">
