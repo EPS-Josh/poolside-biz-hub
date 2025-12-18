@@ -41,7 +41,7 @@ const MileageCalculator = () => {
   
   const [ratePerMile, setRatePerMile] = useState(() => {
     const saved = localStorage.getItem('mileageRate');
-    return saved ? parseFloat(saved) : 0.67; // 2024 IRS standard rate
+    return saved ? parseFloat(saved) : 0.70; // 2025 IRS standard rate
   });
 
   const [newEntry, setNewEntry] = useState({
@@ -815,8 +815,8 @@ const MileageCalculator = () => {
 
           {/* Info Note */}
           <p className="text-xs text-muted-foreground mt-4 text-center">
-            The 2024 IRS standard mileage rate for business use is $0.67 per mile. 
-            Data is stored locally in your browser.
+            The 2025 IRS standard mileage rate for business use is $0.70 per mile. 
+            Data is securely stored in your database.
           </p>
         </main>
       </div>
