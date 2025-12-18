@@ -57,6 +57,7 @@ const MileageCalculator = () => {
   const [employees, setEmployees] = useState<string[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
+  const [routeEmployeeOverrides, setRouteEmployeeOverrides] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
 
   // Fetch employees with technician, manager, or admin roles
@@ -291,13 +292,16 @@ const MileageCalculator = () => {
   };
 
   const importCalculatedRoute = (route: DayRoute) => {
-    // Check if already imported (by date + employee)
+    const routeKey = `${route.date}-${route.technician}`;
+    const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
+    
+    // Check if already imported (by date + assigned employee)
     const existingEntry = entries.find(e => 
-      e.date === route.date && e.employee === route.technician && e.description.includes('Auto-calculated')
+      e.date === route.date && e.employee === assignedEmployee && e.description.includes('Auto-calculated')
     );
     
     if (existingEntry) {
-      toast.error('This route has already been imported');
+      toast.error('This route has already been imported for this employee');
       return;
     }
 
@@ -307,11 +311,15 @@ const MileageCalculator = () => {
       description: `Auto-calculated (${route.stops.length - 2} stops)`,
       startMiles: 0,
       endMiles: route.totalMiles,
-      employee: route.technician,
+      employee: assignedEmployee,
     };
 
     setEntries([...entries, entry]);
-    toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${route.technician} on ${format(parseISO(route.date), 'MMM d, yyyy')}`);
+    toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${assignedEmployee} on ${format(parseISO(route.date), 'MMM d, yyyy')}`);
+  };
+
+  const updateRouteEmployee = (routeKey: string, employee: string) => {
+    setRouteEmployeeOverrides(prev => ({ ...prev, [routeKey]: employee }));
   };
 
   const importAllRoutes = () => {
@@ -319,8 +327,11 @@ const MileageCalculator = () => {
     const newEntries: MileageEntry[] = [];
     
     calculatedRoutes.forEach(route => {
+      const routeKey = `${route.date}-${route.technician}`;
+      const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
+      
       const existingEntry = entries.find(e => 
-        e.date === route.date && e.employee === route.technician && e.description.includes('Auto-calculated')
+        e.date === route.date && e.employee === assignedEmployee && e.description.includes('Auto-calculated')
       );
       
       if (!existingEntry) {
@@ -330,7 +341,7 @@ const MileageCalculator = () => {
           description: `Auto-calculated (${route.stops.length - 2} stops)`,
           startMiles: 0,
           endMiles: route.totalMiles,
-          employee: route.technician,
+          employee: assignedEmployee,
         });
         imported++;
       }
@@ -458,33 +469,48 @@ const MileageCalculator = () => {
                     {calculatedRoutes.map(route => (
                       <div 
                         key={`${route.date}-${route.technician}`} 
-                        className="p-3 bg-background rounded-lg border flex items-center justify-between"
+                        className="p-3 bg-background rounded-lg border space-y-2"
                       >
-                        <div className="flex-1">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">
                               {format(parseISO(route.date), 'EEE, MMM d, yyyy')}
                             </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                              <User className="h-3 w-3" />
-                              {route.technician}
+                            <span className="text-xs text-muted-foreground">
+                              (from: {route.technician})
                             </span>
                           </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {route.stops.length - 2} stops · {route.totalMiles.toFixed(1)} miles
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {route.stops.slice(1, -1).map(s => s.name).join(' → ')}
-                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => importCalculatedRoute(route)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => importCalculatedRoute(route)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs whitespace-nowrap">Assign to:</Label>
+                          <Select 
+                            value={routeEmployeeOverrides[`${route.date}-${route.technician}`] || route.technician} 
+                            onValueChange={(value) => updateRouteEmployee(`${route.date}-${route.technician}`, value)}
+                          >
+                            <SelectTrigger className="h-8 text-xs flex-1">
+                              <SelectValue placeholder="Select employee..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {employees.map(emp => (
+                                <SelectItem key={emp} value={emp}>{emp}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {route.stops.length - 2} stops · {route.totalMiles.toFixed(1)} miles
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {route.stops.slice(1, -1).map(s => s.name).join(' → ')}
+                        </div>
                       </div>
                     ))}
                   </div>
