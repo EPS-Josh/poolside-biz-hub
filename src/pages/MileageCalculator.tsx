@@ -36,10 +36,8 @@ const HOME_BASE = {
 };
 
 const MileageCalculator = () => {
-  const [entries, setEntries] = useState<MileageEntry[]>(() => {
-    const saved = localStorage.getItem('mileageEntries');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [entries, setEntries] = useState<MileageEntry[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(true);
   
   const [ratePerMile, setRatePerMile] = useState(() => {
     const saved = localStorage.getItem('mileageRate');
@@ -59,6 +57,34 @@ const MileageCalculator = () => {
   const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
   const [routeEmployeeOverrides, setRouteEmployeeOverrides] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Fetch mileage entries from database
+  const fetchEntries = async () => {
+    setIsLoadingEntries(true);
+    const { data, error } = await supabase
+      .from('mileage_entries')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching mileage entries:', error);
+      toast.error('Failed to load mileage entries');
+    } else if (data) {
+      setEntries(data.map(e => ({
+        id: e.id,
+        date: e.date,
+        description: e.description || '',
+        startMiles: Number(e.start_miles),
+        endMiles: Number(e.end_miles),
+        employee: e.employee || undefined,
+      })));
+    }
+    setIsLoadingEntries(false);
+  };
+
+  useEffect(() => {
+    fetchEntries();
+  }, []);
 
   // Fetch employees with technician, manager, or admin roles
   useEffect(() => {
@@ -88,14 +114,10 @@ const MileageCalculator = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('mileageEntries', JSON.stringify(entries));
-  }, [entries]);
-
-  useEffect(() => {
     localStorage.setItem('mileageRate', ratePerMile.toString());
   }, [ratePerMile]);
 
-  const handleAddEntry = () => {
+  const handleAddEntry = async () => {
     if (!newEntry.date || !newEntry.startMiles || !newEntry.endMiles) {
       toast.error('Please fill in date, start miles, and end miles');
       return;
@@ -109,16 +131,40 @@ const MileageCalculator = () => {
       return;
     }
 
-    const entry: MileageEntry = {
-      id: crypto.randomUUID(),
-      date: newEntry.date,
-      description: newEntry.description,
-      startMiles: start,
-      endMiles: end,
-      employee: newEntry.employee || undefined,
-    };
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      toast.error('You must be logged in to add entries');
+      return;
+    }
 
-    setEntries([...entries, entry]);
+    const { data, error } = await supabase
+      .from('mileage_entries')
+      .insert({
+        user_id: userData.user.id,
+        date: newEntry.date,
+        description: newEntry.description || null,
+        start_miles: start,
+        end_miles: end,
+        employee: newEntry.employee || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding mileage entry:', error);
+      toast.error('Failed to add mileage entry');
+      return;
+    }
+
+    setEntries([{
+      id: data.id,
+      date: data.date,
+      description: data.description || '',
+      startMiles: Number(data.start_miles),
+      endMiles: Number(data.end_miles),
+      employee: data.employee || undefined,
+    }, ...entries]);
+    
     setNewEntry({
       date: new Date().toISOString().split('T')[0],
       description: '',
@@ -126,16 +172,38 @@ const MileageCalculator = () => {
       endMiles: '',
       employee: newEntry.employee, // Keep the same employee selected
     });
-    toast.success('Mileage entry added');
+    toast.success('Mileage entry saved');
   };
 
-  const handleDeleteEntry = (id: string) => {
+  const handleDeleteEntry = async (id: string) => {
+    const { error } = await supabase
+      .from('mileage_entries')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting mileage entry:', error);
+      toast.error('Failed to delete entry');
+      return;
+    }
+
     setEntries(entries.filter(e => e.id !== id));
     toast.success('Entry deleted');
   };
 
-  const handleClearAll = () => {
-    if (confirm('Are you sure you want to clear all entries?')) {
+  const handleClearAll = async () => {
+    if (confirm('Are you sure you want to clear all entries? This cannot be undone.')) {
+      const { error } = await supabase
+        .from('mileage_entries')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+      if (error) {
+        console.error('Error clearing mileage entries:', error);
+        toast.error('Failed to clear entries');
+        return;
+      }
+
       setEntries([]);
       toast.success('All entries cleared');
     }
@@ -291,7 +359,7 @@ const MileageCalculator = () => {
     }
   };
 
-  const importCalculatedRoute = (route: DayRoute) => {
+  const importCalculatedRoute = async (route: DayRoute) => {
     const routeKey = `${route.date}-${route.technician}`;
     const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
     
@@ -305,16 +373,40 @@ const MileageCalculator = () => {
       return;
     }
 
-    const entry: MileageEntry = {
-      id: crypto.randomUUID(),
-      date: route.date,
-      description: `Auto-calculated (${route.stops.length - 2} stops)`,
-      startMiles: 0,
-      endMiles: route.totalMiles,
-      employee: assignedEmployee,
-    };
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      toast.error('You must be logged in to import routes');
+      return;
+    }
 
-    setEntries([...entries, entry]);
+    const { data, error } = await supabase
+      .from('mileage_entries')
+      .insert({
+        user_id: userData.user.id,
+        date: route.date,
+        description: `Auto-calculated (${route.stops.length - 2} stops)`,
+        start_miles: 0,
+        end_miles: route.totalMiles,
+        employee: assignedEmployee,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error importing route:', error);
+      toast.error('Failed to import route');
+      return;
+    }
+
+    setEntries([{
+      id: data.id,
+      date: data.date,
+      description: data.description || '',
+      startMiles: Number(data.start_miles),
+      endMiles: Number(data.end_miles),
+      employee: data.employee || undefined,
+    }, ...entries]);
+    
     toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${assignedEmployee} on ${format(parseISO(route.date), 'MMM d, yyyy')}`);
   };
 
@@ -322,9 +414,14 @@ const MileageCalculator = () => {
     setRouteEmployeeOverrides(prev => ({ ...prev, [routeKey]: employee }));
   };
 
-  const importAllRoutes = () => {
-    let imported = 0;
-    const newEntries: MileageEntry[] = [];
+  const importAllRoutes = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      toast.error('You must be logged in to import routes');
+      return;
+    }
+
+    const toImport: { date: string; description: string; start_miles: number; end_miles: number; employee: string; user_id: string }[] = [];
     
     calculatedRoutes.forEach(route => {
       const routeKey = `${route.date}-${route.technician}`;
@@ -335,24 +432,44 @@ const MileageCalculator = () => {
       );
       
       if (!existingEntry) {
-        newEntries.push({
-          id: crypto.randomUUID(),
+        toImport.push({
+          user_id: userData.user!.id,
           date: route.date,
           description: `Auto-calculated (${route.stops.length - 2} stops)`,
-          startMiles: 0,
-          endMiles: route.totalMiles,
+          start_miles: 0,
+          end_miles: route.totalMiles,
           employee: assignedEmployee,
         });
-        imported++;
       }
     });
 
-    if (newEntries.length > 0) {
-      setEntries([...entries, ...newEntries]);
-      toast.success(`Imported ${imported} routes`);
-    } else {
+    if (toImport.length === 0) {
       toast.info('All routes have already been imported');
+      return;
     }
+
+    const { data, error } = await supabase
+      .from('mileage_entries')
+      .insert(toImport)
+      .select();
+
+    if (error) {
+      console.error('Error importing routes:', error);
+      toast.error('Failed to import routes');
+      return;
+    }
+
+    const newEntries = data.map(e => ({
+      id: e.id,
+      date: e.date,
+      description: e.description || '',
+      startMiles: Number(e.start_miles),
+      endMiles: Number(e.end_miles),
+      employee: e.employee || undefined,
+    }));
+
+    setEntries([...newEntries, ...entries]);
+    toast.success(`Imported ${toImport.length} routes`);
   };
 
   const totalMiles = entries.reduce((sum, e) => sum + (e.endMiles - e.startMiles), 0);
@@ -606,7 +723,12 @@ const MileageCalculator = () => {
               )}
             </CardHeader>
             <CardContent>
-              {entries.length === 0 ? (
+              {isLoadingEntries ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-muted-foreground">Loading entries...</span>
+                </div>
+              ) : entries.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   No mileage entries yet. Add your first entry above or calculate from appointments.
                 </p>
