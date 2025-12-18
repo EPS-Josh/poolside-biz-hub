@@ -1,10 +1,12 @@
 
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import WaterTestAnalyzer from '@/components/WaterTestAnalyzer';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { 
   Users, 
   DollarSign, 
@@ -22,151 +24,292 @@ import {
   Droplets,
   MapPin,
   Calculator,
-  Car
+  Car,
+  GripVertical,
+  RotateCcw
 } from 'lucide-react';
 
+interface MenuItem {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  route: string;
+}
+
+interface MenuSection {
+  id: string;
+  title: string;
+  description: string;
+  items: MenuItem[];
+}
+
+const STORAGE_KEY = 'menu-layout';
+
+const getDefaultMenuSections = (): MenuSection[] => [
+  {
+    id: 'operations',
+    title: "Operations",
+    description: "Day-to-day business operations and management",
+    items: [
+      {
+        id: 'calendar',
+        title: "Appointment Calendar",
+        description: "Schedule and manage appointments",
+        icon: Calendar,
+        color: "bg-red-500",
+        route: '/calendar',
+      },
+      {
+        id: 'inventory',
+        title: "Inventory",
+        description: "Track products, parts, and supplies",
+        icon: Package,
+        color: "bg-orange-500",
+        route: '/inventory',
+      },
+      {
+        id: 'service-records',
+        title: "Service Records",
+        description: "View and manage all service records",
+        icon: ClipboardList,
+        color: "bg-blue-600",
+        route: '/service-records',
+      },
+      {
+        id: 'follow-ups',
+        title: "Follow-ups Needed",
+        description: "Manage service records requiring follow-up",
+        icon: Bell,
+        color: "bg-yellow-500",
+        route: '/follow-ups',
+      },
+      {
+        id: 'tsbs',
+        title: "TSB's",
+        description: "Technical Service Bulletins management",
+        icon: FileText,
+        color: "bg-indigo-500",
+        route: '/tsbs',
+      },
+    ]
+  },
+  {
+    id: 'dashboard',
+    title: "Dashboard & Metrics",
+    description: "Key performance indicators and business overview",
+    items: [
+      {
+        id: 'bpa',
+        title: "Company Key Metrics",
+        description: "View overall business performance and KPIs",
+        icon: DollarSign,
+        color: "bg-green-500",
+        route: '/bpa',
+      },
+      {
+        id: 'analytics',
+        title: "Analytics & Reports",
+        description: "Detailed analytics and business reports",
+        icon: BarChart3,
+        color: "bg-purple-500",
+        route: '/analytics',
+      },
+    ]
+  },
+  {
+    id: 'customers',
+    title: "Customers",
+    description: "Customer management and information",
+    items: [
+      {
+        id: 'customer-dashboard',
+        title: "Customer Dashboard", 
+        description: "Manage customers and view customer data",
+        icon: Users,
+        color: "bg-blue-500",
+        route: '/customers',
+      },
+      {
+        id: 'customer-messaging',
+        title: "Customer Messaging",
+        description: "Manage SMS opt-ins and customer communications",
+        icon: MessageSquare,
+        color: "bg-cyan-500",
+        route: '/sms-opt-in',
+      },
+      {
+        id: 'cleaning-pricing',
+        title: "Cleaning Pricing",
+        description: "View pool cleaning service pricing by pool size",
+        icon: Droplets,
+        color: "bg-sky-500",
+        route: '/cleaning-pricing',
+      },
+      {
+        id: 'customer-map',
+        title: "Customer Map",
+        description: "View customer locations, plan routes, and manage service areas",
+        icon: MapPin,
+        color: "bg-rose-500",
+        route: '/customers/map',
+      },
+    ]
+  },
+  {
+    id: 'management',
+    title: "Management",
+    description: "Company and employee management tools",
+    items: [
+      {
+        id: 'employees',
+        title: "Employees",
+        description: "Manage staff and employee information",
+        icon: UserCheck,
+        color: "bg-teal-500",
+        route: '/employees',
+      },
+      {
+        id: 'company-data',
+        title: "Company Data",
+        description: "Company settings and configuration",
+        icon: Building,
+        color: "bg-gray-500",
+        route: '/company-data',
+      },
+      {
+        id: 'cleaning-forecast',
+        title: "Cleaning Forecast",
+        description: "Analyze workload capacity and forecast staffing needs",
+        icon: TrendingUp,
+        color: "bg-emerald-500",
+        route: '/cleaning-forecast',
+      },
+      {
+        id: 'accountant',
+        title: "Accountant",
+        description: "Track accountant questions and answers",
+        icon: Calculator,
+        color: "bg-violet-500",
+        route: '/accountant',
+      },
+      {
+        id: 'mileage-calculator',
+        title: "Mileage Calculator",
+        description: "Track business mileage for tax deductions",
+        icon: Car,
+        color: "bg-amber-500",
+        route: '/mileage-calculator',
+      },
+    ]
+  }
+];
+
+// Icon mapping for restoring from localStorage
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Calendar, Package, ClipboardList, Bell, FileText, DollarSign, BarChart3,
+  Users, MessageSquare, Droplets, MapPin, UserCheck, Building, TrendingUp,
+  Calculator, Car
+};
+
+const getIconForItem = (itemId: string, defaultSections: MenuSection[]): React.ComponentType<{ className?: string }> => {
+  for (const section of defaultSections) {
+    const item = section.items.find(i => i.id === itemId);
+    if (item) return item.icon;
+  }
+  return Calendar;
+};
+
+const loadSavedLayout = (): MenuSection[] | null => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+    
+    const parsed = JSON.parse(saved);
+    const defaultSections = getDefaultMenuSections();
+    
+    // Restore icon references since they can't be serialized
+    return parsed.map((section: MenuSection) => ({
+      ...section,
+      items: section.items.map((item: MenuItem) => ({
+        ...item,
+        icon: getIconForItem(item.id, defaultSections)
+      }))
+    }));
+  } catch {
+    return null;
+  }
+};
+
+const saveLayout = (sections: MenuSection[]) => {
+  // Remove icon references before saving since they can't be serialized
+  const toSave = sections.map(section => ({
+    ...section,
+    items: section.items.map(item => ({
+      ...item,
+      icon: undefined
+    }))
+  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+};
 
 const Menu = () => {
   const navigate = useNavigate();
+  const [menuSections, setMenuSections] = useState<MenuSection[]>(() => {
+    return loadSavedLayout() || getDefaultMenuSections();
+  });
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  const menuSections = [
-    {
-      title: "Operations",
-      description: "Day-to-day business operations and management",
-      items: [
-        {
-          title: "Appointment Calendar",
-          description: "Schedule and manage appointments",
-          icon: Calendar,
-          color: "bg-red-500",
-          action: () => navigate('/calendar'),
-        },
-        {
-          title: "Inventory",
-          description: "Track products, parts, and supplies",
-          icon: Package,
-          color: "bg-orange-500",
-          action: () => navigate('/inventory'),
-        },
-        {
-          title: "Service Records",
-          description: "View and manage all service records",
-          icon: ClipboardList,
-          color: "bg-blue-600",
-          action: () => navigate('/service-records'),
-        },
-        {
-          title: "Follow-ups Needed",
-          description: "Manage service records requiring follow-up",
-          icon: Bell,
-          color: "bg-yellow-500",
-          action: () => navigate('/follow-ups'),
-        },
-        {
-          title: "TSB's",
-          description: "Technical Service Bulletins management",
-          icon: FileText,
-          color: "bg-indigo-500",
-          action: () => navigate('/tsbs'),
-        },
-      ]
-    },
-    {
-      title: "Dashboard & Metrics",
-      description: "Key performance indicators and business overview",
-      items: [
-        {
-          title: "Company Key Metrics",
-          description: "View overall business performance and KPIs",
-          icon: DollarSign,
-          color: "bg-green-500",
-          action: () => navigate('/bpa'),
-        },
-        {
-          title: "Analytics & Reports",
-          description: "Detailed analytics and business reports",
-          icon: BarChart3,
-          color: "bg-purple-500",
-          action: () => navigate('/analytics'),
-        },
-      ]
-    },
-    {
-      title: "Customers",
-      description: "Customer management and information",
-      items: [
-        {
-          title: "Customer Dashboard", 
-          description: "Manage customers and view customer data",
-          icon: Users,
-          color: "bg-blue-500",
-          action: () => navigate('/customers'),
-        },
-        {
-          title: "Customer Messaging",
-          description: "Manage SMS opt-ins and customer communications",
-          icon: MessageSquare,
-          color: "bg-cyan-500",
-          action: () => navigate('/sms-opt-in'),
-        },
-        {
-          title: "Cleaning Pricing",
-          description: "View pool cleaning service pricing by pool size",
-          icon: Droplets,
-          color: "bg-sky-500",
-          action: () => navigate('/cleaning-pricing'),
-        },
-        {
-          title: "Customer Map",
-          description: "View customer locations, plan routes, and manage service areas",
-          icon: MapPin,
-          color: "bg-rose-500",
-          action: () => navigate('/customers/map'),
-        },
-      ]
-    },
-    {
-      title: "Management",
-      description: "Company and employee management tools",
-      items: [
-        {
-          title: "Employees",
-          description: "Manage staff and employee information",
-          icon: UserCheck,
-          color: "bg-teal-500",
-          action: () => navigate('/employees'),
-        },
-        {
-          title: "Company Data",
-          description: "Company settings and configuration",
-          icon: Building,
-          color: "bg-gray-500",
-          action: () => navigate('/company-data'),
-        },
-        {
-          title: "Cleaning Forecast",
-          description: "Analyze workload capacity and forecast staffing needs",
-          icon: TrendingUp,
-          color: "bg-emerald-500",
-          action: () => navigate('/cleaning-forecast'),
-        },
-        {
-          title: "Accountant",
-          description: "Track accountant questions and answers",
-          icon: Calculator,
-          color: "bg-violet-500",
-          action: () => navigate('/accountant'),
-        },
-        {
-          title: "Mileage Calculator",
-          description: "Track business mileage for tax deductions",
-          icon: Car,
-          color: "bg-amber-500",
-          action: () => navigate('/mileage-calculator'),
-        },
-      ]
+  useEffect(() => {
+    saveLayout(menuSections);
+  }, [menuSections]);
+
+  const handleDragEnd = (result: DropResult) => {
+    const { source, destination, type } = result;
+    
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    if (type === 'section') {
+      // Reordering sections
+      const newSections = Array.from(menuSections);
+      const [removed] = newSections.splice(source.index, 1);
+      newSections.splice(destination.index, 0, removed);
+      setMenuSections(newSections);
+    } else {
+      // Reordering items within or between sections
+      const sourceSectionIndex = menuSections.findIndex(s => s.id === source.droppableId);
+      const destSectionIndex = menuSections.findIndex(s => s.id === destination.droppableId);
+      
+      if (sourceSectionIndex === -1 || destSectionIndex === -1) return;
+
+      const newSections = [...menuSections];
+      
+      if (sourceSectionIndex === destSectionIndex) {
+        // Same section
+        const newItems = Array.from(newSections[sourceSectionIndex].items);
+        const [removed] = newItems.splice(source.index, 1);
+        newItems.splice(destination.index, 0, removed);
+        newSections[sourceSectionIndex] = { ...newSections[sourceSectionIndex], items: newItems };
+      } else {
+        // Different sections
+        const sourceItems = Array.from(newSections[sourceSectionIndex].items);
+        const destItems = Array.from(newSections[destSectionIndex].items);
+        const [removed] = sourceItems.splice(source.index, 1);
+        destItems.splice(destination.index, 0, removed);
+        newSections[sourceSectionIndex] = { ...newSections[sourceSectionIndex], items: sourceItems };
+        newSections[destSectionIndex] = { ...newSections[destSectionIndex], items: destItems };
+      }
+      
+      setMenuSections(newSections);
     }
-  ];
+  };
+
+  const resetLayout = () => {
+    setMenuSections(getDefaultMenuSections());
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   return (
     <ProtectedRoute>
@@ -174,52 +317,131 @@ const Menu = () => {
         <Header />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">Business Menu</h1>
-              <p className="text-muted-foreground">Access all areas of your business from this central hub</p>
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Business Menu</h1>
+                <p className="text-muted-foreground">Access all areas of your business from this central hub</p>
+              </div>
+              <div className="flex gap-2">
+                {isEditMode && (
+                  <Button variant="outline" size="sm" onClick={resetLayout}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset Layout
+                  </Button>
+                )}
+                <Button 
+                  variant={isEditMode ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setIsEditMode(!isEditMode)}
+                >
+                  <GripVertical className="h-4 w-4 mr-2" />
+                  {isEditMode ? 'Done Editing' : 'Edit Layout'}
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-8">
-              {menuSections.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="space-y-4">
-                  <div>
-                    <h2 className="text-xl font-semibold text-foreground mb-1">{section.title}</h2>
-                    <p className="text-sm text-muted-foreground">{section.description}</p>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {section.items.map((item, itemIndex) => (
-                      <Card key={itemIndex} className="hover:shadow-lg transition-shadow cursor-pointer group">
-                        <CardHeader className="pb-4">
-                          <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-lg ${item.color}`}>
-                              <item.icon className="h-6 w-6 text-white" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">
-                                {item.title}
-                              </CardTitle>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <CardDescription className="mb-4 text-sm">
-                            {item.description}
-                          </CardDescription>
-                          <Button 
-                            onClick={item.action}
-                            className="w-full"
-                            variant="outline"
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="sections" type="section">
+                {(provided) => (
+                  <div 
+                    className="space-y-8" 
+                    ref={provided.innerRef} 
+                    {...provided.droppableProps}
+                  >
+                    {menuSections.map((section, sectionIndex) => (
+                      <Draggable 
+                        key={section.id} 
+                        draggableId={section.id} 
+                        index={sectionIndex}
+                        isDragDisabled={!isEditMode}
+                      >
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`space-y-4 ${snapshot.isDragging ? 'opacity-80' : ''}`}
                           >
-                            Access {item.title}
-                          </Button>
-                        </CardContent>
-                      </Card>
+                            <div className="flex items-center gap-2">
+                              {isEditMode && (
+                                <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded">
+                                  <GripVertical className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div>
+                                <h2 className="text-xl font-semibold text-foreground mb-1">{section.title}</h2>
+                                <p className="text-sm text-muted-foreground">{section.description}</p>
+                              </div>
+                            </div>
+                            
+                            <Droppable droppableId={section.id} type="item">
+                              {(provided) => (
+                                <div 
+                                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                >
+                                  {section.items.map((item, itemIndex) => (
+                                    <Draggable 
+                                      key={item.id} 
+                                      draggableId={item.id} 
+                                      index={itemIndex}
+                                      isDragDisabled={!isEditMode}
+                                    >
+                                      {(provided, snapshot) => (
+                                        <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          className={snapshot.isDragging ? 'opacity-80' : ''}
+                                        >
+                                          <Card className={`hover:shadow-lg transition-shadow cursor-pointer group h-full ${isEditMode ? 'ring-2 ring-dashed ring-muted-foreground/30' : ''}`}>
+                                            <CardHeader className="pb-4">
+                                              <div className="flex items-center space-x-3">
+                                                {isEditMode && (
+                                                  <div {...provided.dragHandleProps} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded">
+                                                    <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                                  </div>
+                                                )}
+                                                <div className={`p-2 rounded-lg ${item.color}`}>
+                                                  <item.icon className="h-6 w-6 text-white" />
+                                                </div>
+                                                <div>
+                                                  <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">
+                                                    {item.title}
+                                                  </CardTitle>
+                                                </div>
+                                              </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                              <CardDescription className="mb-4 text-sm">
+                                                {item.description}
+                                              </CardDescription>
+                                              <Button 
+                                                onClick={() => !isEditMode && navigate(item.route)}
+                                                className="w-full"
+                                                variant="outline"
+                                                disabled={isEditMode}
+                                              >
+                                                Access {item.title}
+                                              </Button>
+                                            </CardContent>
+                                          </Card>
+                                        </div>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          </div>
+                        )}
+                      </Draggable>
                     ))}
+                    {provided.placeholder}
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </Droppable>
+            </DragDropContext>
 
 
             {/* Water Test Analyzer Section */}
