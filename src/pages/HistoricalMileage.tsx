@@ -117,6 +117,23 @@ const HistoricalMileage = () => {
     setIsCalculating(true);
     setCalculatedRoutes([]);
     
+    // Refresh imported routes before calculating to get latest state
+    const { data: importedData } = await supabase
+      .from('mileage_entries')
+      .select('date, employee, description')
+      .ilike('description', '%Auto-calculated%');
+    
+    const freshImportedRoutes = new Set<string>();
+    if (importedData) {
+      importedData.forEach(e => {
+        freshImportedRoutes.add(`${e.date}-${e.employee}`);
+        if (e.description) {
+          freshImportedRoutes.add(`${e.date}-${e.employee}-${e.description}`);
+        }
+      });
+    }
+    setImportedRoutes(freshImportedRoutes);
+    
     try {
       const { data: appointments, error } = await supabase
         .from('appointments')
@@ -209,7 +226,7 @@ const HistoricalMileage = () => {
           
           // Check if already imported (by date + Joshua Wilkinson)
           const joshFullName = employees.find(e => e.toLowerCase().includes('josh')) || 'Joshua Wilkinson';
-          if (!importedRoutes.has(`${date}-${joshFullName}`)) {
+          if (!freshImportedRoutes.has(`${date}-${joshFullName}`)) {
             const route = await calculateRouteForAppointments(date, dayData.josh, 'solo-josh', ['Josh']);
             if (route) routes.push(route);
           }
@@ -218,7 +235,7 @@ const HistoricalMileage = () => {
         // Process Lance-solo route
         if (dayData.lance.length > 0) {
           const lanceFullName = employees.find(e => e.toLowerCase().includes('lance')) || 'Lance';
-          if (!importedRoutes.has(`${date}-${lanceFullName}`)) {
+          if (!freshImportedRoutes.has(`${date}-${lanceFullName}`)) {
             const route = await calculateRouteForAppointments(date, dayData.lance, 'solo-lance', ['Lance']);
             if (route) routes.push(route);
           }
@@ -235,7 +252,7 @@ const HistoricalMileage = () => {
           const lanceFullName = employees.find(e => e.toLowerCase().includes('lance')) || 'Lance';
           
           // Check if any entry for this date mentions these tech names
-          const alreadyImported = Array.from(importedRoutes).some(key => {
+          const alreadyImported = Array.from(freshImportedRoutes).some(key => {
             if (!key.startsWith(date)) return false;
             // Check if this entry's description contains any of the multi-tech names
             return techNames.some(techName => key.toLowerCase().includes(techName.toLowerCase()));
