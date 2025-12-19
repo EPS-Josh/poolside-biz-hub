@@ -1492,6 +1492,47 @@ export type Database = {
         }
         Relationships: []
       }
+      technician_customer_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          technician_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          technician_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          technician_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_customer_assignments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tsbs: {
         Row: {
           attachments: Json | null
@@ -1670,6 +1711,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_technician_assigned_to_customer: {
+        Args: { _customer_id: string; _user_id: string }
+        Returns: boolean
+      }
       log_sensitive_data_access: {
         Args: {
           access_type: string

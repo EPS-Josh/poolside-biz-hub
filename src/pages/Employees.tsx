@@ -9,9 +9,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Shield, Key, UserPlus, Mail, Calendar, RefreshCw } from 'lucide-react';
+import { Users, Shield, Key, UserPlus, Mail, Calendar, RefreshCw, UserCheck } from 'lucide-react';
 import { Header } from '@/components/Header';
+import { TechnicianCustomerAssignments } from '@/components/TechnicianCustomerAssignments';
 
 interface UserProfile {
   id: string;
@@ -345,7 +347,7 @@ export const Employees = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Employee Management</h1>
-            <p className="text-muted-foreground">Manage user accounts and permissions</p>
+            <p className="text-muted-foreground">Manage user accounts, permissions, and customer assignments</p>
           </div>
           <div className="flex space-x-2">
             <Button variant="outline" onClick={fetchUsers}>
@@ -417,120 +419,139 @@ export const Employees = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="text-center">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
-              <p>Loading employees...</p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            {users.map((userProfile) => (
-              <Card key={userProfile.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Users className="h-5 w-5" />
-                        <span>{userProfile.full_name || 'No Name'}</span>
-                      </CardTitle>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2">
-                        <div className="flex items-center space-x-1">
-                          <Mail className="h-4 w-4" />
-                          <span>{userProfile.email}</span>
-                        </div>
-                        {userProfile.last_sign_in_at && (
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>Last login: {new Date(userProfile.last_sign_in_at).toLocaleDateString()}</span>
+        <Tabs defaultValue="employees" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="employees" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Employees
+            </TabsTrigger>
+            <TabsTrigger value="assignments" className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              Customer Assignments
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="employees">
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="text-center">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4 animate-pulse" />
+                  <p>Loading employees...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {users.map((userProfile) => (
+                  <Card key={userProfile.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Users className="h-5 w-5" />
+                            <span>{userProfile.full_name || 'No Name'}</span>
+                          </CardTitle>
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2">
+                            <div className="flex items-center space-x-1">
+                              <Mail className="h-4 w-4" />
+                              <span>{userProfile.email}</span>
+                            </div>
+                            {userProfile.last_sign_in_at && (
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="h-4 w-4" />
+                                <span>Last login: {new Date(userProfile.last_sign_in_at).toLocaleDateString()}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Key className="h-4 w-4 mr-2" />
+                              Reset Password
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Reset Password</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will send a password reset email to {userProfile.email}. Are you sure you want to continue?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => resetUserPassword(userProfile.id, userProfile.email)}>
+                                Send Reset Email
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Key className="h-4 w-4 mr-2" />
-                          Reset Password
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Reset Password</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will send a password reset email to {userProfile.email}. Are you sure you want to continue?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => resetUserPassword(userProfile.id, userProfile.email)}>
-                            Send Reset Email
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Current Roles</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {userProfile.roles.length > 0 ? (
-                          userProfile.roles.map((role) => (
-                            <Badge
-                              key={role}
-                              variant="outline"
-                              className={roleColors[role as AppRole]}
-                            >
-                              {role}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="ml-2 h-4 w-4 p-0"
-                                onClick={() => updateUserRole(userProfile.id, role as AppRole, 'remove')}
-                              >
-                                ×
-                              </Button>
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-muted-foreground text-sm">No roles assigned</span>
-                        )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Current Roles</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {userProfile.roles.length > 0 ? (
+                              userProfile.roles.map((role) => (
+                                <Badge
+                                  key={role}
+                                  variant="outline"
+                                  className={roleColors[role as AppRole]}
+                                >
+                                  {role}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="ml-2 h-4 w-4 p-0"
+                                    onClick={() => updateUserRole(userProfile.id, role as AppRole, 'remove')}
+                                  >
+                                    ×
+                                  </Button>
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-muted-foreground text-sm">No roles assigned</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-medium mb-2">Add Role</h4>
+                          <div className="flex space-x-2">
+                            <Select onValueChange={(role: AppRole) => updateUserRole(userProfile.id, role, 'add')}>
+                              <SelectTrigger className="w-48">
+                                <SelectValue placeholder="Select role to add" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(['admin', 'manager', 'technician', 'customer', 'guest'] as AppRole[])
+                                  .filter(role => !userProfile.roles.includes(role))
+                                  .map((role) => (
+                                    <SelectItem key={role} value={role}>
+                                      <div>
+                                        <div className="font-medium capitalize">{role}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          {roleDescriptions[role]}
+                                        </div>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium mb-2">Add Role</h4>
-                      <div className="flex space-x-2">
-                        <Select onValueChange={(role: AppRole) => updateUserRole(userProfile.id, role, 'add')}>
-                          <SelectTrigger className="w-48">
-                            <SelectValue placeholder="Select role to add" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(['admin', 'manager', 'technician', 'customer', 'guest'] as AppRole[])
-                              .filter(role => !userProfile.roles.includes(role))
-                              .map((role) => (
-                                <SelectItem key={role} value={role}>
-                                  <div>
-                                    <div className="font-medium capitalize">{role}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {roleDescriptions[role]}
-                                    </div>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="assignments">
+            <TechnicianCustomerAssignments />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
