@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import WaterTestAnalyzer from '@/components/WaterTestAnalyzer';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import { 
   Users, 
   DollarSign, 
@@ -26,7 +29,8 @@ import {
   Calculator,
   Car,
   GripVertical,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
 
 interface MenuItem {
@@ -44,8 +48,6 @@ interface MenuSection {
   description: string;
   items: MenuItem[];
 }
-
-const STORAGE_KEY = 'menu-layout';
 
 const getDefaultMenuSections = (): MenuSection[] => [
   {
@@ -206,7 +208,7 @@ const getDefaultMenuSections = (): MenuSection[] => [
   }
 ];
 
-// Icon mapping for restoring from localStorage
+// Icon mapping for restoring from database
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar, Package, ClipboardList, Bell, FileText, DollarSign, BarChart3,
   Users, MessageSquare, Droplets, MapPin, UserCheck, Building, TrendingUp,
@@ -221,49 +223,98 @@ const getIconForItem = (itemId: string, defaultSections: MenuSection[]): React.C
   return Calendar;
 };
 
-const loadSavedLayout = (): MenuSection[] | null => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return null;
-    
-    const parsed = JSON.parse(saved);
-    const defaultSections = getDefaultMenuSections();
-    
-    // Restore icon references since they can't be serialized
-    return parsed.map((section: MenuSection) => ({
-      ...section,
-      items: section.items.map((item: MenuItem) => ({
-        ...item,
-        icon: getIconForItem(item.id, defaultSections)
-      }))
-    }));
-  } catch {
-    return null;
-  }
+const restoreIcons = (sections: MenuSection[]): MenuSection[] => {
+  const defaultSections = getDefaultMenuSections();
+  return sections.map((section: MenuSection) => ({
+    ...section,
+    items: section.items.map((item: MenuItem) => ({
+      ...item,
+      icon: getIconForItem(item.id, defaultSections)
+    }))
+  }));
 };
 
-const saveLayout = (sections: MenuSection[]) => {
+const serializeLayout = (sections: MenuSection[]) => {
   // Remove icon references before saving since they can't be serialized
-  const toSave = sections.map(section => ({
+  return sections.map(section => ({
     ...section,
     items: section.items.map(item => ({
       ...item,
       icon: undefined
     }))
   }));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
 };
 
 const Menu = () => {
   const navigate = useNavigate();
-  const [menuSections, setMenuSections] = useState<MenuSection[]>(() => {
-    return loadSavedLayout() || getDefaultMenuSections();
-  });
+  const { user } = useAuth();
+  const [menuSections, setMenuSections] = useState<MenuSection[]>(getDefaultMenuSections());
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
+  // Load layout from database
   useEffect(() => {
-    saveLayout(menuSections);
-  }, [menuSections]);
+    const loadLayout = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('user_menu_layouts')
+          .select('layout_data')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error loading menu layout:', error);
+          setMenuSections(getDefaultMenuSections());
+        } else if (data?.layout_data) {
+          const restored = restoreIcons(data.layout_data as unknown as MenuSection[]);
+          setMenuSections(restored);
+        } else {
+          setMenuSections(getDefaultMenuSections());
+        }
+      } catch (err) {
+        console.error('Error loading menu layout:', err);
+        setMenuSections(getDefaultMenuSections());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadLayout();
+  }, [user]);
+
+  // Save layout to database (debounced)
+  const saveLayout = useCallback(async (sections: MenuSection[]) => {
+    if (!user) return;
+
+    setIsSaving(true);
+    try {
+      const serialized = serializeLayout(sections);
+      
+      const { error } = await supabase
+        .from('user_menu_layouts')
+        .upsert({
+          user_id: user.id,
+          layout_data: serialized
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving menu layout:', error);
+        toast.error('Failed to save layout');
+      }
+    } catch (err) {
+      console.error('Error saving menu layout:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [user]);
 
   const handleDragEnd = (result: DropResult) => {
     const { source, destination, type } = result;
@@ -271,12 +322,13 @@ const Menu = () => {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
+    let newSections: MenuSection[];
+
     if (type === 'section') {
       // Reordering sections
-      const newSections = Array.from(menuSections);
+      newSections = Array.from(menuSections);
       const [removed] = newSections.splice(source.index, 1);
       newSections.splice(destination.index, 0, removed);
-      setMenuSections(newSections);
     } else {
       // Reordering items within or between sections
       const sourceSectionIndex = menuSections.findIndex(s => s.id === source.droppableId);
@@ -284,7 +336,7 @@ const Menu = () => {
       
       if (sourceSectionIndex === -1 || destSectionIndex === -1) return;
 
-      const newSections = [...menuSections];
+      newSections = [...menuSections];
       
       if (sourceSectionIndex === destSectionIndex) {
         // Same section
@@ -301,15 +353,42 @@ const Menu = () => {
         newSections[sourceSectionIndex] = { ...newSections[sourceSectionIndex], items: sourceItems };
         newSections[destSectionIndex] = { ...newSections[destSectionIndex], items: destItems };
       }
-      
-      setMenuSections(newSections);
+    }
+    
+    setMenuSections(newSections);
+    saveLayout(newSections);
+  };
+
+  const resetLayout = async () => {
+    const defaultSections = getDefaultMenuSections();
+    setMenuSections(defaultSections);
+    
+    if (user) {
+      try {
+        await supabase
+          .from('user_menu_layouts')
+          .delete()
+          .eq('user_id', user.id);
+      } catch (err) {
+        console.error('Error resetting layout:', err);
+      }
     }
   };
 
-  const resetLayout = () => {
-    setMenuSections(getDefaultMenuSections());
-    localStorage.removeItem(STORAGE_KEY);
-  };
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-background">
+          <Header />
+          <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          </main>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -320,7 +399,10 @@ const Menu = () => {
             <div className="mb-8 flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">Business Menu</h1>
-                <p className="text-muted-foreground">Access all areas of your business from this central hub</p>
+                <p className="text-muted-foreground">
+                  Access all areas of your business from this central hub
+                  {isSaving && <span className="ml-2 text-xs">(saving...)</span>}
+                </p>
               </div>
               <div className="flex gap-2">
                 {isEditMode && (
