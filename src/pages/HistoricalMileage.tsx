@@ -66,21 +66,25 @@ const HistoricalMileage = () => {
     fetchEmployees();
   }, []);
 
-  // Check which routes have already been imported (by original technician)
+  // Check which routes have already been imported
   useEffect(() => {
     const checkImportedRoutes = async () => {
       const { data } = await supabase
         .from('mileage_entries')
-        .select('date, description')
-        .ilike('description', '%Auto-calculated from%');
+        .select('date, employee, description')
+        .ilike('description', '%Auto-calculated%');
       
       if (data) {
         const imported = new Set<string>();
         data.forEach(e => {
-          // Parse original technician from description: "Auto-calculated from [Tech Name] (X stops)"
+          // Try new format first: "Auto-calculated from [Tech Name] (X stops)"
           const match = e.description?.match(/Auto-calculated from (.+?) \(/);
           if (match) {
             imported.add(`${e.date}-${match[1]}`);
+          } else {
+            // Fall back to old format - use the employee name as the route key
+            // This handles legacy imports before we tracked original technician
+            imported.add(`${e.date}-${e.employee}`);
           }
         });
         setImportedRoutes(imported);
