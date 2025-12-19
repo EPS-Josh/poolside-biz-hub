@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calculator, Loader2, Download, Calendar, Plus, MapPin, User, Users } from 'lucide-react';
+import { ArrowLeft, Calculator, Loader2, Download, Calendar, Plus, MapPin, User, Users, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
@@ -446,6 +447,30 @@ const HistoricalMileage = () => {
     toast.success(message);
   };
 
+  const clearAllImportedMileage = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      toast.error('You must be logged in');
+      return;
+    }
+
+    const { error, count } = await supabase
+      .from('mileage_entries')
+      .delete()
+      .in('employee', ['Joshua Wilkinson', 'Lance Caulk'])
+      .ilike('description', '%Auto-calculated%');
+
+    if (error) {
+      console.error('Error clearing mileage:', error);
+      toast.error('Failed to clear mileage entries');
+      return;
+    }
+
+    setImportedRoutes(new Set());
+    setCalculatedRoutes([]);
+    toast.success('Cleared all auto-calculated mileage entries. Click "Calculate Historical Mileage" to start fresh.');
+  };
+
   const calculatedTotal = calculatedRoutes.reduce((sum, r) => sum + r.totalMiles, 0);
   const soloRoutes = calculatedRoutes.filter(r => r.routeType !== 'needs-assignment');
   const needsAssignmentRoutes = calculatedRoutes.filter(r => r.routeType === 'needs-assignment');
@@ -486,24 +511,49 @@ const HistoricalMileage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                onClick={fetchAndCalculateAppointmentMileage}
-                disabled={isLoadingAppointments}
-                className="mb-4"
-                size="lg"
-              >
-                {isLoadingAppointments ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isCalculating ? 'Calculating Routes...' : 'Loading Appointments...'}
-                  </>
-                ) : (
-                  <>
-                    <Calculator className="h-4 w-4 mr-2" />
-                    Calculate Historical Mileage
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-2 mb-4 flex-wrap">
+                <Button 
+                  onClick={fetchAndCalculateAppointmentMileage}
+                  disabled={isLoadingAppointments}
+                  size="lg"
+                >
+                  {isLoadingAppointments ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {isCalculating ? 'Calculating Routes...' : 'Loading Appointments...'}
+                    </>
+                  ) : (
+                    <>
+                      <Calculator className="h-4 w-4 mr-2" />
+                      Calculate Historical Mileage
+                    </>
+                  )}
+                </Button>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="lg">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear All Imported
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Clear all imported mileage?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will delete all auto-calculated mileage entries for Joshua Wilkinson and Lance Caulk. 
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={clearAllImportedMileage}>
+                        Yes, Clear All
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
 
               {calculatedRoutes.length > 0 && (
                 <div className="space-y-4">
