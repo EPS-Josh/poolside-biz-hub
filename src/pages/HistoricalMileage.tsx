@@ -160,6 +160,9 @@ const HistoricalMileage = () => {
       for (const [groupKey, dayAppointments] of Object.entries(appointmentsByDateTech)) {
         const [date, technician] = groupKey.split('|');
         
+        // Skip routes that haven't been assigned to an employee
+        if (technician === 'Unassigned') continue;
+        
         const validAppointments = dayAppointments.filter(apt => 
           apt.customers?.latitude && apt.customers?.longitude
         );
