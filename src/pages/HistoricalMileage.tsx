@@ -245,18 +245,20 @@ const HistoricalMileage = () => {
         if (dayData.multi.length > 0) {
           const techNames = Array.from(dayData.techNames).filter(t => categorizeTechnician(t) === 'multi');
           
-          // For multi-tech routes, check if THIS SPECIFIC route was imported
-          // by looking for entries with matching tech names in description
-          const techNamesStr = techNames.join(', ');
           const joshFullName = employees.find(e => e.toLowerCase().includes('josh')) || 'Joshua Wilkinson';
-          const lanceFullName = employees.find(e => e.toLowerCase().includes('lance')) || 'Lance';
+          const lanceFullName = employees.find(e => e.toLowerCase().includes('lance')) || 'Lance Caulk';
           
-          // Check if any entry for this date mentions these tech names
-          const alreadyImported = Array.from(freshImportedRoutes).some(key => {
-            if (!key.startsWith(date)) return false;
-            // Check if this entry's description contains any of the multi-tech names
-            return techNames.some(techName => key.toLowerCase().includes(techName.toLowerCase()));
-          });
+          // Multi-tech routes are considered imported if EITHER Josh or Lance already has an entry for this date
+          // (because the user would have assigned it to one of them)
+          const joshHasEntry = freshImportedRoutes.has(`${date}-${joshFullName}`);
+          const lanceHasEntry = freshImportedRoutes.has(`${date}-${lanceFullName}`);
+          
+          // Also check for "Josh & Lance" style descriptions
+          const hasMultiTechEntry = Array.from(freshImportedRoutes).some(key => 
+            key.startsWith(date) && key.toLowerCase().includes('josh & lance')
+          );
+          
+          const alreadyImported = joshHasEntry || lanceHasEntry || hasMultiTechEntry;
           
           if (!alreadyImported) {
             const route = await calculateRouteForAppointments(date, dayData.multi, 'needs-assignment', techNames);
