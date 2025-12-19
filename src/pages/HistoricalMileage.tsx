@@ -6,14 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Calculator, Loader2, Download, Calendar, Plus, MapPin } from 'lucide-react';
+import { ArrowLeft, Calculator, Loader2, Download, Calendar, Plus, MapPin, User, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
 interface DayRoute {
   date: string;
-  technician: string;
+  routeType: 'solo-josh' | 'solo-lance' | 'needs-assignment';
+  originalTechs: string[]; // Original technician names from service records
   totalMiles: number;
   stops: { name: string; address: string }[];
   legs: { from: string; to: string; distanceMiles: number }[];
@@ -25,12 +26,32 @@ const HOME_BASE = {
   coordinate: { lat: 32.1976, lng: -110.9568 }
 };
 
+// Categorize a technician_name string
+const categorizeTechnician = (techName: string): 'josh' | 'lance' | 'multi' => {
+  const lower = techName.toLowerCase().trim();
+  
+  // Check if it's Josh alone (no other names)
+  const hasJosh = /\bjosh\b/i.test(lower);
+  const hasLance = /\blance\b/i.test(lower);
+  const hasOthers = /\b(scott|robert|dave|dad)\b/i.test(lower);
+  
+  // Multiple names or other technicians = needs assignment
+  if ((hasJosh && hasLance) || hasOthers || lower.includes('&') || lower.includes(',') || lower.includes(' and ')) {
+    return 'multi';
+  }
+  
+  if (hasJosh && !hasLance) return 'josh';
+  if (hasLance && !hasJosh) return 'lance';
+  
+  return 'multi'; // Default to needing assignment if unclear
+};
+
 const HistoricalMileage = () => {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState<string[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false);
   const [calculatedRoutes, setCalculatedRoutes] = useState<DayRoute[]>([]);
-  const [routeEmployeeOverrides, setRouteEmployeeOverrides] = useState<Record<string, string>>({});
+  const [routeEmployeeAssignments, setRouteEmployeeAssignments] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
   const [importedRoutes, setImportedRoutes] = useState<Set<string>>(new Set());
 
@@ -71,21 +92,14 @@ const HistoricalMileage = () => {
     const checkImportedRoutes = async () => {
       const { data } = await supabase
         .from('mileage_entries')
-        .select('date, employee, description')
+        .select('date, employee')
         .ilike('description', '%Auto-calculated%');
       
       if (data) {
         const imported = new Set<string>();
         data.forEach(e => {
-          // Try new format first: "Auto-calculated from [Tech Name] (X stops)"
-          const match = e.description?.match(/Auto-calculated from (.+?) \(/);
-          if (match) {
-            imported.add(`${e.date}-${match[1]}`);
-          } else {
-            // Fall back to old format - use the employee name as the route key
-            // This handles legacy imports before we tracked original technician
-            imported.add(`${e.date}-${e.employee}`);
-          }
+          // Track by date + assigned employee
+          imported.add(`${e.date}-${e.employee}`);
         });
         setImportedRoutes(imported);
       }
@@ -145,6 +159,7 @@ const HistoricalMileage = () => {
         console.error('Error fetching service records:', srError);
       }
 
+      // Map customer+date to technician name
       const technicianMap = new Map<string, string>();
       serviceRecords?.forEach(sr => {
         const key = `${sr.customer_id}-${sr.service_date}`;
@@ -153,80 +168,85 @@ const HistoricalMileage = () => {
         }
       });
 
-      const appointmentsByDateTech: Record<string, any[]> = {};
+      // Group appointments by date, then by category (josh/lance/multi)
+      const appointmentsByDateCategory: Record<string, { 
+        josh: any[]; 
+        lance: any[]; 
+        multi: any[];
+        techNames: Set<string>;
+      }> = {};
+      
       appointments.forEach(apt => {
         const date = apt.appointment_date;
         const techKey = `${apt.customer_id}-${date}`;
-        const technician = technicianMap.get(techKey) || 'Unassigned';
-        const groupKey = `${date}|${technician}`;
+        const techName = technicianMap.get(techKey) || 'Unassigned';
+        const category = categorizeTechnician(techName);
         
-        if (!appointmentsByDateTech[groupKey]) {
-          appointmentsByDateTech[groupKey] = [];
+        if (!appointmentsByDateCategory[date]) {
+          appointmentsByDateCategory[date] = { 
+            josh: [], 
+            lance: [], 
+            multi: [],
+            techNames: new Set()
+          };
         }
-        appointmentsByDateTech[groupKey].push(apt);
+        
+        appointmentsByDateCategory[date][category].push(apt);
+        appointmentsByDateCategory[date].techNames.add(techName);
       });
 
       const routes: DayRoute[] = [];
       
-      for (const [groupKey, dayAppointments] of Object.entries(appointmentsByDateTech)) {
-        const [date, technician] = groupKey.split('|');
-        
-        // Skip routes that have already been imported
-        if (importedRoutes.has(`${date}-${technician}`)) continue;
-        
-        const validAppointments = dayAppointments.filter(apt => 
-          apt.customers?.latitude && apt.customers?.longitude
-        );
-
-        if (validAppointments.length === 0) continue;
-
-        const stops = [
-          HOME_BASE,
-          ...validAppointments.map(apt => ({
-            name: `${apt.customers.first_name} ${apt.customers.last_name}`,
-            address: `${apt.customers.address || ''}, ${apt.customers.city || ''}, ${apt.customers.state || ''}`.trim(),
-            coordinate: {
-              lat: parseFloat(apt.customers.latitude),
-              lng: parseFloat(apt.customers.longitude)
-            }
-          })),
-          HOME_BASE
-        ];
-
-        try {
-          const { data: routeData, error: routeError } = await supabase.functions.invoke(
-            'calculate-route-distance',
-            { body: { stops } }
-          );
-
-          if (routeError) {
-            console.error(`Error calculating route for ${date} (${technician}):`, routeError);
-            continue;
+      for (const [date, dayData] of Object.entries(appointmentsByDateCategory)) {
+        // Process Josh-solo route
+        if (dayData.josh.length > 0) {
+          const routeKey = `${date}-solo-josh`;
+          
+          // Check if already imported (by date + Joshua Wilkinson)
+          const joshFullName = employees.find(e => e.toLowerCase().includes('josh')) || 'Joshua Wilkinson';
+          if (!importedRoutes.has(`${date}-${joshFullName}`)) {
+            const route = await calculateRouteForAppointments(date, dayData.josh, 'solo-josh', ['Josh']);
+            if (route) routes.push(route);
           }
-
-          routes.push({
-            date,
-            technician,
-            totalMiles: routeData.totalDistanceMiles,
-            stops: stops.map(s => ({ name: s.name, address: s.address || '' })),
-            legs: routeData.legs || []
-          });
-        } catch (err) {
-          console.error(`Failed to calculate route for ${date} (${technician}):`, err);
+        }
+        
+        // Process Lance-solo route
+        if (dayData.lance.length > 0) {
+          const lanceFullName = employees.find(e => e.toLowerCase().includes('lance')) || 'Lance';
+          if (!importedRoutes.has(`${date}-${lanceFullName}`)) {
+            const route = await calculateRouteForAppointments(date, dayData.lance, 'solo-lance', ['Lance']);
+            if (route) routes.push(route);
+          }
+        }
+        
+        // Process multi-tech route (all combined into one route for the day)
+        if (dayData.multi.length > 0) {
+          const techNames = Array.from(dayData.techNames).filter(t => categorizeTechnician(t) === 'multi');
+          
+          // Check if already imported by either Josh or Lance
+          const joshFullName = employees.find(e => e.toLowerCase().includes('josh')) || 'Joshua Wilkinson';
+          const lanceFullName = employees.find(e => e.toLowerCase().includes('lance')) || 'Lance';
+          const alreadyImportedByJosh = importedRoutes.has(`${date}-${joshFullName}`);
+          const alreadyImportedByLance = importedRoutes.has(`${date}-${lanceFullName}`);
+          
+          // Only show if not imported by either
+          if (!alreadyImportedByJosh && !alreadyImportedByLance) {
+            const route = await calculateRouteForAppointments(date, dayData.multi, 'needs-assignment', techNames);
+            if (route) routes.push(route);
+          }
         }
       }
 
-      routes.sort((a, b) => {
-        if (a.date !== b.date) return a.date.localeCompare(b.date);
-        return a.technician.localeCompare(b.technician);
-      });
+      routes.sort((a, b) => a.date.localeCompare(b.date));
 
       setCalculatedRoutes(routes);
       
       if (routes.length > 0) {
-        toast.success(`Calculated mileage for ${routes.length} routes`);
+        const soloCount = routes.filter(r => r.routeType !== 'needs-assignment').length;
+        const needsAssignment = routes.filter(r => r.routeType === 'needs-assignment').length;
+        toast.success(`Found ${routes.length} routes: ${soloCount} auto-assigned, ${needsAssignment} need assignment`);
       } else {
-        toast.warning('No routes could be calculated. Make sure customers have geocoded addresses.');
+        toast.warning('No unimported routes found. All routes may have been imported already.');
       }
     } catch (error: any) {
       console.error('Error fetching appointments:', error);
@@ -237,12 +257,83 @@ const HistoricalMileage = () => {
     }
   };
 
-  const importCalculatedRoute = async (route: DayRoute) => {
-    const routeKey = `${route.date}-${route.technician}`;
-    const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
+  const calculateRouteForAppointments = async (
+    date: string, 
+    dayAppointments: any[], 
+    routeType: DayRoute['routeType'],
+    originalTechs: string[]
+  ): Promise<DayRoute | null> => {
+    const validAppointments = dayAppointments.filter(apt => 
+      apt.customers?.latitude && apt.customers?.longitude
+    );
+
+    if (validAppointments.length === 0) return null;
+
+    const stops = [
+      HOME_BASE,
+      ...validAppointments.map(apt => ({
+        name: `${apt.customers.first_name} ${apt.customers.last_name}`,
+        address: `${apt.customers.address || ''}, ${apt.customers.city || ''}, ${apt.customers.state || ''}`.trim(),
+        coordinate: {
+          lat: parseFloat(apt.customers.latitude),
+          lng: parseFloat(apt.customers.longitude)
+        }
+      })),
+      HOME_BASE
+    ];
+
+    try {
+      const { data: routeData, error: routeError } = await supabase.functions.invoke(
+        'calculate-route-distance',
+        { body: { stops } }
+      );
+
+      if (routeError) {
+        console.error(`Error calculating route for ${date}:`, routeError);
+        return null;
+      }
+
+      return {
+        date,
+        routeType,
+        originalTechs,
+        totalMiles: routeData.totalDistanceMiles,
+        stops: stops.map(s => ({ name: s.name, address: s.address || '' })),
+        legs: routeData.legs || []
+      };
+    } catch (err) {
+      console.error(`Failed to calculate route for ${date}:`, err);
+      return null;
+    }
+  };
+
+  const getRouteKey = (route: DayRoute) => `${route.date}-${route.routeType}`;
+
+  const getAssignedEmployee = (route: DayRoute): string | null => {
+    const routeKey = getRouteKey(route);
     
-    if (importedRoutes.has(routeKey)) {
-      toast.error('This route has already been imported for this employee');
+    if (route.routeType === 'solo-josh') {
+      return employees.find(e => e.toLowerCase().includes('josh')) || 'Joshua Wilkinson';
+    }
+    if (route.routeType === 'solo-lance') {
+      return employees.find(e => e.toLowerCase().includes('lance')) || 'Lance';
+    }
+    
+    // For needs-assignment routes, check if user has selected someone
+    return routeEmployeeAssignments[routeKey] || null;
+  };
+
+  const importCalculatedRoute = async (route: DayRoute) => {
+    const assignedEmployee = getAssignedEmployee(route);
+    
+    if (!assignedEmployee) {
+      toast.error('Please select an employee to assign this route to');
+      return;
+    }
+    
+    const importKey = `${route.date}-${assignedEmployee}`;
+    if (importedRoutes.has(importKey)) {
+      toast.error(`A route for ${assignedEmployee} on this date has already been imported`);
       return;
     }
 
@@ -257,7 +348,7 @@ const HistoricalMileage = () => {
       .insert({
         user_id: userData.user.id,
         date: route.date,
-        description: `Auto-calculated from ${route.technician} (${route.stops.length - 2} stops)`,
+        description: `Auto-calculated (${route.stops.length - 2} stops) - ${route.originalTechs.join(', ')}`,
         start_miles: 0,
         end_miles: route.totalMiles,
         employee: assignedEmployee,
@@ -269,12 +360,13 @@ const HistoricalMileage = () => {
       return;
     }
 
-    setImportedRoutes(prev => new Set([...prev, routeKey]));
+    setImportedRoutes(prev => new Set([...prev, importKey]));
+    setCalculatedRoutes(prev => prev.filter(r => getRouteKey(r) !== getRouteKey(route)));
     toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${assignedEmployee} on ${format(parseISO(route.date), 'MMM d, yyyy')}`);
   };
 
   const updateRouteEmployee = (routeKey: string, employee: string) => {
-    setRouteEmployeeOverrides(prev => ({ ...prev, [routeKey]: employee }));
+    setRouteEmployeeAssignments(prev => ({ ...prev, [routeKey]: employee }));
   };
 
   const importAllRoutes = async () => {
@@ -284,34 +376,45 @@ const HistoricalMileage = () => {
       return;
     }
 
-    const toImport: { date: string; description: string; start_miles: number; end_miles: number; employee: string; user_id: string }[] = [];
-    const newImportKeys: string[] = [];
+    // Only import routes that have an assigned employee (solo routes + manually assigned multi routes)
+    const toImport: { 
+      route: DayRoute;
+      employee: string;
+    }[] = [];
     
     calculatedRoutes.forEach(route => {
-      const routeKey = `${route.date}-${route.technician}`;
-      const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
+      const assignedEmployee = getAssignedEmployee(route);
+      if (!assignedEmployee) return; // Skip unassigned routes
       
-      if (!importedRoutes.has(routeKey)) {
-        toImport.push({
-          user_id: userData.user!.id,
-          date: route.date,
-          description: `Auto-calculated from ${route.technician} (${route.stops.length - 2} stops)`,
-          start_miles: 0,
-          end_miles: route.totalMiles,
-          employee: assignedEmployee,
-        });
-        newImportKeys.push(routeKey);
+      const importKey = `${route.date}-${assignedEmployee}`;
+      if (!importedRoutes.has(importKey)) {
+        toImport.push({ route, employee: assignedEmployee });
       }
     });
 
+    const skippedCount = calculatedRoutes.filter(r => !getAssignedEmployee(r)).length;
+
     if (toImport.length === 0) {
-      toast.info('All routes have already been imported');
+      if (skippedCount > 0) {
+        toast.warning(`${skippedCount} routes need assignment before importing`);
+      } else {
+        toast.info('All routes have already been imported');
+      }
       return;
     }
 
+    const entries = toImport.map(({ route, employee }) => ({
+      user_id: userData.user!.id,
+      date: route.date,
+      description: `Auto-calculated (${route.stops.length - 2} stops) - ${route.originalTechs.join(', ')}`,
+      start_miles: 0,
+      end_miles: route.totalMiles,
+      employee: employee,
+    }));
+
     const { error } = await supabase
       .from('mileage_entries')
-      .insert(toImport);
+      .insert(entries);
 
     if (error) {
       console.error('Error importing routes:', error);
@@ -319,11 +422,23 @@ const HistoricalMileage = () => {
       return;
     }
 
-    setImportedRoutes(prev => new Set([...prev, ...newImportKeys]));
-    toast.success(`Imported ${toImport.length} routes`);
+    const newImportedKeys = toImport.map(({ route, employee }) => `${route.date}-${employee}`);
+    setImportedRoutes(prev => new Set([...prev, ...newImportedKeys]));
+    
+    // Remove imported routes from the list
+    const importedRouteKeys = new Set(toImport.map(({ route }) => getRouteKey(route)));
+    setCalculatedRoutes(prev => prev.filter(r => !importedRouteKeys.has(getRouteKey(r))));
+    
+    let message = `Imported ${toImport.length} routes`;
+    if (skippedCount > 0) {
+      message += ` (${skippedCount} routes still need assignment)`;
+    }
+    toast.success(message);
   };
 
   const calculatedTotal = calculatedRoutes.reduce((sum, r) => sum + r.totalMiles, 0);
+  const soloRoutes = calculatedRoutes.filter(r => r.routeType !== 'needs-assignment');
+  const needsAssignmentRoutes = calculatedRoutes.filter(r => r.routeType === 'needs-assignment');
 
   return (
     <ProtectedRoute>
@@ -382,27 +497,38 @@ const HistoricalMileage = () => {
 
               {calculatedRoutes.length > 0 && (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      Found {calculatedRoutes.length} routes · {calculatedTotal.toFixed(1)} total miles · ${(calculatedTotal * ratePerMile).toFixed(2)}
-                    </p>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="text-sm">
+                      <p className="font-medium">
+                        {calculatedRoutes.length} routes · {calculatedTotal.toFixed(1)} total miles · ${(calculatedTotal * ratePerMile).toFixed(2)}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        <span className="inline-flex items-center gap-1"><User className="h-3 w-3" /> {soloRoutes.length} auto-assigned</span>
+                        {needsAssignmentRoutes.length > 0 && (
+                          <span className="ml-3 inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                            <Users className="h-3 w-3" /> {needsAssignmentRoutes.length} need assignment
+                          </span>
+                        )}
+                      </p>
+                    </div>
                     <Button variant="outline" size="sm" onClick={importAllRoutes}>
                       <Download className="h-4 w-4 mr-2" />
-                      Import All
+                      Import All Assigned
                     </Button>
                   </div>
                   
                   <div className="max-h-[60vh] overflow-y-auto space-y-2">
                     {calculatedRoutes.map(route => {
-                      const routeKey = `${route.date}-${route.technician}`;
-                      const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
-                      const importKey = `${route.date}-${assignedEmployee}`;
-                      const isImported = importedRoutes.has(importKey);
+                      const routeKey = getRouteKey(route);
+                      const assignedEmployee = getAssignedEmployee(route);
+                      const isSolo = route.routeType !== 'needs-assignment';
                       
                       return (
                         <div 
                           key={routeKey} 
-                          className={`p-3 bg-background rounded-lg border space-y-2 ${isImported ? 'opacity-50' : ''}`}
+                          className={`p-3 bg-background rounded-lg border space-y-2 ${
+                            !isSolo && !assignedEmployee ? 'border-amber-300 dark:border-amber-700' : ''
+                          }`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -410,12 +536,15 @@ const HistoricalMileage = () => {
                               <span className="font-medium">
                                 {format(parseISO(route.date), 'EEE, MMM d, yyyy')}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                (from: {route.technician})
-                              </span>
-                              {isImported && (
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full dark:bg-green-900/30 dark:text-green-400">
-                                  Imported
+                              {isSolo ? (
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full dark:bg-green-900/30 dark:text-green-400 inline-flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  {route.routeType === 'solo-josh' ? 'Josh' : 'Lance'}
+                                </span>
+                              ) : (
+                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full dark:bg-amber-900/30 dark:text-amber-400 inline-flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {route.originalTechs.join(', ')}
                                 </span>
                               )}
                             </div>
@@ -423,30 +552,37 @@ const HistoricalMileage = () => {
                               variant="ghost" 
                               size="sm"
                               onClick={() => importCalculatedRoute(route)}
-                              disabled={isImported}
+                              disabled={!assignedEmployee}
+                              title={!assignedEmployee ? 'Select an employee first' : 'Import route'}
                             >
                               <Plus className="h-4 w-4" />
                             </Button>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Label className="text-xs whitespace-nowrap">Assign to:</Label>
-                            <Select 
-                              value={assignedEmployee} 
-                              onValueChange={(value) => updateRouteEmployee(routeKey, value)}
-                              disabled={isImported}
-                            >
-                              <SelectTrigger className="h-8 text-xs flex-1">
-                                <SelectValue placeholder="Select employee..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {employees.map(emp => (
-                                  <SelectItem key={emp} value={emp}>{emp}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          
+                          {!isSolo && (
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs whitespace-nowrap">Assign to:</Label>
+                              <Select 
+                                value={assignedEmployee || ''} 
+                                onValueChange={(value) => updateRouteEmployee(routeKey, value)}
+                              >
+                                <SelectTrigger className={`h-8 text-xs flex-1 ${!assignedEmployee ? 'border-amber-400' : ''}`}>
+                                  <SelectValue placeholder="Select driver..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {employees.map(emp => (
+                                    <SelectItem key={emp} value={emp}>{emp}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          
                           <div className="text-sm text-muted-foreground">
                             {route.stops.length - 2} stops · {route.totalMiles.toFixed(1)} miles
+                            {assignedEmployee && isSolo && (
+                              <span className="ml-2">→ {assignedEmployee}</span>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {route.stops.slice(1, -1).map(s => s.name).join(' → ')}
