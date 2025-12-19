@@ -92,14 +92,18 @@ const HistoricalMileage = () => {
     const checkImportedRoutes = async () => {
       const { data } = await supabase
         .from('mileage_entries')
-        .select('date, employee')
+        .select('date, employee, description')
         .ilike('description', '%Auto-calculated%');
       
       if (data) {
         const imported = new Set<string>();
         data.forEach(e => {
-          // Track by date + assigned employee
+          // Track by date + assigned employee + description (to distinguish multi-tech)
           imported.add(`${e.date}-${e.employee}`);
+          // Also track with description for multi-tech matching
+          if (e.description) {
+            imported.add(`${e.date}-${e.employee}-${e.description}`);
+          }
         });
         setImportedRoutes(imported);
       }
@@ -223,14 +227,20 @@ const HistoricalMileage = () => {
         if (dayData.multi.length > 0) {
           const techNames = Array.from(dayData.techNames).filter(t => categorizeTechnician(t) === 'multi');
           
-          // Check if already imported by either Josh or Lance
+          // For multi-tech routes, check if THIS SPECIFIC route was imported
+          // by looking for entries with matching tech names in description
+          const techNamesStr = techNames.join(', ');
           const joshFullName = employees.find(e => e.toLowerCase().includes('josh')) || 'Joshua Wilkinson';
           const lanceFullName = employees.find(e => e.toLowerCase().includes('lance')) || 'Lance';
-          const alreadyImportedByJosh = importedRoutes.has(`${date}-${joshFullName}`);
-          const alreadyImportedByLance = importedRoutes.has(`${date}-${lanceFullName}`);
           
-          // Only show if not imported by either
-          if (!alreadyImportedByJosh && !alreadyImportedByLance) {
+          // Check if any entry for this date mentions these tech names
+          const alreadyImported = Array.from(importedRoutes).some(key => {
+            if (!key.startsWith(date)) return false;
+            // Check if this entry's description contains any of the multi-tech names
+            return techNames.some(techName => key.toLowerCase().includes(techName.toLowerCase()));
+          });
+          
+          if (!alreadyImported) {
             const route = await calculateRouteForAppointments(date, dayData.multi, 'needs-assignment', techNames);
             if (route) routes.push(route);
           }
