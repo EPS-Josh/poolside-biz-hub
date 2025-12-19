@@ -67,29 +67,56 @@ const ClientPortalPhotos = () => {
     }
   };
 
-  const getPublicUrl = (path: string) => {
-    // If path is already a full URL, return it directly
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    // Otherwise, construct the URL from the bucket
-    const { data } = supabase.storage
-      .from('customer-photos')
-      .getPublicUrl(path);
-    return data.publicUrl;
-  };
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
 
-  const getDocumentUrl = (path: string) => {
-    // If path is already a full URL, return it directly
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
+  // Generate signed URLs for photos when they load
+  useEffect(() => {
+    const generatePhotoUrls = async () => {
+      const urls: Record<string, string> = {};
+      for (const photo of photos) {
+        if (photo.file_path.startsWith('http://') || photo.file_path.startsWith('https://')) {
+          urls[photo.id] = photo.file_path;
+        } else {
+          const { data } = await supabase.storage
+            .from('customer-photos')
+            .createSignedUrl(photo.file_path, 3600); // 1 hour expiry
+          if (data?.signedUrl) {
+            urls[photo.id] = data.signedUrl;
+          }
+        }
+      }
+      setPhotoUrls(urls);
+    };
+
+    if (photos.length > 0) {
+      generatePhotoUrls();
     }
-    // Otherwise, construct the URL from the bucket
-    const { data } = supabase.storage
-      .from('customer-plans-drawings')
-      .getPublicUrl(path);
-    return data.publicUrl;
-  };
+  }, [photos]);
+
+  // Generate signed URLs for documents when they load
+  useEffect(() => {
+    const generateDocumentUrls = async () => {
+      const urls: Record<string, string> = {};
+      for (const doc of documents) {
+        if (doc.file_path.startsWith('http://') || doc.file_path.startsWith('https://')) {
+          urls[doc.id] = doc.file_path;
+        } else {
+          const { data } = await supabase.storage
+            .from('customer-plans-drawings')
+            .createSignedUrl(doc.file_path, 3600); // 1 hour expiry
+          if (data?.signedUrl) {
+            urls[doc.id] = data.signedUrl;
+          }
+        }
+      }
+      setDocumentUrls(urls);
+    };
+
+    if (documents.length > 0) {
+      generateDocumentUrls();
+    }
+  }, [documents]);
 
   if (customerLoading || loading) {
     return (
@@ -144,11 +171,17 @@ const ClientPortalPhotos = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {photos.map((photo) => (
                   <Card key={photo.id} className="overflow-hidden">
-                    <img
-                      src={getPublicUrl(photo.file_path)}
-                      alt={photo.description || photo.file_name}
-                      className="w-full h-48 object-cover"
-                    />
+                    {photoUrls[photo.id] ? (
+                      <img
+                        src={photoUrls[photo.id]}
+                        alt={photo.description || photo.file_name}
+                        className="w-full h-48 object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-muted flex items-center justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
                     <CardContent className="p-4">
                       <p className="text-sm font-medium">{photo.file_name}</p>
                       {photo.description && (
@@ -198,9 +231,10 @@ const ClientPortalPhotos = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(getDocumentUrl(doc.file_path), '_blank')}
+                          onClick={() => documentUrls[doc.id] && window.open(documentUrls[doc.id], '_blank')}
+                          disabled={!documentUrls[doc.id]}
                         >
-                          View
+                          {documentUrls[doc.id] ? 'View' : 'Loading...'}
                         </Button>
                       </div>
                     </CardContent>
