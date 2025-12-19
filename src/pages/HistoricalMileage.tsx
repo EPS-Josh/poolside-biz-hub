@@ -454,10 +454,11 @@ const HistoricalMileage = () => {
       return;
     }
 
-    const { error, count } = await supabase
+    // Delete entries for both employees with Auto-calculated description
+    const { error } = await supabase
       .from('mileage_entries')
       .delete()
-      .in('employee', ['Joshua Wilkinson', 'Lance Caulk'])
+      .or('employee.eq.Joshua Wilkinson,employee.eq.Lance Caulk')
       .ilike('description', '%Auto-calculated%');
 
     if (error) {
