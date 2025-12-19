@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,9 @@ import WaterTestAnalyzer from '@/components/WaterTestAnalyzer';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { toast } from 'sonner';
-import { 
+import {
   Users, 
   DollarSign, 
   ShoppingCart, 
@@ -248,10 +249,19 @@ const serializeLayout = (sections: MenuSection[]) => {
 const Menu = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
   const [menuSections, setMenuSections] = useState<MenuSection[]>(getDefaultMenuSections());
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Filter out Management section for non-admin users
+  const visibleMenuSections = useMemo(() => {
+    if (rolesLoading) return menuSections;
+    if (isAdmin()) return menuSections;
+    // Hide management section for non-admin users
+    return menuSections.filter(section => section.id !== 'management');
+  }, [menuSections, isAdmin, rolesLoading]);
 
   // Load layout from database
   useEffect(() => {
@@ -430,7 +440,7 @@ const Menu = () => {
                     ref={provided.innerRef} 
                     {...provided.droppableProps}
                   >
-                    {menuSections.map((section, sectionIndex) => (
+                    {visibleMenuSections.map((section, sectionIndex) => (
                       <Draggable 
                         key={section.id} 
                         draggableId={section.id} 
