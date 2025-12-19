@@ -66,16 +66,23 @@ const HistoricalMileage = () => {
     fetchEmployees();
   }, []);
 
-  // Check which routes have already been imported
+  // Check which routes have already been imported (by original technician)
   useEffect(() => {
     const checkImportedRoutes = async () => {
       const { data } = await supabase
         .from('mileage_entries')
-        .select('date, employee, description')
-        .ilike('description', '%Auto-calculated%');
+        .select('date, description')
+        .ilike('description', '%Auto-calculated from%');
       
       if (data) {
-        const imported = new Set(data.map(e => `${e.date}-${e.employee}`));
+        const imported = new Set<string>();
+        data.forEach(e => {
+          // Parse original technician from description: "Auto-calculated from [Tech Name] (X stops)"
+          const match = e.description?.match(/Auto-calculated from (.+?) \(/);
+          if (match) {
+            imported.add(`${e.date}-${match[1]}`);
+          }
+        });
         setImportedRoutes(imported);
       }
     };
@@ -160,8 +167,8 @@ const HistoricalMileage = () => {
       for (const [groupKey, dayAppointments] of Object.entries(appointmentsByDateTech)) {
         const [date, technician] = groupKey.split('|');
         
-        // Only show routes that haven't been assigned to an employee yet
-        if (technician !== 'Unassigned') continue;
+        // Skip routes that have already been imported
+        if (importedRoutes.has(`${date}-${technician}`)) continue;
         
         const validAppointments = dayAppointments.filter(apt => 
           apt.customers?.latitude && apt.customers?.longitude
@@ -229,9 +236,8 @@ const HistoricalMileage = () => {
   const importCalculatedRoute = async (route: DayRoute) => {
     const routeKey = `${route.date}-${route.technician}`;
     const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
-    const importKey = `${route.date}-${assignedEmployee}`;
     
-    if (importedRoutes.has(importKey)) {
+    if (importedRoutes.has(routeKey)) {
       toast.error('This route has already been imported for this employee');
       return;
     }
@@ -247,7 +253,7 @@ const HistoricalMileage = () => {
       .insert({
         user_id: userData.user.id,
         date: route.date,
-        description: `Auto-calculated (${route.stops.length - 2} stops)`,
+        description: `Auto-calculated from ${route.technician} (${route.stops.length - 2} stops)`,
         start_miles: 0,
         end_miles: route.totalMiles,
         employee: assignedEmployee,
@@ -259,7 +265,7 @@ const HistoricalMileage = () => {
       return;
     }
 
-    setImportedRoutes(prev => new Set([...prev, importKey]));
+    setImportedRoutes(prev => new Set([...prev, routeKey]));
     toast.success(`Imported ${route.totalMiles.toFixed(1)} miles for ${assignedEmployee} on ${format(parseISO(route.date), 'MMM d, yyyy')}`);
   };
 
@@ -280,18 +286,17 @@ const HistoricalMileage = () => {
     calculatedRoutes.forEach(route => {
       const routeKey = `${route.date}-${route.technician}`;
       const assignedEmployee = routeEmployeeOverrides[routeKey] || route.technician;
-      const importKey = `${route.date}-${assignedEmployee}`;
       
-      if (!importedRoutes.has(importKey)) {
+      if (!importedRoutes.has(routeKey)) {
         toImport.push({
           user_id: userData.user!.id,
           date: route.date,
-          description: `Auto-calculated (${route.stops.length - 2} stops)`,
+          description: `Auto-calculated from ${route.technician} (${route.stops.length - 2} stops)`,
           start_miles: 0,
           end_miles: route.totalMiles,
           employee: assignedEmployee,
         });
-        newImportKeys.push(importKey);
+        newImportKeys.push(routeKey);
       }
     });
 
