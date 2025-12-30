@@ -40,8 +40,11 @@ const Calendar = () => {
     setIsDialogOpen(true);
   };
 
-  // Get current Phoenix date for "Today's Appointments"
-  const phoenixToday = getCurrentPhoenixDate();
+  // Get the date to display in the sidebar - use currentDate when in Day view, otherwise today
+  const sidebarDate = viewType === 'day' ? currentDate : getCurrentPhoenixDate();
+  const sidebarTitle = viewType === 'day' 
+    ? `Appointments for ${currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+    : "Today's Appointments";
 
   return (
     <ProtectedRoute>
@@ -154,10 +157,10 @@ const Calendar = () => {
                     {/* Today's Appointments */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Today's Appointments</CardTitle>
+                        <CardTitle className="text-lg">{sidebarTitle}</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <AppointmentList limit={20} dateFilter={phoenixToday} />
+                        <AppointmentList limit={20} dateFilter={sidebarDate} />
                       </CardContent>
                     </Card>
 
