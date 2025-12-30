@@ -440,16 +440,31 @@ export const TechnicianCustomerAssignments = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Search className="h-5 w-5" />
-            Unassigned Customers
+            Customer Summary
           </CardTitle>
           <CardDescription>
-            These customers are not assigned to any technician and can only be accessed by admins and managers.
+            Overview of customer assignments. Unassigned customers can only be accessed by admins and managers.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-muted-foreground">
-            {getUnassignedCustomers().length} unassigned customer{getUnassignedCustomers().length !== 1 ? 's' : ''}
-          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Total Customers</p>
+              <p className="text-2xl font-bold">{customers.length}</p>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Assigned</p>
+              <p className="text-2xl font-bold text-primary">
+                {customers.length - getUnassignedCustomers().length}
+              </p>
+            </div>
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">Unassigned</p>
+              <p className="text-2xl font-bold text-muted-foreground">
+                {getUnassignedCustomers().length}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
