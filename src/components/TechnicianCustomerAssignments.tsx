@@ -88,11 +88,11 @@ export const TechnicianCustomerAssignments = () => {
 
   const fetchCustomers = async () => {
     try {
+      // Fetch all customers - no limit to ensure we can assign everyone
       const { data, error } = await supabase
         .from('customers')
         .select('id, first_name, last_name, address, city')
-        .order('last_name', { ascending: true })
-        .limit(1000);
+        .order('last_name', { ascending: true });
 
       if (error) throw error;
       setCustomers(data || []);
