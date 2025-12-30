@@ -183,6 +183,55 @@ export const TechnicianCustomerAssignments = () => {
     }
   };
 
+  const handleAssignAllCustomers = async () => {
+    if (!selectedTechnician) {
+      toast({
+        title: "Error",
+        description: "Please select a technician first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const unassignedCustomers = getUnassignedCustomers();
+    if (unassignedCustomers.length === 0) {
+      toast({
+        title: "No Customers",
+        description: "All customers are already assigned",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const assignmentsToInsert = unassignedCustomers.map(customer => ({
+        technician_user_id: selectedTechnician,
+        customer_id: customer.id,
+        assigned_by: user?.id
+      }));
+
+      const { error } = await supabase
+        .from('technician_customer_assignments')
+        .insert(assignmentsToInsert);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `${unassignedCustomers.length} customers assigned successfully`
+      });
+
+      fetchAssignments();
+    } catch (error) {
+      console.error('Error assigning all customers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to assign customers",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleRemoveAssignment = async (assignmentId: string) => {
     try {
       const { error } = await supabase
@@ -292,10 +341,19 @@ export const TechnicianCustomerAssignments = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-end">
-              <Button onClick={handleAssignCustomer} className="w-full">
+            <div className="flex items-end gap-2">
+              <Button onClick={handleAssignCustomer} className="flex-1">
                 <Plus className="h-4 w-4 mr-2" />
                 Assign Customer
+              </Button>
+              <Button 
+                onClick={handleAssignAllCustomers} 
+                variant="secondary"
+                disabled={!selectedTechnician}
+                className="flex-1"
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Assign All ({getUnassignedCustomers().length})
               </Button>
             </div>
           </div>
