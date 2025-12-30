@@ -88,14 +88,31 @@ export const TechnicianCustomerAssignments = () => {
 
   const fetchCustomers = async () => {
     try {
-      // Fetch all customers - no limit to ensure we can assign everyone
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, address, city')
-        .order('last_name', { ascending: true });
+      // Fetch all customers using pagination to bypass 1000 row limit
+      let allCustomers: Customer[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      setCustomers(data || []);
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, first_name, last_name, address, city')
+          .order('last_name', { ascending: true })
+          .range(from, from + batchSize - 1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          allCustomers = [...allCustomers, ...data];
+          from += batchSize;
+          hasMore = data.length === batchSize;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      setCustomers(allCustomers);
     } catch (error) {
       console.error('Error fetching customers:', error);
     }
