@@ -51,11 +51,13 @@ export const TechnicianCustomerAssignments = () => {
 
   const fetchData = async () => {
     setLoading(true);
+    // Fetch technicians and customers first
     await Promise.all([
       fetchTechnicians(),
-      fetchCustomers(),
-      fetchAssignments()
+      fetchCustomers()
     ]);
+    // Then fetch assignments (needs customers to be loaded for matching)
+    await fetchAssignments();
     setLoading(false);
   };
 
@@ -120,32 +122,37 @@ export const TechnicianCustomerAssignments = () => {
 
   const fetchAssignments = async () => {
     try {
-      const { data, error } = await supabase
-        .from('technician_customer_assignments')
-        .select('*')
-        .order('assigned_at', { ascending: false });
+      // Fetch all assignments using pagination
+      let allAssignments: Assignment[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
 
-      if (error) throw error;
-      
-      // Fetch customer details for assignments
-      if (data && data.length > 0) {
-        const customerIds = data.map(a => a.customer_id);
-        const { data: customerData, error: customerError } = await supabase
-          .from('customers')
-          .select('id, first_name, last_name, address, city')
-          .in('id', customerIds);
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('technician_customer_assignments')
+          .select('*')
+          .order('assigned_at', { ascending: false })
+          .range(from, from + batchSize - 1);
 
-        if (customerError) throw customerError;
+        if (error) throw error;
 
-        const assignmentsWithCustomers = data.map(assignment => ({
-          ...assignment,
-          customer: customerData?.find(c => c.id === assignment.customer_id)
-        }));
-        
-        setAssignments(assignmentsWithCustomers);
-      } else {
-        setAssignments([]);
+        if (data && data.length > 0) {
+          allAssignments = [...allAssignments, ...data];
+          from += batchSize;
+          hasMore = data.length === batchSize;
+        } else {
+          hasMore = false;
+        }
       }
+
+      // Match assignments with already-fetched customers instead of re-fetching
+      const assignmentsWithCustomers = allAssignments.map(assignment => ({
+        ...assignment,
+        customer: customers.find(c => c.id === assignment.customer_id)
+      }));
+      
+      setAssignments(assignmentsWithCustomers);
     } catch (error) {
       console.error('Error fetching assignments:', error);
     }
@@ -221,21 +228,32 @@ export const TechnicianCustomerAssignments = () => {
     }
 
     try {
-      const assignmentsToInsert = unassignedCustomers.map(customer => ({
-        technician_user_id: selectedTechnician,
-        customer_id: customer.id,
-        assigned_by: user?.id
-      }));
+      // Insert in batches to avoid request size limits
+      const batchSize = 500;
+      let successCount = 0;
+      
+      for (let i = 0; i < unassignedCustomers.length; i += batchSize) {
+        const batch = unassignedCustomers.slice(i, i + batchSize);
+        const assignmentsToInsert = batch.map(customer => ({
+          technician_user_id: selectedTechnician,
+          customer_id: customer.id,
+          assigned_by: user?.id
+        }));
 
-      const { error } = await supabase
-        .from('technician_customer_assignments')
-        .insert(assignmentsToInsert);
+        const { error } = await supabase
+          .from('technician_customer_assignments')
+          .upsert(assignmentsToInsert, { 
+            onConflict: 'technician_user_id,customer_id',
+            ignoreDuplicates: true 
+          });
 
-      if (error) throw error;
+        if (error) throw error;
+        successCount += batch.length;
+      }
 
       toast({
         title: "Success",
-        description: `${unassignedCustomers.length} customers assigned successfully`
+        description: `${successCount} customers assigned successfully`
       });
 
       fetchAssignments();
