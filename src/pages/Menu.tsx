@@ -249,19 +249,27 @@ const serializeLayout = (sections: MenuSection[]) => {
 const Menu = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { isAdmin, loading: rolesLoading } = useUserRoles();
+  const { isAdmin, isTechnician, loading: rolesLoading } = useUserRoles();
   const [menuSections, setMenuSections] = useState<MenuSection[]>(getDefaultMenuSections());
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Filter out Management section for non-admin users
+  // Filter sections based on user role
   const visibleMenuSections = useMemo(() => {
     if (rolesLoading) return menuSections;
     if (isAdmin()) return menuSections;
-    // Hide management section for non-admin users
-    return menuSections.filter(section => section.id !== 'management');
-  }, [menuSections, isAdmin, rolesLoading]);
+    
+    // Sections to hide for non-admin users
+    const hiddenSections = ['management'];
+    
+    // Also hide dashboard & metrics for technicians
+    if (isTechnician()) {
+      hiddenSections.push('dashboard');
+    }
+    
+    return menuSections.filter(section => !hiddenSections.includes(section.id));
+  }, [menuSections, isAdmin, isTechnician, rolesLoading]);
 
   // Load layout from database
   useEffect(() => {
