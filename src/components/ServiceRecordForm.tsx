@@ -139,13 +139,15 @@ export const ServiceRecordForm = ({ customerId, onSuccess, appointmentData, trig
     setUseWizardMode(isMobile);
   }, [isMobile]);
 
-  // Check for draft when dialog opens
+  // Check for draft when dialog opens - only check once on initial open
   useEffect(() => {
-    if (open && hasDraft && !draftChecked) {
-      setShowDraftPrompt(true);
+    if (open && !draftChecked) {
       setDraftChecked(true);
+      if (hasDraft) {
+        setShowDraftPrompt(true);
+      }
     }
-  }, [open, hasDraft, draftChecked]);
+  }, [open, draftChecked]); // Remove hasDraft from dependencies to prevent re-triggering
 
   // Reset draft check when dialog closes
   useEffect(() => {
