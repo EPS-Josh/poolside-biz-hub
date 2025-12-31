@@ -300,13 +300,6 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
                   className="flex-1"
                 />
               </div>
-              <Button
-                onClick={restoreInvoicingStatus}
-                variant="outline"
-                size="sm"
-              >
-                Restore Non-Consultation to Ready for QB
-              </Button>
               <Select value={invoicingStatusFilter} onValueChange={setInvoicingStatusFilter}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filter by invoicing status" />
