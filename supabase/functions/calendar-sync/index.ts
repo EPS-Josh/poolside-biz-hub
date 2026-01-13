@@ -30,9 +30,9 @@ serve(async (req) => {
       throw new Error('Invalid user token')
     }
 
-    // Get active integrations
+    // Get active integrations with decrypted tokens
     const { data: integrations } = await supabase
-      .from('calendar_integrations')
+      .from('calendar_integrations_decrypted')
       .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true)
