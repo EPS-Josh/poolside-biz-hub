@@ -19,6 +19,17 @@ interface CustomerEmailRequest {
   customerName: string;
 }
 
+// Escape HTML entities to prevent XSS in email templates
+function escapeHtml(text: string | undefined | null): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log('send-customer-email function called');
 
@@ -33,7 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!authHeader) {
       console.error('Missing authorization header');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Authentication required' }),
+        JSON.stringify({ error: 'Authentication required' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -50,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (userError || !user) {
       console.error('Invalid authentication:', userError);
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid token' }),
+        JSON.stringify({ error: 'Invalid authentication' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -73,14 +84,14 @@ const handler = async (req: Request): Promise<Response> => {
     const hasPermission = userRoles.includes('admin') || userRoles.includes('manager');
 
     if (!hasPermission) {
-      console.error('User lacks required role:', user.id, userRoles);
+      console.error('User lacks required role:', user.id);
       return new Response(
-        JSON.stringify({ error: 'Forbidden - Admin or Manager role required' }),
+        JSON.stringify({ error: 'Insufficient permissions' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User authorized:', user.id, userRoles);
+    console.log('User authorized:', user.id);
 
     const { 
       to, 
@@ -91,16 +102,24 @@ const handler = async (req: Request): Promise<Response> => {
       customerName 
     }: CustomerEmailRequest = await req.json();
 
-    console.log('Sending email to:', to, 'from:', senderEmail);
+    // Validate inputs
+    if (!to || !subject || !content || !senderName || !senderEmail || !customerName) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Format the email content with proper HTML structure
+    console.log('Sending email to customer');
+
+    // Format the email content with proper HTML structure and escaped content
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>${subject}</title>
+          <title>${escapeHtml(subject)}</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -139,13 +158,13 @@ const handler = async (req: Request): Promise<Response> => {
         </head>
         <body>
           <div class="header">
-            <h2 style="margin: 0; color: #007bff;">${subject}</h2>
+            <h2 style="margin: 0; color: #007bff;">${escapeHtml(subject)}</h2>
           </div>
           <div class="content">
-            <div class="content-text">${content}</div>
+            <div class="content-text">${escapeHtml(content)}</div>
           </div>
           <div class="footer">
-            <p>This email was sent to ${customerName} (${to}) from ${senderName}</p>
+            <p>This email was sent to ${escapeHtml(customerName)} (${escapeHtml(to)}) from ${escapeHtml(senderName)}</p>
             <p>If you received this email in error, please contact us.</p>
           </div>
         </body>
@@ -161,7 +180,21 @@ const handler = async (req: Request): Promise<Response> => {
       text: content, // Plain text fallback
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    if (emailResponse.error) {
+      console.error("Error sending email:", emailResponse.error);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "Failed to send email. Please try again." 
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log("Email sent successfully:", emailResponse.data?.id);
 
     return new Response(
       JSON.stringify({ 
@@ -183,8 +216,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message,
-        message: "Failed to send email" 
+        message: "Failed to send email. Please try again later." 
       }),
       {
         status: 500,
