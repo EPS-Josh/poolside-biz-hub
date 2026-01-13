@@ -31,7 +31,9 @@ import {
   Car,
   GripVertical,
   RotateCcw,
-  Loader2
+  Loader2,
+  Route,
+  Wrench
 } from 'lucide-react';
 
 interface MenuItem {
@@ -63,6 +65,22 @@ const getDefaultMenuSections = (): MenuSection[] => [
         icon: Calendar,
         color: "bg-red-500",
         route: '/calendar',
+      },
+      {
+        id: 'daily-routes',
+        title: "Daily Routes",
+        description: "Plan and manage technician routes",
+        icon: Route,
+        color: "bg-emerald-600",
+        route: '/daily-routes',
+      },
+      {
+        id: 'technician-dashboard',
+        title: "Technician View",
+        description: "Mobile-friendly view for field technicians",
+        icon: Wrench,
+        color: "bg-cyan-600",
+        route: '/technician',
       },
       {
         id: 'inventory',
@@ -213,7 +231,7 @@ const getDefaultMenuSections = (): MenuSection[] => [
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar, Package, ClipboardList, Bell, FileText, DollarSign, BarChart3,
   Users, MessageSquare, Droplets, MapPin, UserCheck, Building, TrendingUp,
-  Calculator, Car
+  Calculator, Car, Route, Wrench
 };
 
 const getIconForItem = (itemId: string, defaultSections: MenuSection[]): React.ComponentType<{ className?: string }> => {
