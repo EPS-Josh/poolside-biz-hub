@@ -2,7 +2,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { QuickStatusChange, getStatusColor } from './QuickStatusChange';
 
 type FilterType = 'all' | 'not-complete' | 'no-service-record' | 'in-progress' | 'confirmed';
 
@@ -152,16 +152,6 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
     }
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'scheduled': return 'bg-blue-100 text-blue-800';
-      case 'confirmed': return 'bg-green-100 text-green-800';
-      case 'in-progress': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const handleCreateServiceRecord = (appointment: any) => {
     console.log('Creating service record for appointment:', appointment);
@@ -242,9 +232,14 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
             <CardContent className="p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center space-x-2 flex-wrap">
-                  <Badge className={getStatusColor(appointment.status)}>
-                    {appointment.status}
-                  </Badge>
+                  <QuickStatusChange appointmentId={appointment.id} currentStatus={appointment.status}>
+                    <button
+                      className={`px-2 py-1 rounded text-xs font-medium cursor-pointer transition-colors ${getStatusColor(appointment.status)}`}
+                      title="Click to change status"
+                    >
+                      {appointment.status}
+                    </button>
+                  </QuickStatusChange>
                   {serviceRecordMap[appointment.id] && (
                     <div className="flex items-center space-x-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
                       <CheckCircle className="h-3 w-3" />
