@@ -5,6 +5,7 @@ import { getAppointmentsForDate } from '@/utils/appointmentUtils';
 import { isSameDayPhoenix, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 import { useAppointmentServiceRecords } from '@/hooks/useAppointmentServiceRecords';
 import { CheckCircle } from 'lucide-react';
+import { QuickStatusChange, getStatusColor } from './QuickStatusChange';
 
 interface MonthViewProps {
   currentDate: Date;
@@ -77,9 +78,20 @@ export const MonthView: React.FC<MonthViewProps> = ({
                     onClick={(e) => onAppointmentClick(apt, e)}
                     title={`${apt.appointment_time} - ${customerName} - ${apt.service_type}${serviceRecordMap[apt.id] ? ' (Service Complete)' : ''}`}
                   >
-                    <div className="hidden sm:flex items-center space-x-1">
-                      {serviceRecordMap[apt.id] && <CheckCircle className="h-3 w-3" />}
-                      <span>{apt.appointment_time} - {customerName}</span>
+                    <div className="hidden sm:flex items-center justify-between gap-1">
+                      <div className="flex items-center space-x-1 truncate">
+                        {serviceRecordMap[apt.id] && <CheckCircle className="h-3 w-3 flex-shrink-0" />}
+                        <span className="truncate">{apt.appointment_time} - {customerName}</span>
+                      </div>
+                      <QuickStatusChange appointmentId={apt.id} currentStatus={apt.status}>
+                        <button
+                          className={`px-1 py-0.5 rounded text-[10px] font-medium cursor-pointer transition-colors flex-shrink-0 ${getStatusColor(apt.status)}`}
+                          title="Click to change status"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {apt.status.substring(0, 4)}
+                        </button>
+                      </QuickStatusChange>
                     </div>
                     <div className="sm:hidden flex items-center space-x-1">
                       {serviceRecordMap[apt.id] && <CheckCircle className="h-3 w-3" />}

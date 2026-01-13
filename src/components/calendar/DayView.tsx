@@ -2,6 +2,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { getAppointmentsForDate } from '@/utils/appointmentUtils';
+import { QuickStatusChange, getStatusColor } from './QuickStatusChange';
 
 interface DayViewProps {
   currentDate: Date;
@@ -43,13 +44,14 @@ export const DayView: React.FC<DayViewProps> = ({
                     <div className="text-gray-600">{apt.service_type}</div>
                     <div className="text-sm text-gray-500">{apt.appointment_time}</div>
                   </div>
-                  <div className={`px-2 py-1 rounded text-xs font-medium ${
-                    apt.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    apt.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {apt.status}
-                  </div>
+                  <QuickStatusChange appointmentId={apt.id} currentStatus={apt.status}>
+                    <button
+                      className={`px-2 py-1 rounded text-xs font-medium cursor-pointer transition-colors ${getStatusColor(apt.status)}`}
+                      title="Click to change status"
+                    >
+                      {apt.status}
+                    </button>
+                  </QuickStatusChange>
                 </div>
               </div>
             );
