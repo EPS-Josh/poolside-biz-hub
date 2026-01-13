@@ -334,17 +334,30 @@ export const useUpdateRouteStopOrder = () => {
       stops 
     }: { 
       routeId: string; 
-      stops: { id: string; stop_order: number }[] 
+      stops: { id?: string; stop_order: number; customerId: string; appointmentId?: string }[] 
     }) => {
-      // Update each stop's order
-      for (const stop of stops) {
-        const { error } = await supabase
-          .from('route_stops')
-          .update({ stop_order: stop.stop_order })
-          .eq('id', stop.id);
+      // Delete all existing stops for this route
+      const { error: deleteError } = await supabase
+        .from('route_stops')
+        .delete()
+        .eq('route_id', routeId);
 
-        if (error) throw error;
-      }
+      if (deleteError) throw deleteError;
+
+      // Insert all stops with new order
+      const stopsToInsert = stops.map((stop, index) => ({
+        route_id: routeId,
+        customer_id: stop.customerId,
+        appointment_id: stop.appointmentId || null,
+        stop_order: index + 1,
+        status: 'pending'
+      }));
+
+      const { error: insertError } = await supabase
+        .from('route_stops')
+        .insert(stopsToInsert);
+
+      if (insertError) throw insertError;
 
       return { routeId };
     },

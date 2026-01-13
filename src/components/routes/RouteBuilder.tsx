@@ -273,12 +273,14 @@ export const RouteBuilder: React.FC<RouteBuilderProps> = ({
     }
 
     if (editingRoute) {
-      // Update existing route stops order
+      // Update existing route stops
       await updateStopOrder.mutateAsync({
         routeId: editingRoute.id,
         stops: selectedStops.map((stop, index) => ({
           id: stop.id,
-          stop_order: index + 1
+          stop_order: index + 1,
+          customerId: stop.customerId,
+          appointmentId: stop.appointmentId
         }))
       });
     } else {
