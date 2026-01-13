@@ -159,9 +159,9 @@ serve(async (req) => {
       console.log('=== SYNC INVOICE STARTED ===');
       console.log('Service record ID:', data.service_record_id);
       
-      // Get QuickBooks connection
+      // Get QuickBooks connection with decrypted tokens
       const { data: connection, error: connError } = await supabaseClient
-        .from('quickbooks_connections')
+        .from('quickbooks_connections_decrypted')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
@@ -419,9 +419,9 @@ serve(async (req) => {
       console.log('=== FETCH INVOICES FROM QB ===');
       
       try {
-        // Get QuickBooks connection
+        // Get QuickBooks connection with decrypted tokens
         const { data: connection, error: connError } = await supabaseClient
-          .from('quickbooks_connections')
+          .from('quickbooks_connections_decrypted')
           .select('*')
           .eq('user_id', user.id)
           .eq('is_active', true)
@@ -572,8 +572,9 @@ serve(async (req) => {
       console.log('=== FETCH PROFIT AND LOSS DATA ===');
       
       try {
+        // Get QuickBooks connection with decrypted tokens
         const { data: connection, error: connError } = await supabaseClient
-          .from('quickbooks_connections')
+          .from('quickbooks_connections_decrypted')
           .select('*')
           .eq('user_id', user.id)
           .eq('is_active', true)

@@ -135,6 +135,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean | null
+          is_encrypted: boolean | null
           last_sync_at: string | null
           provider: string
           refresh_token: string | null
@@ -148,6 +149,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          is_encrypted?: boolean | null
           last_sync_at?: string | null
           provider: string
           refresh_token?: string | null
@@ -161,6 +163,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          is_encrypted?: boolean | null
           last_sync_at?: string | null
           provider?: string
           refresh_token?: string | null
@@ -217,6 +220,13 @@ export type Database = {
             columns: ["integration_id"]
             isOneToOne: false
             referencedRelation: "calendar_integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_sync_log_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_integrations_decrypted"
             referencedColumns: ["id"]
           },
         ]
@@ -1074,6 +1084,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean | null
+          is_encrypted: boolean | null
           refresh_token: string | null
           token_expires_at: string | null
           updated_at: string
@@ -1085,6 +1096,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          is_encrypted?: boolean | null
           refresh_token?: string | null
           token_expires_at?: string | null
           updated_at?: string
@@ -1096,6 +1108,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean | null
+          is_encrypted?: boolean | null
           refresh_token?: string | null
           token_expires_at?: string | null
           updated_at?: string
@@ -1832,10 +1845,96 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      calendar_integrations_decrypted: {
+        Row: {
+          access_token: string | null
+          calendar_id: string | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          is_encrypted: boolean | null
+          last_sync_at: string | null
+          provider: string | null
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: never
+          calendar_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_encrypted?: boolean | null
+          last_sync_at?: string | null
+          provider?: string | null
+          refresh_token?: never
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: never
+          calendar_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_encrypted?: boolean | null
+          last_sync_at?: string | null
+          provider?: string | null
+          refresh_token?: never
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      quickbooks_connections_decrypted: {
+        Row: {
+          access_token: string | null
+          company_id: string | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          is_encrypted: boolean | null
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: never
+          company_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_encrypted?: boolean | null
+          refresh_token?: never
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: never
+          company_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          is_encrypted?: boolean | null
+          refresh_token?: never
+          token_expires_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_tokens: { Args: never; Returns: undefined }
+      decrypt_token: { Args: { encrypted_token: string }; Returns: string }
+      encrypt_existing_tokens: { Args: never; Returns: undefined }
+      encrypt_token: { Args: { plain_token: string }; Returns: string }
       get_current_user_context: { Args: never; Returns: Json }
       get_customer_service_data: {
         Args: { customer_filter_id?: string; limit_results?: number }
