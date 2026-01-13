@@ -68,7 +68,75 @@ export const useTechnicianAppointments = (showTomorrow: boolean = false) => {
     queryFn: async (): Promise<TechnicianAppointment[]> => {
       if (!user) return [];
 
-      // Check for technician's assigned customers
+      // First, check if there's a route for this technician on this date
+      const { data: routes } = await supabase
+        .from('daily_routes')
+        .select(`
+          id,
+          route_stops (
+            id,
+            stop_order,
+            status,
+            notes,
+            customer_id,
+            appointment_id
+          )
+        `)
+        .eq('technician_user_id', user.id)
+        .eq('route_date', dateString)
+        .limit(1);
+
+      // If a route exists, use route stops to build the appointment list
+      if (routes && routes.length > 0 && routes[0].route_stops?.length > 0) {
+        const routeStops = routes[0].route_stops.sort((a: any, b: any) => a.stop_order - b.stop_order);
+        const appointmentIds = routeStops
+          .map((stop: any) => stop.appointment_id)
+          .filter((id: string | null) => id !== null);
+
+        if (appointmentIds.length > 0) {
+          const { data: appointmentsData, error } = await supabase
+            .from('appointments')
+            .select(`
+              id,
+              appointment_date,
+              appointment_time,
+              service_type,
+              status,
+              notes,
+              customer_id,
+              customers!customer_id (
+                id,
+                first_name,
+                last_name,
+                address,
+                city,
+                state,
+                zip_code,
+                phone,
+                email,
+                latitude,
+                longitude
+              )
+            `)
+            .in('id', appointmentIds);
+
+          if (error) {
+            console.error('Error fetching route appointments:', error);
+            throw error;
+          }
+
+          // Sort appointments by route stop order
+          const appointmentMap = new Map((appointmentsData || []).map(a => [a.id, a]));
+          const orderedAppointments = routeStops
+            .filter((stop: any) => stop.appointment_id && appointmentMap.has(stop.appointment_id))
+            .map((stop: any) => appointmentMap.get(stop.appointment_id)) as TechnicianAppointment[];
+
+          saveToOfflineCache(dateString, orderedAppointments);
+          return orderedAppointments;
+        }
+      }
+
+      // Fallback: No route exists, use original logic
       const { data: assignments } = await supabase
         .from('technician_customer_assignments')
         .select('customer_id')
@@ -76,8 +144,7 @@ export const useTechnicianAppointments = (showTomorrow: boolean = false) => {
 
       const assignedCustomerIds = assignments?.map(a => a.customer_id) || [];
 
-      // Fetch appointments - either assigned customers only (for technicians) or all (for admins)
-      let query = supabase
+      let appointmentQuery = supabase
         .from('appointments')
         .select(`
           id,
@@ -104,15 +171,13 @@ export const useTechnicianAppointments = (showTomorrow: boolean = false) => {
         .eq('appointment_date', dateString)
         .order('appointment_time');
 
-      // If technician has assigned customers, filter by them
       if (assignedCustomerIds.length > 0) {
-        query = query.in('customer_id', assignedCustomerIds);
+        appointmentQuery = appointmentQuery.in('customer_id', assignedCustomerIds);
       } else {
-        // If no assignments, show all appointments for the user
-        query = query.eq('user_id', user.id);
+        appointmentQuery = appointmentQuery.eq('user_id', user.id);
       }
 
-      const { data, error } = await query;
+      const { data, error } = await appointmentQuery;
 
       if (error) {
         console.error('Error fetching technician appointments:', error);
@@ -121,7 +186,6 @@ export const useTechnicianAppointments = (showTomorrow: boolean = false) => {
 
       const appointments = (data || []) as TechnicianAppointment[];
       
-      // Save to offline cache
       saveToOfflineCache(dateString, appointments);
       
       return appointments;
