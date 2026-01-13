@@ -114,10 +114,14 @@ export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
   // Check if current service type requires chemical readings
   const showChemicalReadings = CHEMICAL_READING_SERVICES.includes(formData.service_type);
 
-  // Filter steps based on service type
-  const WIZARD_STEPS = ALL_WIZARD_STEPS.filter(step => step.alwaysShow || showChemicalReadings);
+  // Filter steps based on service type - memoize to prevent recalculation issues
+  const WIZARD_STEPS = React.useMemo(() => 
+    ALL_WIZARD_STEPS.filter(step => step.alwaysShow || showChemicalReadings),
+    [showChemicalReadings]
+  );
 
   const totalSteps = WIZARD_STEPS.length;
+  const isLastStep = currentStep === totalSteps - 1;
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   // Reset to valid step if current step is out of bounds after service type change
@@ -707,7 +711,7 @@ export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
           )}
         </Button>
         
-        {currentStep === totalSteps - 1 ? (
+        {isLastStep ? (
           <Button type="submit" disabled={loading} className="h-12 px-6">
             {loading ? 'Saving...' : 'Save Record'}
           </Button>
