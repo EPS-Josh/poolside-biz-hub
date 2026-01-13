@@ -674,6 +674,51 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_routes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          route_date: string
+          status: string
+          technician_user_id: string
+          total_estimated_distance_miles: number | null
+          total_estimated_duration_minutes: number | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          route_date: string
+          status?: string
+          technician_user_id: string
+          total_estimated_distance_miles?: number | null
+          total_estimated_duration_minutes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          route_date?: string
+          status?: string
+          technician_user_id?: string
+          total_estimated_distance_miles?: number | null
+          total_estimated_duration_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string | null
@@ -1172,6 +1217,126 @@ export type Database = {
           window_start?: string
         }
         Relationships: []
+      }
+      route_change_requests: {
+        Row: {
+          created_at: string
+          id: string
+          request_data: Json
+          request_type: string
+          requested_by: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          route_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_data: Json
+          request_type: string
+          requested_by: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          route_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_data?: Json
+          request_type?: string
+          requested_by?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          route_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_change_requests_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "daily_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_stops: {
+        Row: {
+          actual_arrival_time: string | null
+          actual_departure_time: string | null
+          appointment_id: string | null
+          created_at: string
+          customer_id: string
+          estimated_arrival_time: string | null
+          estimated_duration_minutes: number | null
+          id: string
+          notes: string | null
+          route_id: string
+          status: string
+          stop_order: number
+          updated_at: string
+        }
+        Insert: {
+          actual_arrival_time?: string | null
+          actual_departure_time?: string | null
+          appointment_id?: string | null
+          created_at?: string
+          customer_id: string
+          estimated_arrival_time?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          route_id: string
+          status?: string
+          stop_order: number
+          updated_at?: string
+        }
+        Update: {
+          actual_arrival_time?: string | null
+          actual_departure_time?: string | null
+          appointment_id?: string | null
+          created_at?: string
+          customer_id?: string
+          estimated_arrival_time?: string | null
+          estimated_duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          route_id?: string
+          status?: string
+          stop_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_stops_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_stops_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "daily_routes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_service_routes: {
         Row: {
