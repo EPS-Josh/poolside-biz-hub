@@ -5,6 +5,7 @@ import { getAppointmentsForDate } from '@/utils/appointmentUtils';
 import { isSameDayPhoenix, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
 import { useAppointmentServiceRecords } from '@/hooks/useAppointmentServiceRecords';
 import { CheckCircle } from 'lucide-react';
+import { QuickStatusChange, getStatusColor } from './QuickStatusChange';
 
 interface WeekViewProps {
   currentDate: Date;
@@ -72,6 +73,15 @@ export const WeekView: React.FC<WeekViewProps> = ({
                       </div>
                       <div>{customerName}</div>
                       <div className="text-xs">{apt.service_type}</div>
+                      <QuickStatusChange appointmentId={apt.id} currentStatus={apt.status}>
+                        <button
+                          className={`mt-1 px-1.5 py-0.5 rounded text-xs font-medium cursor-pointer transition-colors ${getStatusColor(apt.status)}`}
+                          title="Click to change status"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {apt.status}
+                        </button>
+                      </QuickStatusChange>
                     </div>
                   );
                 })}
