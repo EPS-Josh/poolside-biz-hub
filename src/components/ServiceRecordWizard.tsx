@@ -80,6 +80,7 @@ interface ServiceRecordWizardProps {
   loading: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
+  submitButtonContent?: React.ReactNode;
 }
 
 // Service types that require chemical readings
@@ -108,6 +109,7 @@ export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
   loading,
   onSubmit,
   onCancel,
+  submitButtonContent,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -713,7 +715,7 @@ export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
         
         {isLastStep ? (
           <Button type="submit" disabled={loading} className="h-12 px-6">
-            {loading ? 'Saving...' : 'Save Record'}
+            {submitButtonContent ?? (loading ? 'Saving...' : 'Save Record')}
           </Button>
         ) : (
           <Button type="button" onClick={goNext} className="h-12 px-6">
