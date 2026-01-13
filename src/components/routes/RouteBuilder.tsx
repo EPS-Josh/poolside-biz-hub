@@ -79,46 +79,8 @@ export const RouteBuilder: React.FC<RouteBuilderProps> = ({
   const createRoute = useCreateDailyRoute();
   const updateStopOrder = useUpdateRouteStopOrder();
 
-  // Fetch customers (preferring those assigned to selected technician)
-  const { data: customers = [], isLoading: loadingCustomers } = useQuery({
-    queryKey: ['customers-for-route', selectedTechnician],
-    queryFn: async (): Promise<Customer[]> => {
-      let query = supabase
-        .from('customers')
-        .select('id, first_name, last_name, address, city, state, zip_code, latitude, longitude')
-        .order('last_name');
-
-      if (selectedTechnician) {
-        // Get assigned customers first
-        const { data: assignments } = await supabase
-          .from('technician_customer_assignments')
-          .select('customer_id')
-          .eq('technician_user_id', selectedTechnician);
-
-        const assignedIds = assignments?.map(a => a.customer_id) || [];
-
-        if (assignedIds.length > 0) {
-          // Fetch assigned customers
-          const { data, error } = await supabase
-            .from('customers')
-            .select('id, first_name, last_name, address, city, state, zip_code, latitude, longitude')
-            .in('id', assignedIds)
-            .order('last_name');
-
-          if (error) throw error;
-          return data as Customer[];
-        }
-      }
-
-      const { data, error } = await query.limit(100);
-      if (error) throw error;
-      return data as Customer[];
-    },
-    enabled: !!selectedTechnician
-  });
-
-  // Fetch appointments for the date
-  const { data: appointments = [] } = useQuery({
+  // Fetch appointments for the date first
+  const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
     queryKey: ['appointments-for-route', format(date, 'yyyy-MM-dd'), selectedTechnician],
     queryFn: async () => {
       const dateString = format(date, 'yyyy-MM-dd');
@@ -130,15 +92,7 @@ export const RouteBuilder: React.FC<RouteBuilderProps> = ({
         .order('appointment_time');
 
       if (selectedTechnician) {
-        const { data: assignments } = await supabase
-          .from('technician_customer_assignments')
-          .select('customer_id')
-          .eq('technician_user_id', selectedTechnician);
-
-        const assignedIds = assignments?.map(a => a.customer_id) || [];
-        if (assignedIds.length > 0) {
-          query = query.in('customer_id', assignedIds);
-        }
+        query = query.eq('user_id', selectedTechnician);
       }
 
       const { data, error } = await query;
@@ -147,6 +101,32 @@ export const RouteBuilder: React.FC<RouteBuilderProps> = ({
     },
     enabled: !!selectedTechnician
   });
+
+  // Fetch only customers who have appointments on this date
+  const { data: customers = [], isLoading: loadingCustomers } = useQuery({
+    queryKey: ['customers-for-route', format(date, 'yyyy-MM-dd'), selectedTechnician, appointments],
+    queryFn: async (): Promise<Customer[]> => {
+      const customerIds = appointments
+        .map(a => a.customer_id)
+        .filter((id): id is string => id !== null);
+
+      if (customerIds.length === 0) return [];
+
+      // Deduplicate customer IDs
+      const uniqueCustomerIds = [...new Set(customerIds)];
+
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, address, city, state, zip_code, latitude, longitude')
+        .in('id', uniqueCustomerIds)
+        .order('last_name');
+
+      if (error) throw error;
+      return data as Customer[];
+    },
+    enabled: !!selectedTechnician && appointments.length > 0
+  });
+
 
   // Initialize stops from editing route
   useEffect(() => {
@@ -377,20 +357,20 @@ export const RouteBuilder: React.FC<RouteBuilderProps> = ({
 
             {/* Customer List */}
             <div className="max-h-[400px] overflow-y-auto space-y-2">
-              {loadingCustomers ? (
+              {loadingCustomers || loadingAppointments ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Loading customers...
                 </p>
               ) : filteredCustomers.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   {selectedTechnician 
-                    ? 'No assigned customers found' 
+                    ? 'No customers with appointments on this date' 
                     : 'Select a technician to see customers'}
                 </p>
               ) : (
                 filteredCustomers.map((customer) => {
                   const isAdded = selectedStops.some(s => s.customerId === customer.id);
-                  const hasAppointment = appointments.some(a => a.customer_id === customer.id);
+                  const appointment = appointments.find(a => a.customer_id === customer.id);
 
                   return (
                     <div
@@ -404,9 +384,9 @@ export const RouteBuilder: React.FC<RouteBuilderProps> = ({
                           <p className="font-medium text-sm">
                             {customer.first_name} {customer.last_name}
                           </p>
-                          {hasAppointment && (
+                          {appointment && (
                             <Badge variant="secondary" className="text-xs">
-                              Scheduled
+                              {appointment.appointment_time?.slice(0, 5)}
                             </Badge>
                           )}
                         </div>
