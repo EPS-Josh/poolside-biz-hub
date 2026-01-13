@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useTechnicianAppointments, TechnicianAppointment } from '@/hooks/useTechnicianAppointments';
 import { TechnicianAppointmentCard } from '@/components/technician/TechnicianAppointmentCard';
-import { QuickServiceRecordSheet } from '@/components/technician/QuickServiceRecordSheet';
+import { TechnicianServiceRecordSheet } from '@/components/technician/TechnicianServiceRecordSheet';
 import { OfflineSyncBanner } from '@/components/technician/OfflineSyncBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -273,8 +273,8 @@ const TechnicianDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Quick Service Record Sheet */}
-      <QuickServiceRecordSheet
+      {/* Full Service Record Sheet */}
+      <TechnicianServiceRecordSheet
         open={serviceRecordOpen}
         onOpenChange={setServiceRecordOpen}
         appointment={selectedAppointment}
