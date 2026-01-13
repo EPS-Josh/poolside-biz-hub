@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -273,10 +274,149 @@ serve(async (req) => {
   }
 
   try {
+    // ============ AUTHENTICATION ============
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('Missing or invalid authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Create Supabase client with user's auth token
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify the JWT and get user claims
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims) {
+      console.log('Invalid JWT token:', claimsError?.message);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log(`Authenticated user: ${userId}`);
+
+    // ============ AUTHORIZATION ============
+    // Check if user has admin or manager role
+    const { data: userRoles, error: rolesError } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (rolesError) {
+      console.error('Error fetching user roles:', rolesError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to verify permissions' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const hasPermission = userRoles?.some(r => r.role === 'admin' || r.role === 'manager');
+    if (!hasPermission) {
+      console.log(`User ${userId} lacks required permissions. Roles:`, userRoles?.map(r => r.role));
+      return new Response(
+        JSON.stringify({ error: 'Insufficient permissions. Admin or manager role required.' }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    console.log(`User ${userId} authorized with roles:`, userRoles?.map(r => r.role));
+
+    // ============ RATE LIMITING ============
+    // Use service role client for rate limiting (bypasses RLS)
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const rateLimitKey = `pima-lookup:${userId}`;
+    const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+
+    // Check recent requests in the last hour
+    const { data: recentRequests, error: rateLimitError } = await supabaseService
+      .from('rate_limit_log')
+      .select('request_count, window_start')
+      .eq('identifier', rateLimitKey)
+      .eq('endpoint', 'pima-assessor-lookup')
+      .gte('window_start', oneHourAgo)
+      .order('window_start', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+      // Continue anyway - don't block on rate limit errors
+    }
+
+    const MAX_REQUESTS_PER_HOUR = 20;
+    const currentCount = recentRequests?.request_count || 0;
+
+    if (currentCount >= MAX_REQUESTS_PER_HOUR) {
+      console.log(`Rate limit exceeded for user ${userId}: ${currentCount} requests in the last hour`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded. Maximum 20 requests per hour.',
+          retryAfter: 3600 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': '3600'
+          } 
+        }
+      );
+    }
+
+    // Update rate limit counter
+    if (recentRequests) {
+      await supabaseService
+        .from('rate_limit_log')
+        .update({ 
+          request_count: currentCount + 1,
+          created_at: new Date().toISOString()
+        })
+        .eq('identifier', rateLimitKey)
+        .eq('endpoint', 'pima-assessor-lookup')
+        .eq('window_start', recentRequests.window_start);
+    } else {
+      await supabaseService
+        .from('rate_limit_log')
+        .insert({
+          endpoint: 'pima-assessor-lookup',
+          identifier: rateLimitKey,
+          request_count: 1,
+          window_start: new Date().toISOString()
+        });
+    }
+
+    // ============ INPUT VALIDATION ============
     const body = await req.json();
     const { address } = body;
 
-    // Input validation
     if (!address || typeof address !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Valid address string is required' }),
@@ -313,6 +453,20 @@ serve(async (req) => {
 
     console.log(`Processing lookup request for address: ${sanitizedAddress}`);
 
+    // ============ AUDIT LOGGING ============
+    await supabaseService
+      .from('audit_logs')
+      .insert({
+        user_id: userId,
+        action: 'pima_assessor_lookup',
+        resource_type: 'external_api',
+        new_values: { 
+          address: sanitizedAddress,
+          timestamp: new Date().toISOString()
+        }
+      });
+
+    // ============ BUSINESS LOGIC ============
     const assessorRecord = await searchPimaAssessor(sanitizedAddress);
 
     return new Response(
