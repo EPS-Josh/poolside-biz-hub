@@ -19,6 +19,17 @@ interface ServiceRequestData {
   message?: string;
 }
 
+// Escape HTML entities to prevent XSS in email templates
+function escapeHtml(text: string | undefined | null): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -130,7 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
         window_start: new Date().toISOString()
       });
 
-    console.log('Service request validated:', requestData);
+    console.log('Service request validated for:', escapeHtml(requestData.email));
 
     // Insert into database
     const { data: serviceRequest, error: dbError } = await supabaseClient
@@ -150,80 +161,88 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (dbError) {
       console.error('Database error:', dbError);
-      throw new Error(`Database error: ${dbError.message}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to save service request. Please try again.',
+          success: false 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Service request saved to database:', serviceRequest);
+    console.log('Service request saved to database with ID:', serviceRequest.id);
 
-    // Send notification email to business - now with multiple recipients
+    // Send notification email to business - with escaped HTML content
     const businessEmailResponse = await resend.emails.send({
       from: "Pool Service <noreply@finestpoolsandspas.com>",
       to: [
         "info@finestpoolsandspas.com",
-        "lance@finestpoolsandspas.com" // Updated recipient
+        "lance@finestpoolsandspas.com"
       ],
-      subject: `New Service Request from ${requestData.firstName} ${requestData.lastName}`,
+      subject: `New Service Request from ${escapeHtml(requestData.firstName)} ${escapeHtml(requestData.lastName)}`,
       html: `
         <h2>New Pool Service Request</h2>
         <h3>Customer Information:</h3>
-        <p><strong>Name:</strong> ${requestData.firstName} ${requestData.lastName}</p>
-        <p><strong>Email:</strong> ${requestData.email}</p>
-        <p><strong>Phone:</strong> ${requestData.phone}</p>
-        <p><strong>Address:</strong> ${requestData.address}</p>
-        <p><strong>Service Type:</strong> ${requestData.serviceType}</p>
-        <p><strong>Preferred Contact:</strong> ${requestData.preferredContactMethod}</p>
-        ${requestData.message ? `<p><strong>Message:</strong> ${requestData.message}</p>` : ''}
-        <p><strong>Request ID:</strong> ${serviceRequest.id}</p>
+        <p><strong>Name:</strong> ${escapeHtml(requestData.firstName)} ${escapeHtml(requestData.lastName)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(requestData.email)}</p>
+        <p><strong>Phone:</strong> ${escapeHtml(requestData.phone)}</p>
+        <p><strong>Address:</strong> ${escapeHtml(requestData.address)}</p>
+        <p><strong>Service Type:</strong> ${escapeHtml(requestData.serviceType)}</p>
+        <p><strong>Preferred Contact:</strong> ${escapeHtml(requestData.preferredContactMethod)}</p>
+        ${requestData.message ? `<p><strong>Message:</strong> ${escapeHtml(requestData.message)}</p>` : ''}
+        <p><strong>Request ID:</strong> ${escapeHtml(serviceRequest.id)}</p>
         <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
       `,
     });
 
     if (businessEmailResponse.error) {
       console.error("Error sending business notification email:", businessEmailResponse.error);
-      throw new Error(`Failed to send business notification: ${businessEmailResponse.error.message}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Service request saved but notification failed. Our team will still process your request.',
+          success: true,
+          serviceRequest 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Send confirmation email to customer
+    // Send confirmation email to customer - with escaped HTML content
     const customerEmailResponse = await resend.emails.send({
       from: "Finest Pools & Spas <noreply@finestpoolsandspas.com>",
       to: [requestData.email],
       subject: "We Received Your Pool Service Request!",
       html: `
-        <h2>Thank you for your service request, ${requestData.firstName}!</h2>
-        <p>We have received your request for <strong>${requestData.serviceType}</strong> and will contact you within 24 hours.</p>
+        <h2>Thank you for your service request, ${escapeHtml(requestData.firstName)}!</h2>
+        <p>We have received your request for <strong>${escapeHtml(requestData.serviceType)}</strong> and will contact you within 24 hours.</p>
         
         <h3>Your Request Details:</h3>
-        <p><strong>Service Type:</strong> ${requestData.serviceType}</p>
-        <p><strong>Property Address:</strong> ${requestData.address}</p>
-        <p><strong>Preferred Contact Method:</strong> ${requestData.preferredContactMethod}</p>
-        ${requestData.message ? `<p><strong>Your Message:</strong> ${requestData.message}</p>` : ''}
+        <p><strong>Service Type:</strong> ${escapeHtml(requestData.serviceType)}</p>
+        <p><strong>Property Address:</strong> ${escapeHtml(requestData.address)}</p>
+        <p><strong>Preferred Contact Method:</strong> ${escapeHtml(requestData.preferredContactMethod)}</p>
+        ${requestData.message ? `<p><strong>Your Message:</strong> ${escapeHtml(requestData.message)}</p>` : ''}
         
         <p>If you have any urgent questions, please call us at (520) 728-3002.</p>
         
         <p>Best regards,<br>
-        The Finest Pools & Spas Team</p>
+        The Finest Pools &amp; Spas Team</p>
         
         <hr>
-        <p><small>Request ID: ${serviceRequest.id}</small></p>
+        <p><small>Request ID: ${escapeHtml(serviceRequest.id)}</small></p>
       `,
     });
 
     if (customerEmailResponse.error) {
       console.error("Error sending customer confirmation email:", customerEmailResponse.error);
-      throw new Error(`Failed to send customer confirmation: ${customerEmailResponse.error.message}`);
     }
 
-    console.log("Business email sent:", businessEmailResponse);
-    console.log("Customer email sent:", customerEmailResponse);
+    console.log("Emails sent successfully for request:", serviceRequest.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         serviceRequest,
-        emailsSent: {
-          business: businessEmailResponse,
-          customer: customerEmailResponse
-        }
+        message: 'Your service request has been submitted successfully.'
       }),
       {
         status: 200,
@@ -237,7 +256,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in send-service-request-email function:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: 'An unexpected error occurred. Please try again later.',
         success: false 
       }),
       {

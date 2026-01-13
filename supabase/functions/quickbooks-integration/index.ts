@@ -104,7 +104,12 @@ serve(async (req) => {
         
         if (!tokenResponse.ok || tokenData.error) {
           console.error('Token exchange error:', tokenData);
-          throw new Error(`Token exchange failed: ${JSON.stringify(tokenData)}`);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to connect to QuickBooks. Please try again.' 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         console.log('Token exchange successful');
@@ -123,7 +128,12 @@ serve(async (req) => {
 
         if (dbError) {
           console.error('Database error:', dbError);
-          throw new Error(`Database error: ${dbError.message}`);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to save QuickBooks connection. Please try again.' 
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         return new Response(JSON.stringify({ 
@@ -136,7 +146,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('OAuth callback error:', error);
         return new Response(JSON.stringify({ 
-          error: error.message || 'OAuth callback failed' 
+          error: 'OAuth callback failed. Please try again.' 
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -219,7 +229,7 @@ serve(async (req) => {
         if (!tokenResponse.ok) {
           const errorText = await tokenResponse.text();
           console.error('Token refresh failed:', errorText);
-          throw new Error(`Token refresh failed: ${errorText}`);
+          throw new Error('Token refresh failed');
         }
 
         const tokenData = await tokenResponse.json();
@@ -327,8 +337,7 @@ serve(async (req) => {
         if (!customerResponse.ok) {
           console.log('Customer creation failed');
           return new Response(JSON.stringify({ 
-            error: 'Failed to create customer in QuickBooks',
-            details: customerResult
+            error: 'Failed to create customer in QuickBooks'
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -371,8 +380,7 @@ serve(async (req) => {
         const errorText = await invoiceResponse.text();
         console.error('Invoice creation failed:', errorText);
         return new Response(JSON.stringify({ 
-          error: 'Failed to create invoice in QuickBooks',
-          details: errorText
+          error: 'Failed to create invoice in QuickBooks'
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -452,7 +460,7 @@ serve(async (req) => {
           if (!tokenResponse.ok) {
             const errorText = await tokenResponse.text();
             console.error('Token refresh failed:', errorText);
-            throw new Error(`Token refresh failed: ${errorText}`);
+            throw new Error('Token refresh failed');
           }
 
           const tokenData = await tokenResponse.json();
@@ -516,7 +524,12 @@ serve(async (req) => {
         if (!invoicesResponse.ok) {
           const errorText = await invoicesResponse.text();
           console.error('Failed to fetch invoices:', errorText);
-          throw new Error(`Failed to fetch invoices: ${errorText}`);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to fetch invoices from QuickBooks'
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
 
         const invoicesResult = await invoicesResponse.json();
@@ -546,7 +559,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('Error fetching invoices:', error);
         return new Response(JSON.stringify({ 
-          error: error.message || 'Failed to fetch invoices from QuickBooks'
+          error: 'Failed to fetch invoices from QuickBooks'
         }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -597,7 +610,7 @@ serve(async (req) => {
           if (!tokenResponse.ok) {
             const errorText = await tokenResponse.text();
             console.error('Token refresh failed:', errorText);
-            throw new Error(`Token refresh failed: ${errorText}`);
+            throw new Error('Token refresh failed');
           }
 
           const tokenData = await tokenResponse.json();
@@ -736,8 +749,7 @@ serve(async (req) => {
           }
 
           return new Response(JSON.stringify({ 
-            error: 'Failed to fetch P&L data from QuickBooks',
-            details: errorText
+            error: 'Failed to fetch P&L data from QuickBooks'
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500,
@@ -856,8 +868,7 @@ serve(async (req) => {
       } catch (error) {
         console.error('Error fetching P&L data:', error);
         return new Response(JSON.stringify({ 
-          error: 'Failed to fetch P&L data',
-          details: error.message
+          error: 'Failed to fetch P&L data from QuickBooks'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
@@ -873,8 +884,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      stack: error.stack
+      error: 'An unexpected error occurred. Please try again later.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
