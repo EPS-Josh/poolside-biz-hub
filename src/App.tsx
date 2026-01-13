@@ -48,6 +48,7 @@ import CleaningPricing from "./pages/CleaningPricing";
 import Accountant from "./pages/Accountant";
 import MileageCalculator from "./pages/MileageCalculator";
 import HistoricalMileage from "./pages/HistoricalMileage";
+import TechnicianDashboard from "./pages/TechnicianDashboard";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +117,7 @@ const App = () => (
             <Route path="/client-portal/profile" element={<ClientPortalProfile />} />
             <Route path="/client-portal/request-service" element={<ClientPortalRequestService />} />
             <Route path="/ha-dashboard" element={<HADashboard />} />
+            <Route path="/technician" element={<TechnicianDashboard />} />
             <Route path="/cleaning-pricing" element={<CleaningPricing />} />
             <Route path="/accountant" element={
               <ProtectedRoute excludedRoles={['guest']}>
