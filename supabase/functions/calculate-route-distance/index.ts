@@ -33,7 +33,28 @@ serve(async (req) => {
       );
     }
 
-    const { stops } = await req.json();
+    const body = await req.json();
+    
+    // Support both 'stops' format and 'coordinates' format
+    let stops: RouteStop[];
+    
+    if (body.stops) {
+      stops = body.stops;
+    } else if (body.coordinates) {
+      // Convert coordinates format to stops format
+      stops = body.coordinates.map((coord: any, index: number) => ({
+        name: `Stop ${index + 1}`,
+        coordinate: {
+          lat: coord.latitude || coord.lat,
+          lng: coord.longitude || coord.lng
+        }
+      }));
+    } else {
+      return new Response(
+        JSON.stringify({ error: 'Either stops or coordinates are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     if (!stops || stops.length < 2) {
       return new Response(
@@ -42,18 +63,27 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Calculating route for ${stops.length} stops`);
+    const optimize = body.optimize === true;
+
+    console.log(`Calculating route for ${stops.length} stops${optimize ? ' with optimization' : ''}`);
 
     // Build coordinates string for Mapbox API
     const coordinates = stops
       .map((stop: RouteStop) => `${stop.coordinate.lng},${stop.coordinate.lat}`)
       .join(';');
 
-    // Call Mapbox Directions API
-    const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?access_token=${mapboxToken}&overview=false&steps=false`;
+    // Call Mapbox Optimization API if optimize is true, otherwise use Directions API
+    let apiUrl: string;
+    if (optimize) {
+      // Use Optimization API for route optimization
+      apiUrl = `https://api.mapbox.com/optimized-trips/v1/mapbox/driving/${coordinates}?access_token=${mapboxToken}&source=first&destination=last&roundtrip=false`;
+    } else {
+      // Use Directions API for simple route calculation
+      apiUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?access_token=${mapboxToken}&overview=false&steps=false`;
+    }
     
-    console.log('Calling Mapbox Directions API...');
-    const response = await fetch(directionsUrl);
+    console.log('Calling Mapbox API...');
+    const response = await fetch(apiUrl);
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -66,6 +96,41 @@ serve(async (req) => {
 
     const data = await response.json();
     
+    // Handle optimization response
+    if (optimize) {
+      if (!data.trips || data.trips.length === 0) {
+        console.error('No optimized route found');
+        return new Response(
+          JSON.stringify({ error: 'No optimized route found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const trip = data.trips[0];
+      const distanceMeters = trip.distance;
+      const distanceMiles = distanceMeters / 1609.344;
+      const durationSeconds = trip.duration;
+
+      // Get the optimized waypoint order
+      const optimizedOrder = data.waypoints
+        .map((wp: any) => wp.waypoint_index)
+        .filter((idx: number) => idx !== undefined);
+
+      console.log(`Optimized route: ${distanceMiles.toFixed(2)} miles, order: ${optimizedOrder.join(' -> ')}`);
+
+      return new Response(
+        JSON.stringify({
+          totalDistance: distanceMiles,
+          totalDistanceMiles: distanceMiles,
+          totalDuration: durationSeconds,
+          totalDurationMinutes: durationSeconds / 60,
+          optimizedOrder,
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Handle regular directions response
     if (!data.routes || data.routes.length === 0) {
       console.error('No routes found');
       return new Response(
@@ -91,7 +156,9 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        totalDistance: distanceMiles,
         totalDistanceMiles: distanceMiles,
+        totalDuration: durationSeconds,
         totalDurationMinutes: durationSeconds / 60,
         legs,
       }),
