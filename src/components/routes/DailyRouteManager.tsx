@@ -43,25 +43,28 @@ export const DailyRouteManager: React.FC = () => {
   const [showRouteBuilder, setShowRouteBuilder] = useState(false);
   const [editingRoute, setEditingRoute] = useState<DailyRoute | null>(null);
 
-  // Fetch technicians
+  // Fetch users who can be assigned routes (technicians, managers, admins)
   const { data: technicians = [], isLoading: loadingTechnicians } = useQuery({
-    queryKey: ['technicians'],
+    queryKey: ['route-assignable-users'],
     queryFn: async (): Promise<Technician[]> => {
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
-        .eq('role', 'technician');
+        .in('role', ['technician', 'manager', 'admin']);
 
       if (rolesError) throw rolesError;
 
-      const technicianUserIds = userRoles?.map(r => r.user_id) || [];
+      const userIds = userRoles?.map(r => r.user_id) || [];
 
-      if (technicianUserIds.length === 0) return [];
+      if (userIds.length === 0) return [];
+
+      // Deduplicate user IDs (user might have multiple roles)
+      const uniqueUserIds = [...new Set(userIds)];
 
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, email, full_name')
-        .in('id', technicianUserIds);
+        .in('id', uniqueUserIds);
 
       if (profilesError) throw profilesError;
 
