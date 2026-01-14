@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,10 +11,28 @@ import {
   CheckCircle2,
   XCircle,
   PlayCircle,
-  ClipboardList
+  ClipboardList,
+  Car,
+  Key,
+  Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { TechnicianAppointment } from '@/hooks/useTechnicianAppointments';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface TechnicianAppointmentCardProps {
   appointment: TechnicianAppointment;
@@ -25,6 +43,13 @@ interface TechnicianAppointmentCardProps {
   onStatusChange: (appointmentId: string, newStatus: string) => void;
   isUpdatingStatus?: boolean;
 }
+
+const statusOptions = [
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
   scheduled: { label: 'Scheduled', variant: 'secondary', icon: <Clock className="h-3 w-3" /> },
@@ -42,8 +67,15 @@ export const TechnicianAppointmentCard: React.FC<TechnicianAppointmentCardProps>
   onStatusChange,
   isUpdatingStatus
 }) => {
+  const { toast } = useToast();
   const customer = appointment.customers;
   const status = statusConfig[appointment.status] || statusConfig.scheduled;
+  const [accessInfoOpen, setAccessInfoOpen] = useState(false);
+  const [isSendingEnRoute, setIsSendingEnRoute] = useState(false);
+  
+  // Get service details (one-to-one relation)
+  const serviceDetails = customer.customer_service_details;
+  const hasAccessInfo = serviceDetails?.gate_code || serviceDetails?.access_instructions || serviceDetails?.special_notes;
   
   const formatTime = (timeString: string) => {
     try {
@@ -54,6 +86,54 @@ export const TechnicianAppointmentCard: React.FC<TechnicianAppointmentCardProps>
   };
 
   const fullAddress = `${customer.address}, ${customer.city}, ${customer.state} ${customer.zip_code}`;
+  
+  const handleEnRouteNotification = async () => {
+    if (!customer.phone) {
+      toast({
+        title: 'No Phone Number',
+        description: 'Customer does not have a phone number on file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!customer.sms_opt_in) {
+      toast({
+        title: 'SMS Not Enabled',
+        description: 'Customer has not opted in to receive SMS messages.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsSendingEnRoute(true);
+    
+    try {
+      const { error } = await supabase.functions.invoke('send-sms', {
+        body: {
+          to: customer.phone,
+          message: `Hi ${customer.first_name}, your pool technician is on the way! Expected arrival shortly.`,
+          customerId: customer.id,
+        },
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'En Route Notification Sent',
+        description: `SMS sent to ${customer.first_name}`,
+      });
+    } catch (error) {
+      console.error('Error sending en route SMS:', error);
+      toast({
+        title: 'Failed to Send',
+        description: 'Could not send the en route notification.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSendingEnRoute(false);
+    }
+  };
 
   return (
     <Card className="border-l-4 border-l-primary shadow-md">
@@ -69,10 +149,30 @@ export const TechnicianAppointmentCard: React.FC<TechnicianAppointmentCardProps>
               <span>{formatTime(appointment.appointment_time)}</span>
             </div>
           </div>
-          <Badge variant={status.variant} className="flex items-center gap-1 flex-shrink-0">
-            {status.icon}
-            {status.label}
-          </Badge>
+          {/* Status Selector */}
+          <Select 
+            value={appointment.status} 
+            onValueChange={(value) => onStatusChange(appointment.id, value)}
+            disabled={isUpdatingStatus}
+          >
+            <SelectTrigger className="w-[130px] h-8">
+              {isUpdatingStatus ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <SelectValue />
+              )}
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  <div className="flex items-center gap-2">
+                    {statusConfig[option.value]?.icon}
+                    {option.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Service type */}
@@ -98,7 +198,7 @@ export const TechnicianAppointmentCard: React.FC<TechnicianAppointmentCardProps>
           </p>
         )}
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Row 1 */}
         <div className="grid grid-cols-4 gap-2 pt-2">
           <Button
             variant="outline"
@@ -143,34 +243,72 @@ export const TechnicianAppointmentCard: React.FC<TechnicianAppointmentCardProps>
           </Button>
         </div>
 
-        {/* Status change buttons */}
-        {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
-          <div className="flex gap-2 pt-1">
-            {appointment.status === 'scheduled' && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => onStatusChange(appointment.id, 'in_progress')}
-                disabled={isUpdatingStatus}
-              >
-                <PlayCircle className="h-4 w-4 mr-1.5" />
-                Start
-              </Button>
+        {/* Quick Actions - Row 2 */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center justify-center gap-2 h-10"
+            onClick={handleEnRouteNotification}
+            disabled={isSendingEnRoute || !customer.phone || !customer.sms_opt_in}
+          >
+            {isSendingEnRoute ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Car className="h-4 w-4" />
             )}
-            <Button
-              variant="default"
-              size="sm"
-              className="flex-1"
-              onClick={() => onStatusChange(appointment.id, 'completed')}
-              disabled={isUpdatingStatus}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1.5" />
-              Complete
-            </Button>
-          </div>
-        )}
+            <span className="text-xs">En Route</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex items-center justify-center gap-2 h-10"
+            onClick={() => setAccessInfoOpen(true)}
+            disabled={!hasAccessInfo}
+          >
+            <Key className="h-4 w-4" />
+            <span className="text-xs">Access Info</span>
+          </Button>
+        </div>
       </CardContent>
+      
+      {/* Access Info Dialog */}
+      <Dialog open={accessInfoOpen} onOpenChange={setAccessInfoOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Access Information
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {serviceDetails?.gate_code && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Gate Code</p>
+                <p className="text-2xl font-bold font-mono tracking-wider">{serviceDetails.gate_code}</p>
+              </div>
+            )}
+            {serviceDetails?.access_instructions && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Access Instructions</p>
+                <p className="text-sm">{serviceDetails.access_instructions}</p>
+              </div>
+            )}
+            {serviceDetails?.special_notes && (
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Special Notes</p>
+                <p className="text-sm">{serviceDetails.special_notes}</p>
+              </div>
+            )}
+            {!hasAccessInfo && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No access information available for this customer.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

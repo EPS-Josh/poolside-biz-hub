@@ -25,6 +25,12 @@ export interface TechnicianAppointment {
     email: string;
     latitude: number | null;
     longitude: number | null;
+    sms_opt_in: boolean | null;
+    customer_service_details?: {
+      gate_code: string | null;
+      access_instructions: string | null;
+      special_notes: string | null;
+    } | null;
   };
 }
 
@@ -115,7 +121,13 @@ export const useTechnicianAppointments = (showTomorrow: boolean = false) => {
                 phone,
                 email,
                 latitude,
-                longitude
+                longitude,
+                sms_opt_in,
+                customer_service_details (
+                  gate_code,
+                  access_instructions,
+                  special_notes
+                )
               )
             `)
             .in('id', appointmentIds);
@@ -165,7 +177,13 @@ export const useTechnicianAppointments = (showTomorrow: boolean = false) => {
             phone,
             email,
             latitude,
-            longitude
+            longitude,
+            sms_opt_in,
+            customer_service_details (
+              gate_code,
+              access_instructions,
+              special_notes
+            )
           )
         `)
         .eq('appointment_date', dateString)
