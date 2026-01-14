@@ -46,6 +46,7 @@ interface TechnicianAppointmentCardProps {
 
 const statusOptions = [
   { value: 'scheduled', label: 'Scheduled' },
+  { value: 'confirmed', label: 'Confirmed' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
@@ -53,6 +54,7 @@ const statusOptions = [
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
   scheduled: { label: 'Scheduled', variant: 'secondary', icon: <Clock className="h-3 w-3" /> },
+  confirmed: { label: 'Confirmed', variant: 'default', icon: <CheckCircle2 className="h-3 w-3" /> },
   in_progress: { label: 'In Progress', variant: 'default', icon: <PlayCircle className="h-3 w-3" /> },
   completed: { label: 'Completed', variant: 'outline', icon: <CheckCircle2 className="h-3 w-3" /> },
   cancelled: { label: 'Cancelled', variant: 'destructive', icon: <XCircle className="h-3 w-3" /> },
