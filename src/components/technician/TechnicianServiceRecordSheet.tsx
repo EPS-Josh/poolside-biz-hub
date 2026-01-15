@@ -44,10 +44,12 @@ export const TechnicianServiceRecordSheet: React.FC<TechnicianServiceRecordSheet
   const [hasStandaloneSpa, setHasStandaloneSpa] = useState(false);
   
   const currentPhoenixDate = getCurrentPhoenixDate();
-  const [formData, setFormData] = useState({
-    service_date: formatPhoenixDateForDatabase(currentPhoenixDate),
-    service_time: '',
-    service_type: '',
+  
+  // Initialize form data with appointment data to prevent step count issues
+  const getInitialFormData = () => ({
+    service_date: appointment?.appointment_date || formatPhoenixDateForDatabase(currentPhoenixDate),
+    service_time: appointment?.appointment_time || '',
+    service_type: appointment?.service_type || '',
     technician_name: '',
     work_performed: '',
     chemicals_added: '',
@@ -95,17 +97,14 @@ export const TechnicianServiceRecordSheet: React.FC<TechnicianServiceRecordSheet
     }
   });
 
-  // Update form data when appointment changes
+  const [formData, setFormData] = useState(getInitialFormData);
+
+  // Reset form data when appointment changes
   useEffect(() => {
     if (appointment) {
-      setFormData(prev => ({
-        ...prev,
-        service_date: appointment.appointment_date || formatPhoenixDateForDatabase(getCurrentPhoenixDate()),
-        service_time: appointment.appointment_time || '',
-        service_type: appointment.service_type || '',
-      }));
+      setFormData(getInitialFormData());
     }
-  }, [appointment]);
+  }, [appointment?.id]);
 
   // Fetch customer service details to check spa type
   useEffect(() => {
