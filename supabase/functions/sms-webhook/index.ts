@@ -80,13 +80,31 @@ const handler = async (req: Request): Promise<Response> => {
     // Normalize phone number (remove +1 and formatting)
     const normalizedPhone = from.replace(/^\+1/, '').replace(/\D/g, '');
     const messageUppercase = body.trim().toUpperCase();
+    
+    console.log('Normalized phone:', normalizedPhone);
 
-    // Find customer by phone number
-    const { data: customers, error: customerError } = await supabase
+    // Find customer by phone number - search using multiple formats
+    // Database may store phones as "520 904 7410", "520-904-7410", "5209047410", etc.
+    const { data: allCustomers, error: customerError } = await supabase
       .from('customers')
-      .select('id, first_name, sms_opt_in, user_id')
-      .or(`phone.eq.${normalizedPhone},phone.eq.+1${normalizedPhone},phone.eq.${from}`)
-      .limit(1);
+      .select('id, first_name, phone, sms_opt_in, user_id');
+
+    if (customerError) {
+      console.error('Error finding customer:', customerError);
+      return new Response('Error processing message', { status: 500, headers: corsHeaders });
+    }
+
+    // Find customer by comparing normalized phone numbers
+    const customer = allCustomers?.find(c => {
+      if (!c.phone) return false;
+      const customerNormalized = c.phone.replace(/\D/g, '');
+      // Handle both with and without country code
+      return customerNormalized === normalizedPhone || 
+             customerNormalized === `1${normalizedPhone}` ||
+             `1${customerNormalized}` === normalizedPhone;
+    });
+
+    console.log('Found customer:', customer ? `${customer.first_name} (${customer.id})` : 'none');
 
     if (customerError) {
       console.error('Error finding customer:', customerError);
@@ -94,7 +112,6 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     let responseMessage = '';
-    let customer = customers?.[0];
 
     // Handle OPT-IN keywords (Y, YES, OK)
     if (['Y', 'YES', 'OK'].includes(messageUppercase)) {
