@@ -34,6 +34,16 @@ function validateTwilioSignature(
   return signature === expectedSig;
 }
 
+// Escape special characters for XML/TwiML responses
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -132,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      responseMessage = "You're now subscribed to service notifications from Finest Pools & Spas. Reply STOP to opt out or HELP for help. Msg&data rates may apply.";
+      responseMessage = "You're now subscribed to service notifications from Finest Pools and Spas. Reply STOP to opt out or HELP for help. Msg and data rates may apply.";
     }
     // Handle OPT-OUT keyword (STOP)
     else if (['STOP', 'STOPALL', 'UNSUBSCRIBE', 'CANCEL', 'END', 'QUIT'].includes(messageUppercase)) {
@@ -151,11 +161,11 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      responseMessage = "You've been unsubscribed from Finest Pools & Spas SMS notifications. Reply START to resubscribe.";
+      responseMessage = "You've been unsubscribed from Finest Pools and Spas SMS notifications. Reply START to resubscribe.";
     }
     // Handle HELP keyword
     else if (['HELP', 'INFO'].includes(messageUppercase)) {
-      responseMessage = "Finest Pools & Spas service notifications. For help, visit poolside.fps-tucson.com or call us. Reply STOP to opt out. Msg&data rates may apply.";
+      responseMessage = "Finest Pools and Spas service notifications. For help, visit poolside.fps-tucson.com or call us. Reply STOP to opt out. Msg and data rates may apply.";
     }
     // Handle START (re-subscribe after STOP)
     else if (['START', 'UNSTOP'].includes(messageUppercase)) {
@@ -176,7 +186,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       }
 
-      responseMessage = "You're now subscribed to service notifications from Finest Pools & Spas. Reply STOP to opt out or HELP for help. Msg&data rates may apply.";
+      responseMessage = "You're now subscribed to service notifications from Finest Pools and Spas. Reply STOP to opt out or HELP for help. Msg and data rates may apply.";
     }
     // Unknown message - log it but don't respond
     else {
@@ -216,9 +226,10 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Return TwiML response to send message back to customer
+    // Use escapeXml to ensure special characters don't break XML parsing
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Message>${responseMessage}</Message>
+  <Message>${escapeXml(responseMessage)}</Message>
 </Response>`;
 
     return new Response(twimlResponse, {
