@@ -33,7 +33,8 @@ import {
   RotateCcw,
   Loader2,
   Route,
-  Wrench
+  Wrench,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface MenuItem {
@@ -176,6 +177,14 @@ const getDefaultMenuSections = (): MenuSection[] => [
         color: "bg-rose-500",
         route: '/customers/map',
       },
+      {
+        id: 'photo-gallery',
+        title: "Photo Gallery",
+        description: "Review all photos uploaded across customers",
+        icon: ImageIcon,
+        color: "bg-pink-500",
+        route: '/photo-gallery',
+      },
     ]
   },
   {
@@ -231,7 +240,7 @@ const getDefaultMenuSections = (): MenuSection[] => [
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar, Package, ClipboardList, Bell, FileText, DollarSign, BarChart3,
   Users, MessageSquare, Droplets, MapPin, UserCheck, Building, TrendingUp,
-  Calculator, Car, Route, Wrench
+  Calculator, Car, Route, Wrench, ImageIcon
 };
 
 const getIconForItem = (itemId: string, defaultSections: MenuSection[]): React.ComponentType<{ className?: string }> => {
