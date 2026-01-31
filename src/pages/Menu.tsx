@@ -262,6 +262,28 @@ const restoreIcons = (sections: MenuSection[]): MenuSection[] => {
   }));
 };
 
+// Merge new items from defaults into saved layout (handles newly added menu items)
+const mergeNewItems = (savedSections: MenuSection[]): MenuSection[] => {
+  const defaultSections = getDefaultMenuSections();
+  const savedItemIds = new Set(savedSections.flatMap(s => s.items.map(i => i.id)));
+  
+  return savedSections.map(savedSection => {
+    const defaultSection = defaultSections.find(ds => ds.id === savedSection.id);
+    if (!defaultSection) return savedSection;
+    
+    // Find new items in this section that aren't in the saved layout
+    const newItems = defaultSection.items.filter(item => !savedItemIds.has(item.id));
+    
+    if (newItems.length === 0) return savedSection;
+    
+    // Add new items to the end of the section
+    return {
+      ...savedSection,
+      items: [...savedSection.items, ...newItems]
+    };
+  });
+};
+
 const serializeLayout = (sections: MenuSection[]) => {
   // Remove icon references before saving since they can't be serialized
   return sections.map(section => ({
@@ -318,7 +340,8 @@ const Menu = () => {
           setMenuSections(getDefaultMenuSections());
         } else if (data?.layout_data) {
           const restored = restoreIcons(data.layout_data as unknown as MenuSection[]);
-          setMenuSections(restored);
+          const merged = mergeNewItems(restored);
+          setMenuSections(merged);
         } else {
           setMenuSections(getDefaultMenuSections());
         }
