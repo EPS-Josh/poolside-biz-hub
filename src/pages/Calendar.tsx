@@ -9,9 +9,10 @@ import { CalendarView } from '@/components/calendar/CalendarView';
 import { AppointmentForm } from '@/components/calendar/AppointmentForm';
 import { AppointmentList } from '@/components/calendar/AppointmentList';
 import { CalendarIntegrations } from '@/components/calendar/CalendarIntegrations';
+import { UnscheduledJobsBacklog } from '@/components/calendar/UnscheduledJobsBacklog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar as CalendarIcon, Plus, List, Grid, Users, Settings } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, List, Grid, Users, Settings, ClipboardList } from 'lucide-react';
 import { ServiceRoutes } from '@/components/calendar/ServiceRoutes';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
@@ -154,6 +155,19 @@ const Calendar = () => {
 
                   {/* Sidebar */}
                   <div className="space-y-6">
+                    {/* Unscheduled Jobs Backlog */}
+                    <Card className="border-orange-200">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <ClipboardList className="h-5 w-5 text-orange-500" />
+                          Unscheduled Jobs
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <UnscheduledJobsBacklog />
+                      </CardContent>
+                    </Card>
+
                     {/* Today's Appointments */}
                     <Card>
                       <CardHeader>
