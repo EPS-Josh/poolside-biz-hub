@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowLeft, Image as ImageIcon, Loader2, Search, Expand, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import { getThumbnailUrl, getFullSizeUrl } from '@/utils/storageUtils';
 
 interface PhotoWithCustomer {
   id: string;
@@ -27,7 +28,8 @@ const PhotoGallery = () => {
   const [photos, setPhotos] = useState<PhotoWithCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
+  const [fullSizeUrls, setFullSizeUrls] = useState<Record<string, string>>({});
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithCustomer | null>(null);
 
   useEffect(() => {
@@ -82,36 +84,44 @@ const PhotoGallery = () => {
     }
   };
 
-  // Generate signed URLs for visible photos
+  // Generate thumbnail URLs for visible photos
   useEffect(() => {
-    const generateUrls = async () => {
+    const generateThumbnails = async () => {
       const filteredPhotos = getFilteredPhotos();
       const visiblePhotos = filteredPhotos.slice(0, 50); // Limit to first 50 for performance
       
-      const urls: Record<string, string> = { ...photoUrls };
+      const urls: Record<string, string> = { ...thumbnailUrls };
       
       for (const photo of visiblePhotos) {
         if (!urls[photo.id]) {
-          try {
-            const { data } = await supabase.storage
-              .from('customer-photos')
-              .createSignedUrl(photo.file_path, 3600);
-            if (data?.signedUrl) {
-              urls[photo.id] = data.signedUrl;
-            }
-          } catch (error) {
-            console.error('Error generating signed URL:', error);
+          const url = await getThumbnailUrl('customer-photos', photo.file_path);
+          if (url) {
+            urls[photo.id] = url;
           }
         }
       }
       
-      setPhotoUrls(urls);
+      setThumbnailUrls(urls);
     };
 
     if (photos.length > 0) {
-      generateUrls();
+      generateThumbnails();
     }
   }, [photos, searchTerm]);
+
+  // Load full-size URL when a photo is selected
+  useEffect(() => {
+    const loadFullSize = async () => {
+      if (selectedPhoto && !fullSizeUrls[selectedPhoto.id]) {
+        const url = await getFullSizeUrl('customer-photos', selectedPhoto.file_path);
+        if (url) {
+          setFullSizeUrls(prev => ({ ...prev, [selectedPhoto.id]: url }));
+        }
+      }
+    };
+
+    loadFullSize();
+  }, [selectedPhoto]);
 
   const getFilteredPhotos = () => {
     if (!searchTerm) return photos;
@@ -243,11 +253,12 @@ const PhotoGallery = () => {
                           onClick={() => setSelectedPhoto(photo)}
                         >
                           <div className="relative aspect-square">
-                            {photoUrls[photo.id] ? (
+                            {thumbnailUrls[photo.id] ? (
                               <img
-                                src={photoUrls[photo.id]}
+                                src={thumbnailUrls[photo.id]}
                                 alt={photo.description || photo.file_name}
                                 className="w-full h-full object-cover"
+                                loading="lazy"
                               />
                             ) : (
                               <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -280,9 +291,9 @@ const PhotoGallery = () => {
             <DialogContent className="max-w-4xl w-full h-[90vh] p-0">
               {selectedPhoto && (
                 <div className="relative w-full h-full flex items-center justify-center bg-black">
-                  {photoUrls[selectedPhoto.id] ? (
+                  {fullSizeUrls[selectedPhoto.id] ? (
                     <img
-                      src={photoUrls[selectedPhoto.id]}
+                      src={fullSizeUrls[selectedPhoto.id]}
                       alt={selectedPhoto.description || selectedPhoto.file_name}
                       className="max-w-full max-h-full object-contain"
                     />
