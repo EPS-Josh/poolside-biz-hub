@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { TechnicianAppointment, useOfflineServiceRecords } from '@/hooks/useTechnicianAppointments';
 import { formatPhoenixDateForDatabase, getCurrentPhoenixDate } from '@/utils/phoenixTimeUtils';
+import { compressImage } from '@/utils/imageCompression';
 
 interface QuickServiceRecordSheetProps {
   open: boolean;
@@ -82,25 +83,28 @@ export const QuickServiceRecordSheet: React.FC<QuickServiceRecordSheetProps> = (
     const uploadedPaths: string[] = [];
     
     for (const photo of photos) {
-      const fileExt = photo.name.split('.').pop();
+      // Compress the image before upload
+      const compressedPhoto = await compressImage(photo);
+      
+      const fileExt = compressedPhoto.name.split('.').pop() || photo.name.split('.').pop();
       const fileName = `${customerId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('customer-photos')
-        .upload(fileName, photo);
+        .upload(fileName, compressedPhoto);
 
       if (uploadError) {
         console.error('Photo upload error:', uploadError);
         continue;
       }
 
-      // Save to customer_photos table
+      // Save to customer_photos table with compressed file size
       await supabase.from('customer_photos').insert({
         customer_id: customerId,
         file_name: photo.name,
         file_path: fileName,
-        file_size: photo.size,
-        file_type: photo.type,
+        file_size: compressedPhoto.size,
+        file_type: compressedPhoto.type,
         description: 'Service record photo'
       });
 

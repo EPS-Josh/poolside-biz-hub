@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Image as ImageIcon, Expand } from 'lucide-react';
 import { WaterDropLoader } from '@/components/ui/water-drop-loader';
+import { compressImage } from '@/utils/imageCompression';
 
 interface CustomerPhoto {
   id: string;
@@ -111,15 +112,18 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
           throw new Error(`File ${file.name} is not a valid image.`);
         }
 
-        const fileExt = file.name.split('.').pop();
+        // Compress the image before upload
+        const compressedFile = await compressImage(file);
+
+        const fileExt = compressedFile.name.split('.').pop() || file.name.split('.').pop();
         const fileName = `${customerId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         
         console.log('Uploading to storage:', fileName);
 
-        // Upload file to storage
+        // Upload compressed file to storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('customer-photos')
-          .upload(fileName, file, {
+          .upload(fileName, compressedFile, {
             cacheControl: '3600',
             upsert: false
           });
@@ -138,15 +142,15 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
 
         console.log('Public URL:', publicUrl);
 
-        // Save photo record to database (store just the fileName, not full URL)
+        // Save photo record to database (store compressed file size)
         const { error: dbError } = await supabase
           .from('customer_photos')
           .insert({
             customer_id: customerId,
             file_name: file.name,
             file_path: fileName,
-            file_size: file.size,
-            file_type: file.type,
+            file_size: compressedFile.size,
+            file_type: compressedFile.type,
           });
 
         if (dbError) {
