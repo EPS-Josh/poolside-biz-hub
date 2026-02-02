@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,12 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Image as ImageIcon, Expand } from 'lucide-react';
 import { WaterDropLoader } from '@/components/ui/water-drop-loader';
 import { compressImage } from '@/utils/imageCompression';
+import { getThumbnailUrl, getFullSizeUrl } from '@/utils/storageUtils';
 
 interface CustomerPhoto {
   id: string;
   file_name: string;
   file_path: string;
-  signedUrl?: string;
+  thumbnailUrl?: string;
   file_size?: number;
   file_type?: string;
   description?: string;
@@ -30,31 +30,8 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<CustomerPhoto | null>(null);
+  const [fullSizeUrl, setFullSizeUrl] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const getSignedUrl = async (filePath: string): Promise<string> => {
-    try {
-      // Extract the storage path from the URL or use as-is
-      let storagePath = filePath;
-      if (filePath.startsWith('http')) {
-        // Extract path after /customer-photos/
-        const match = filePath.match(/customer-photos\/(.+)$/);
-        if (match) {
-          storagePath = match[1];
-        }
-      }
-      
-      const { data, error } = await supabase.storage
-        .from('customer-photos')
-        .createSignedUrl(storagePath, 3600); // 1 hour expiry
-      
-      if (error) throw error;
-      return data.signedUrl;
-    } catch (error) {
-      console.error('Error generating signed URL:', error);
-      return filePath; // Fallback to original path
-    }
-  };
 
   const fetchPhotos = async () => {
     try {
@@ -66,15 +43,15 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
 
       if (error) throw error;
 
-      // Generate signed URLs for all photos
-      const photosWithSignedUrls = await Promise.all(
+      // Generate thumbnail URLs for all photos
+      const photosWithThumbnails = await Promise.all(
         (data || []).map(async (photo) => ({
           ...photo,
-          signedUrl: await getSignedUrl(photo.file_path)
+          thumbnailUrl: await getThumbnailUrl('customer-photos', photo.file_path)
         }))
       );
 
-      setPhotos(photosWithSignedUrls);
+      setPhotos(photosWithThumbnails);
     } catch (error) {
       console.error('Error fetching photos:', error);
       toast({
@@ -90,6 +67,19 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
   useEffect(() => {
     fetchPhotos();
   }, [customerId]);
+
+  // Load full-size URL when a photo is selected
+  useEffect(() => {
+    const loadFullSize = async () => {
+      if (selectedPhoto) {
+        setFullSizeUrl(null); // Reset while loading
+        const url = await getFullSizeUrl('customer-photos', selectedPhoto.file_path);
+        setFullSizeUrl(url);
+      }
+    };
+
+    loadFullSize();
+  }, [selectedPhoto]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -134,13 +124,6 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
         }
 
         console.log('Upload successful:', uploadData);
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('customer-photos')
-          .getPublicUrl(fileName);
-
-        console.log('Public URL:', publicUrl);
 
         // Save photo record to database (store compressed file size)
         const { error: dbError } = await supabase
@@ -252,106 +235,113 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
 
   return (
     <div>
-        {/* Upload Section */}
-        <div className="mb-6">
-          <Label htmlFor="photo-upload" className="block mb-2">
-            Upload Photos (Max 10MB each)
-          </Label>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-            <Input
-              id="photo-upload"
-              type="file"
-              accept="image/*,.jpg,.jpeg,.png,.gif,.webp"
-              multiple
-              onChange={handleFileUpload}
-              disabled={uploading}
-              className="flex-1 cursor-pointer"
-            />
-            <Button disabled={uploading} className="w-full sm:w-auto">
-              <Upload className="h-4 w-4 mr-2" />
-              {uploading ? 'Uploading...' : 'Upload'}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Supports JPG, PNG, GIF, WebP formats. Tap to select from gallery or take photo.
-          </p>
+      {/* Upload Section */}
+      <div className="mb-6">
+        <Label htmlFor="photo-upload" className="block mb-2">
+          Upload Photos (Max 10MB each)
+        </Label>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+          <Input
+            id="photo-upload"
+            type="file"
+            accept="image/*,.jpg,.jpeg,.png,.gif,.webp"
+            multiple
+            onChange={handleFileUpload}
+            disabled={uploading}
+            className="flex-1 cursor-pointer"
+          />
+          <Button disabled={uploading} className="w-full sm:w-auto">
+            <Upload className="h-4 w-4 mr-2" />
+            {uploading ? 'Uploading...' : 'Upload'}
+          </Button>
         </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Supports JPG, PNG, GIF, WebP formats. Tap to select from gallery or take photo.
+        </p>
+      </div>
 
-        {/* Photos Grid */}
-        {photos.length === 0 ? (
-          <div className="text-center py-8">
-            <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500">No photos uploaded yet</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {photos.map((photo) => (
-              <div key={photo.id} className="border rounded-lg overflow-hidden">
-                <div className="relative group">
-                  <img
-                    src={photo.signedUrl || photo.file_path}
-                    alt={photo.file_name}
-                    className="w-full h-48 object-cover cursor-pointer transition-opacity hover:opacity-90"
-                    onClick={() => setSelectedPhoto(photo)}
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center cursor-pointer"
-                       onClick={() => setSelectedPhoto(photo)}>
-                    <Expand className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeletePhoto(photo.id, photo.file_path);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="p-3">
-                  <p className="text-sm font-medium mb-2">{photo.file_name}</p>
-                  <Input
-                    placeholder="Add description..."
-                    value={photo.description || ''}
-                    onChange={(e) => updatePhotoDescription(photo.id, e.target.value)}
-                    className="text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    {new Date(photo.created_at).toLocaleDateString()}
-                    {photo.file_size && ` • ${Math.round(photo.file_size / 1024)} KB`}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Image Preview Dialog */}
-        <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
-          <DialogContent className="max-w-4xl w-full h-[90vh] p-0">
-            {selectedPhoto && (
-              <div className="relative w-full h-full flex items-center justify-center bg-black">
+      {/* Photos Grid */}
+      {photos.length === 0 ? (
+        <div className="text-center py-8">
+          <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No photos uploaded yet</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {photos.map((photo) => (
+            <div key={photo.id} className="border rounded-lg overflow-hidden">
+              <div className="relative group">
                 <img
-                  src={selectedPhoto.signedUrl || selectedPhoto.file_path}
+                  src={photo.thumbnailUrl || photo.file_path}
+                  alt={photo.file_name}
+                  className="w-full h-48 object-cover cursor-pointer transition-opacity hover:opacity-90"
+                  onClick={() => setSelectedPhoto(photo)}
+                  loading="lazy"
+                />
+                <div 
+                  className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                  onClick={() => setSelectedPhoto(photo)}
+                >
+                  <Expand className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePhoto(photo.id, photo.file_path);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="p-3">
+                <p className="text-sm font-medium mb-2">{photo.file_name}</p>
+                <Input
+                  placeholder="Add description..."
+                  value={photo.description || ''}
+                  onChange={(e) => updatePhotoDescription(photo.id, e.target.value)}
+                  className="text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {new Date(photo.created_at).toLocaleDateString()}
+                  {photo.file_size && ` • ${Math.round(photo.file_size / 1024)} KB`}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!selectedPhoto} onOpenChange={() => setSelectedPhoto(null)}>
+        <DialogContent className="max-w-4xl w-full h-[90vh] p-0">
+          {selectedPhoto && (
+            <div className="relative w-full h-full flex items-center justify-center bg-black">
+              {fullSizeUrl ? (
+                <img
+                  src={fullSizeUrl}
                   alt={selectedPhoto.file_name}
                   className="max-w-full max-h-full object-contain"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-4">
-                  <h3 className="font-medium">{selectedPhoto.file_name}</h3>
-                  {selectedPhoto.description && (
-                    <p className="text-sm text-gray-300 mt-1">{selectedPhoto.description}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-2">
-                    {new Date(selectedPhoto.created_at).toLocaleDateString()}
-                    {selectedPhoto.file_size && ` • ${Math.round(selectedPhoto.file_size / 1024)} KB`}
-                  </p>
-                </div>
+              ) : (
+                <WaterDropLoader />
+              )}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/75 text-white p-4">
+                <h3 className="font-medium">{selectedPhoto.file_name}</h3>
+                {selectedPhoto.description && (
+                  <p className="text-sm text-white/70 mt-1">{selectedPhoto.description}</p>
+                )}
+                <p className="text-xs text-white/50 mt-2">
+                  {new Date(selectedPhoto.created_at).toLocaleDateString()}
+                  {selectedPhoto.file_size && ` • ${Math.round(selectedPhoto.file_size / 1024)} KB`}
+                </p>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
