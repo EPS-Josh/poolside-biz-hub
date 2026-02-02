@@ -242,16 +242,6 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         </>
       )}
 
-      {/* Recurring Options */}
-      <RecurringOptions
-        isRecurring={formData.isRecurring}
-        frequency={formData.frequency}
-        endDate={formData.endDate}
-        onRecurringChange={(isRecurring) => setFormData(prev => ({ ...prev, isRecurring }))}
-        onFrequencyChange={(frequency) => setFormData(prev => ({ ...prev, frequency }))}
-        onEndDateChange={(endDate) => setFormData(prev => ({ ...prev, endDate }))}
-      />
-
       {/* Notes */}
       <div className="space-y-2">
         <Label htmlFor="notes">Notes</Label>
