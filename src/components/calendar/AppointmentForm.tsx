@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +13,7 @@ import { ServiceSelect } from './ServiceSelect';
 import { DateTimeSelect } from './DateTimeSelect';
 import { StatusSelect } from './StatusSelect';
 import { RecurringOptions } from './RecurringOptions';
+import { ClipboardList } from 'lucide-react';
 
 interface AppointmentFormProps {
   onSuccess: () => void;
@@ -34,7 +36,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     status: 'scheduled',
     isRecurring: false,
     frequency: '',
-    endDate: null as Date | null
+    endDate: null as Date | null,
+    isUnscheduled: false
   });
 
   const createAppointmentMutation = useMutation({
@@ -87,14 +90,20 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         }
       } else {
         // Single appointment
-        const dateString = formatDateForDatabase(startDate);
+        const dateString = appointmentData.isUnscheduled 
+          ? '1970-01-01'  // Placeholder date for unscheduled jobs
+          : formatDateForDatabase(startDate);
+        const timeString = appointmentData.isUnscheduled 
+          ? '00:00:00'  // Placeholder time for unscheduled jobs
+          : appointmentData.time;
+        
         appointments.push({
           user_id: user.id,
           customer_id: appointmentData.customerId || null,
           appointment_date: dateString,
-          appointment_time: appointmentData.time,
+          appointment_time: timeString,
           service_type: appointmentData.service,
-          status: appointmentData.status,
+          status: appointmentData.isUnscheduled ? 'unscheduled' : appointmentData.status,
           notes: appointmentData.notes || null,
           is_recurring: false
         });
@@ -133,7 +142,13 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      toast.success(formData.isRecurring ? 'Recurring appointments created successfully!' : 'Appointment created successfully!');
+      queryClient.invalidateQueries({ queryKey: ['unscheduled-jobs'] });
+      const message = formData.isUnscheduled 
+        ? 'Job added to backlog!' 
+        : formData.isRecurring 
+          ? 'Recurring appointments created successfully!' 
+          : 'Appointment created successfully!';
+      toast.success(message);
       onSuccess();
     },
     onError: (error) => {
@@ -145,8 +160,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.service || !formData.time) {
-      toast.error('Please fill in all required fields');
+    if (!formData.service) {
+      toast.error('Please select a service type');
+      return;
+    }
+
+    // Only require time if not unscheduled
+    if (!formData.isUnscheduled && !formData.time) {
+      toast.error('Please select a time');
       return;
     }
     
@@ -162,6 +183,25 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Add to Backlog Toggle */}
+      <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50 border border-orange-200">
+        <div className="flex items-center gap-2">
+          <ClipboardList className="h-4 w-4 text-orange-600" />
+          <Label htmlFor="unscheduled-toggle" className="text-sm font-medium cursor-pointer">
+            Add to backlog (no date yet)
+          </Label>
+        </div>
+        <Switch
+          id="unscheduled-toggle"
+          checked={formData.isUnscheduled}
+          onCheckedChange={(checked) => setFormData(prev => ({ 
+            ...prev, 
+            isUnscheduled: checked,
+            isRecurring: checked ? false : prev.isRecurring // Disable recurring if unscheduled
+          }))}
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <CustomerSelect
           value={formData.customerId}
@@ -173,18 +213,34 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
           onChange={(value) => setFormData(prev => ({ ...prev, service: value }))}
         />
 
-        <DateTimeSelect
-          date={formData.date}
-          time={formData.time}
-          onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
-          onTimeChange={(time) => setFormData(prev => ({ ...prev, time }))}
-        />
+        {!formData.isUnscheduled && (
+          <DateTimeSelect
+            date={formData.date}
+            time={formData.time}
+            onDateChange={(date) => setFormData(prev => ({ ...prev, date }))}
+            onTimeChange={(time) => setFormData(prev => ({ ...prev, time }))}
+          />
+        )}
       </div>
 
-      <StatusSelect
-        value={formData.status}
-        onChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-      />
+      {!formData.isUnscheduled && (
+        <>
+          <StatusSelect
+            value={formData.status}
+            onChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+          />
+
+          {/* Recurring Options */}
+          <RecurringOptions
+            isRecurring={formData.isRecurring}
+            frequency={formData.frequency}
+            endDate={formData.endDate}
+            onRecurringChange={(isRecurring) => setFormData(prev => ({ ...prev, isRecurring }))}
+            onFrequencyChange={(frequency) => setFormData(prev => ({ ...prev, frequency }))}
+            onEndDateChange={(endDate) => setFormData(prev => ({ ...prev, endDate }))}
+          />
+        </>
+      )}
 
       {/* Recurring Options */}
       <RecurringOptions
@@ -216,12 +272,15 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         <Button 
           type="submit" 
           disabled={createAppointmentMutation.isPending}
+          className={formData.isUnscheduled ? 'bg-orange-600 hover:bg-orange-700' : ''}
         >
           {createAppointmentMutation.isPending 
             ? 'Creating...' 
-            : formData.isRecurring 
-              ? 'Create Recurring Service' 
-              : 'Create Appointment'
+            : formData.isUnscheduled
+              ? 'Add to Backlog'
+              : formData.isRecurring 
+                ? 'Create Recurring Service' 
+                : 'Create Appointment'
           }
         </Button>
       </div>
