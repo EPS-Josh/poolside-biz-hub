@@ -92,9 +92,9 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
       for (const file of files) {
         console.log('Processing file:', file.name, 'Size:', file.size, 'Type:', file.type);
         
-        // Check file size (limit to 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-          throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
+        // Check file size (limit to 50MB before compression)
+        if (file.size > 50 * 1024 * 1024) {
+          throw new Error(`File ${file.name} is too large. Maximum size is 50MB.`);
         }
 
         // Check file type
@@ -238,7 +238,7 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
       {/* Upload Section */}
       <div className="mb-6">
         <Label htmlFor="photo-upload" className="block mb-2">
-          Upload Photos (Max 10MB each)
+          Upload Photos
         </Label>
         <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <Input
