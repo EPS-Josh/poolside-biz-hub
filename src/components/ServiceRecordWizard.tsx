@@ -652,6 +652,7 @@ export const ServiceRecordWizard: React.FC<ServiceRecordWizardProps> = ({
             <SelectItem value="not_to_be_invoiced">Not to be Invoiced</SelectItem>
             <SelectItem value="connected_to_future_record">Connected to Future Record</SelectItem>
             <SelectItem value="bill_to_company">Bill to Company</SelectItem>
+            <SelectItem value="special_agreement">Special Agreement</SelectItem>
           </SelectContent>
         </Select>
       </div>

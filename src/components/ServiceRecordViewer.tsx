@@ -391,6 +391,7 @@ export const ServiceRecordViewer = ({ record, open, onOpenChange }: ServiceRecor
                         {record.invoicing_status === 'not_to_be_invoiced' && 'Not to be Invoiced'}
                         {record.invoicing_status === 'connected_to_future_record' && 'Connected to Future Record'}
                         {record.invoicing_status === 'bill_to_company' && 'Bill to Company'}
+                        {record.invoicing_status === 'special_agreement' && 'Special Agreement'}
                       </Badge>
                     </div>
                   )}
