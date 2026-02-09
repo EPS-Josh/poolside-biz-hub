@@ -311,6 +311,7 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
                   <SelectItem value="not_to_be_invoiced">Not to be Invoiced</SelectItem>
                   <SelectItem value="connected_to_future_record">Connected to Future Record</SelectItem>
                   <SelectItem value="bill_to_company">Bill to Company</SelectItem>
+                  <SelectItem value="special_agreement">Special Agreement</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -365,6 +366,7 @@ ${record.customer_notes ? `Customer Notes:\n${record.customer_notes}\n\n` : ''}
                             {record.invoicing_status === 'not_to_be_invoiced' && 'Not Invoiced'}
                             {record.invoicing_status === 'connected_to_future_record' && 'Future Record'}
                             {record.invoicing_status === 'bill_to_company' && 'Bill to Company'}
+                            {record.invoicing_status === 'special_agreement' && 'Special Agreement'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
