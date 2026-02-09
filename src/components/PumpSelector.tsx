@@ -68,12 +68,17 @@ export const PumpSelector = ({
       case 'Variable Speed':
         return [
           'Pentair IntelliFlo VSF',
+          'Pentair IntelliFlo VS+SVRS',
+          'Pentair IntelliFlo3 VSF',
+          'Pentair IntelliFloXF VSF',
+          'Pentair SuperFlo VS',
           'Pentair SuperFlo VST',
+          'Pentair WhisperFlo VST',
+          'Pentair WhisperFloXF VS',
           'Hayward TriStar VS',
           'Hayward MaxFlo VS',
           'Jandy FloPro VS',
-          'Sta-Rite IntelliPro VSF',
-          'Pentair IntelliFlo3 VSF'
+          'Sta-Rite IntelliPro VSF'
         ];
       case 'Single Speed':
         return [
