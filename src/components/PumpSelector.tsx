@@ -83,6 +83,8 @@ export const PumpSelector = ({
       case 'Single Speed':
         return [
           'Pentair SuperFlo',
+          'Pentair SuperMax',
+          'Pentair Max-E-Pro',
           'Hayward Super Pump',
           'Hayward Matrix',
           'Sta-Rite Dura-Glas',
