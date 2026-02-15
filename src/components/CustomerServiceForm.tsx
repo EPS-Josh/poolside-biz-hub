@@ -399,6 +399,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                     onChange={(e) => setPoolSizeDetails(prev => ({ ...prev, start_up_date: e.target.value }))}
                   />
                 </div>
+                <div>
                   <Label htmlFor="pool_type">Pool Type</Label>
                   <Select
                     value={details.pool_type || ''}
