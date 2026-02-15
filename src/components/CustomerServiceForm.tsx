@@ -22,6 +22,7 @@ interface PoolSizeDetails {
   width?: string;
   avg_depth?: string;
   gallons?: string;
+  start_up_date?: string;
 }
 
 interface CustomerServiceDetails {
@@ -388,8 +389,16 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
               <h3 className="text-lg font-medium">Pool Information</h3>
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
+                  <Label htmlFor="pool_start_date">Start Up Date</Label>
+                  <Input
+                    id="pool_start_date"
+                    type="date"
+                    value={poolSizeDetails.start_up_date || ''}
+                    onChange={(e) => setPoolSizeDetails(prev => ({ ...prev, start_up_date: e.target.value }))}
+                  />
+                </div>
                   <Label htmlFor="pool_type">Pool Type</Label>
                   <Select
                     value={details.pool_type || ''}
