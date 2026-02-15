@@ -710,7 +710,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                                 <SelectItem value="jet-black">Jet Black</SelectItem>
                                 <SelectItem value="light-blue">Light Blue</SelectItem>
                                 <SelectItem value="light-gray">Light Gray</SelectItem>
-                                <SelectItem value="tan">Tan</SelectItem>
+                                <SelectItem value="tan">Gold / Tan</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
