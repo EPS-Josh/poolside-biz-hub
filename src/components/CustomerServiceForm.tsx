@@ -78,6 +78,7 @@ interface PoolEquipment {
   water_valve_bypass_port?: string;
   cleaning_head_color?: string;
   number_of_heads?: string;
+  fluidra_warranty_number?: string;
 }
 
 interface CustomerServiceFormProps {
@@ -719,6 +720,15 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                               value={poolEquipment.number_of_heads || ''}
                               onChange={(e) => updatePoolEquipment('number_of_heads', e.target.value)}
                               placeholder="e.g., 1, 2, 3"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="fluidra_warranty_number">Fluidra Warranty #</Label>
+                            <Input
+                              id="fluidra_warranty_number"
+                              value={poolEquipment.fluidra_warranty_number || ''}
+                              onChange={(e) => updatePoolEquipment('fluidra_warranty_number', e.target.value)}
+                              placeholder="Warranty number"
                             />
                           </div>
                         </div>
