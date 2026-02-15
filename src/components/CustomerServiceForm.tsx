@@ -79,6 +79,7 @@ interface PoolEquipment {
   cleaning_head_color?: string;
   number_of_heads?: string;
   fluidra_warranty_number?: string;
+  pentair_job_number?: string;
 }
 
 interface CustomerServiceFormProps {
@@ -729,6 +730,15 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                               value={poolEquipment.fluidra_warranty_number || ''}
                               onChange={(e) => updatePoolEquipment('fluidra_warranty_number', e.target.value)}
                               placeholder="Warranty number"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="pentair_job_number">Pentair Job #</Label>
+                            <Input
+                              id="pentair_job_number"
+                              value={poolEquipment.pentair_job_number || ''}
+                              onChange={(e) => updatePoolEquipment('pentair_job_number', e.target.value)}
+                              placeholder="Job number"
                             />
                           </div>
                         </div>
