@@ -391,12 +391,25 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="pool_type">Pool Type</Label>
-                  <Input
-                    id="pool_type"
+                  <Select
                     value={details.pool_type || ''}
-                    onChange={(e) => updateField('pool_type', e.target.value)}
-                    placeholder="e.g., Chlorine, Saltwater, Natural"
-                  />
+                    onValueChange={(value) => updateField('pool_type', value)}
+                  >
+                    <SelectTrigger id="pool_type">
+                      <SelectValue placeholder="Select pool type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Chlorine">Chlorine</SelectItem>
+                      <SelectItem value="Salt">Salt</SelectItem>
+                      <SelectItem value="Mineral">Mineral</SelectItem>
+                      <SelectItem value="Ozone">Ozone</SelectItem>
+                      <SelectItem value="UV">UV</SelectItem>
+                      <SelectItem value="Bromine">Bromine</SelectItem>
+                      <SelectItem value="Ionizer">Ionizer</SelectItem>
+                      <SelectItem value="Hybrid">Hybrid</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="pool_shape">Pool Shape</Label>
