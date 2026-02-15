@@ -16,6 +16,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Waves, Droplets, Settings, Shield, ChevronDown, ChevronRight, Beaker, FileText } from 'lucide-react';
 
+interface PoolSizeDetails {
+  shape?: string;
+  length?: string;
+  width?: string;
+  avg_depth?: string;
+  gallons?: string;
+}
+
 interface CustomerServiceDetails {
   id?: string;
   pool_type?: string;
@@ -78,6 +86,7 @@ interface CustomerServiceFormProps {
 export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) => {
   const [details, setDetails] = useState<CustomerServiceDetails>({});
   const [poolEquipment, setPoolEquipment] = useState<PoolEquipment>({});
+  const [poolSizeDetails, setPoolSizeDetails] = useState<PoolSizeDetails>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -132,8 +141,18 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
             const parsed = JSON.parse(data.pool_equipment);
             setPoolEquipment(parsed);
           } catch {
-            // If it's not JSON, treat as legacy text
             setPoolEquipment({});
+          }
+        }
+        // Parse pool size JSON if it exists
+        if (data.pool_size) {
+          try {
+            const parsed = JSON.parse(data.pool_size);
+            if (typeof parsed === 'object' && parsed !== null) {
+              setPoolSizeDetails(parsed);
+            }
+          } catch {
+            // Legacy text value - ignore
           }
         }
       }
@@ -161,6 +180,7 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
       const serviceData = {
         customer_id: customerId,
         ...details,
+        pool_size: JSON.stringify(poolSizeDetails),
         pool_equipment: JSON.stringify(poolEquipment),
         updated_at: new Date().toISOString(),
       };
@@ -379,12 +399,74 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                   />
                 </div>
                 <div>
-                  <Label htmlFor="pool_size">Pool Size</Label>
+                  <Label htmlFor="pool_shape">Pool Shape</Label>
+                  <Select
+                    value={poolSizeDetails.shape || ''}
+                    onValueChange={(value) => setPoolSizeDetails(prev => ({ ...prev, shape: value }))}
+                  >
+                    <SelectTrigger id="pool_shape">
+                      <SelectValue placeholder="Select shape" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Rectangle">Rectangle</SelectItem>
+                      <SelectItem value="Oval">Oval</SelectItem>
+                      <SelectItem value="Kidney">Kidney</SelectItem>
+                      <SelectItem value="L-Shape">L-Shape</SelectItem>
+                      <SelectItem value="Freeform">Freeform</SelectItem>
+                      <SelectItem value="Round">Round</SelectItem>
+                      <SelectItem value="Geometric">Geometric</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="pool_length">Length (ft)</Label>
                   <Input
-                    id="pool_size"
-                    value={details.pool_size || ''}
-                    onChange={(e) => updateField('pool_size', e.target.value)}
-                    placeholder="e.g., 20x40 ft, 15,000 gallons"
+                    id="pool_length"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={poolSizeDetails.length || ''}
+                    onChange={(e) => setPoolSizeDetails(prev => ({ ...prev, length: e.target.value }))}
+                    placeholder="Length"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pool_width">Width (ft)</Label>
+                  <Input
+                    id="pool_width"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={poolSizeDetails.width || ''}
+                    onChange={(e) => setPoolSizeDetails(prev => ({ ...prev, width: e.target.value }))}
+                    placeholder="Width"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pool_avg_depth">Avg. Depth (ft)</Label>
+                  <Input
+                    id="pool_avg_depth"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={poolSizeDetails.avg_depth || ''}
+                    onChange={(e) => setPoolSizeDetails(prev => ({ ...prev, avg_depth: e.target.value }))}
+                    placeholder="Avg. Depth"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pool_gallons">Gallons</Label>
+                  <Input
+                    id="pool_gallons"
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={poolSizeDetails.gallons || ''}
+                    onChange={(e) => setPoolSizeDetails(prev => ({ ...prev, gallons: e.target.value }))}
+                    placeholder="Gallons"
                   />
                 </div>
               </div>
