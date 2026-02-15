@@ -498,10 +498,6 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
               <div className="space-y-4">
                 <h4 className="text-md font-medium">Pool Equipment</h4>
                 
-                {/* Equipment Data Loader */}
-                <div className="mb-4">
-                  <EquipmentDataScraper onEquipmentDataFetched={handleEquipmentDataFetched} />
-                </div>
 
                 {/* Enhanced Equipment Selectors */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
