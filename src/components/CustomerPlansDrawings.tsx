@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { FileImage, Upload, X, Eye, Download } from 'lucide-react';
+import { FileImage, Upload, X, Eye, Download, Loader2 } from 'lucide-react';
 
 interface CustomerPlanDrawing {
   id: string;
@@ -30,6 +30,7 @@ export const CustomerPlansDrawings = ({ customerId }: CustomerPlansDrawingsProps
   const [uploading, setUploading] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<CustomerPlanDrawing | null>(null);
   const [uploadCategory, setUploadCategory] = useState<string>('plan');
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   const fetchDocuments = async () => {
@@ -58,6 +59,34 @@ export const CustomerPlansDrawings = ({ customerId }: CustomerPlansDrawingsProps
   useEffect(() => {
     fetchDocuments();
   }, [customerId]);
+
+  // Generate signed URLs when documents change
+  useEffect(() => {
+    const generateSignedUrls = async () => {
+      const urls: Record<string, string> = {};
+      for (const doc of documents) {
+        let storagePath = doc.file_path;
+        // Extract storage path from full URL if needed
+        if (storagePath.startsWith('http')) {
+          const match = storagePath.match(/customer-plans-drawings\/(.+)$/);
+          if (match) {
+            storagePath = match[1];
+          }
+        }
+        const { data } = await supabase.storage
+          .from('customer-plans-drawings')
+          .createSignedUrl(storagePath, 3600);
+        if (data?.signedUrl) {
+          urls[doc.id] = data.signedUrl;
+        }
+      }
+      setSignedUrls(urls);
+    };
+
+    if (documents.length > 0) {
+      generateSignedUrls();
+    }
+  }, [documents]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -103,18 +132,13 @@ export const CustomerPlansDrawings = ({ customerId }: CustomerPlansDrawingsProps
           throw new Error(`Upload failed: ${uploadError.message}`);
         }
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('customer-plans-drawings')
-          .getPublicUrl(fileName);
-
-        // Save document record to database
+        // Save document record to database with storage path (not public URL)
         const { error: dbError } = await supabase
           .from('customer_plans_drawings')
           .insert({
             customer_id: customerId,
             file_name: file.name,
-            file_path: publicUrl,
+            file_path: fileName,
             file_size: file.size,
             file_type: file.type,
             category: uploadCategory,
@@ -323,18 +347,22 @@ export const CustomerPlansDrawings = ({ customerId }: CustomerPlansDrawingsProps
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(document.file_path, '_blank')}
+                      onClick={() => signedUrls[document.id] && window.open(signedUrls[document.id], '_blank')}
+                      disabled={!signedUrls[document.id]}
                     >
-                      <Eye className="h-4 w-4" />
+                      {signedUrls[document.id] ? <Eye className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      disabled={!signedUrls[document.id]}
                       onClick={() => {
-                        const link = window.document.createElement('a');
-                        link.href = document.file_path;
-                        link.download = document.file_name;
-                        link.click();
+                        if (signedUrls[document.id]) {
+                          const link = window.document.createElement('a');
+                          link.href = signedUrls[document.id];
+                          link.download = document.file_name;
+                          link.click();
+                        }
                       }}
                     >
                       <Download className="h-4 w-4" />
