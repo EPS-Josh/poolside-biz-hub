@@ -5,6 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { FileText, Upload, X, Eye, Download } from 'lucide-react';
@@ -30,6 +40,8 @@ export const CustomerScannedDocuments = ({ customerId }: CustomerScannedDocument
   const [uploading, setUploading] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<CustomerScannedDocument | null>(null);
   const [uploadDocumentType, setUploadDocumentType] = useState<string>('other');
+  const [deleteDocId, setDeleteDocId] = useState<string | null>(null);
+  const [deleteFilePath, setDeleteFilePath] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchDocuments = async () => {
@@ -392,7 +404,10 @@ export const CustomerScannedDocuments = ({ customerId }: CustomerScannedDocument
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDeleteDocument(document.id, document.file_path)}
+                      onClick={() => {
+                        setDeleteDocId(document.id);
+                        setDeleteFilePath(document.file_path);
+                      }}
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -403,6 +418,33 @@ export const CustomerScannedDocuments = ({ customerId }: CustomerScannedDocument
           </div>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteDocId} onOpenChange={(open) => { if (!open) { setDeleteDocId(null); setDeleteFilePath(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this document? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteDocId && deleteFilePath) {
+                  handleDeleteDocument(deleteDocId, deleteFilePath);
+                  setDeleteDocId(null);
+                  setDeleteFilePath(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

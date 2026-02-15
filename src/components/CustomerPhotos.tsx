@@ -3,6 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, X, Image as ImageIcon, Expand } from 'lucide-react';
@@ -31,6 +41,8 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
   const [uploading, setUploading] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<CustomerPhoto | null>(null);
   const [fullSizeUrl, setFullSizeUrl] = useState<string | null>(null);
+  const [deletePhotoId, setDeletePhotoId] = useState<string | null>(null);
+  const [deleteFilePath, setDeleteFilePath] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchPhotos = async () => {
@@ -290,7 +302,8 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
                   className="absolute top-2 right-2"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeletePhoto(photo.id, photo.file_path);
+                    setDeletePhotoId(photo.id);
+                    setDeleteFilePath(photo.file_path);
                   }}
                 >
                   <X className="h-4 w-4" />
@@ -342,6 +355,33 @@ export const CustomerPhotos = ({ customerId }: CustomerPhotosProps) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletePhotoId} onOpenChange={(open) => { if (!open) { setDeletePhotoId(null); setDeleteFilePath(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this photo? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletePhotoId && deleteFilePath) {
+                  handleDeletePhoto(deletePhotoId, deleteFilePath);
+                  setDeletePhotoId(null);
+                  setDeleteFilePath(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
