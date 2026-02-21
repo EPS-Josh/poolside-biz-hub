@@ -258,7 +258,13 @@ export const ServiceRecordsList = () => {
     `);
 
     printWindow.document.close();
-    printWindow.print();
+    const logoImg = printWindow.document.querySelector('.company-logo') as HTMLImageElement;
+    if (logoImg && !logoImg.complete) {
+      logoImg.onload = () => printWindow.print();
+      logoImg.onerror = () => printWindow.print();
+    } else {
+      printWindow.print();
+    }
   };
 
   const handleEmail = (record: ServiceRecordWithCustomer) => {
