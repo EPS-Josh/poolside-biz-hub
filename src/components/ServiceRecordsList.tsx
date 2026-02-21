@@ -164,62 +164,95 @@ export const ServiceRecordsList = () => {
     if (!printWindow) return;
 
     const customerName = `${record.customers?.first_name || ''} ${record.customers?.last_name || ''}`.trim();
+    const logoUrl = `${window.location.origin}/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png`;
+    const timeOnJob = record.total_time_minutes 
+      ? record.total_time_minutes >= 60 
+        ? `${Math.floor(record.total_time_minutes / 60)}h ${record.total_time_minutes % 60}m`
+        : `${record.total_time_minutes} min`
+      : 'N/A';
     
     printWindow.document.write(`
       <html>
         <head>
           <title>Service Record - ${customerName}</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-            .section { margin-bottom: 15px; }
-            .label { font-weight: bold; }
-            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 30px 40px; color: #1a1a1a; font-size: 13px; }
+            .company-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #0369a1; padding-bottom: 16px; margin-bottom: 24px; }
+            .company-logo { height: 70px; width: auto; }
+            .company-info { text-align: right; color: #475569; font-size: 12px; line-height: 1.5; }
+            .document-title { text-align: center; font-size: 20px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+            .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 32px; margin-bottom: 24px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+            .detail-item { display: flex; gap: 6px; }
+            .label { font-weight: 600; color: #334155; min-width: 110px; }
+            .value { color: #1e293b; }
+            .section { margin-bottom: 20px; }
+            .section-title { font-size: 14px; font-weight: 700; color: #0369a1; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+            .section-content { padding: 8px 12px; background: #fff; border-left: 3px solid #0369a1; margin-top: 4px; line-height: 1.6; }
+            .footer { margin-top: 40px; padding-top: 12px; border-top: 2px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
+            @media print { body { padding: 20px; } }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Service Record</h1>
-            <p><span class="label">Customer:</span> ${customerName}</p>
-            <p><span class="label">Date:</span> ${format(parseISO(record.service_date), 'MM/dd/yyyy')}</p>
-            <p><span class="label">Service Type:</span> ${record.service_type}</p>
+          <div class="company-header">
+            <img src="${logoUrl}" alt="Company Logo" class="company-logo" />
+            <div class="company-info">
+              <strong>Finest Pools &amp; Spas LLC</strong><br/>
+              Service Record Document
+            </div>
           </div>
-          
-          <div class="section">
-            <p><span class="label">Technician:</span> ${record.technician_name || 'N/A'}</p>
-            <p><span class="label">Address:</span> ${record.customers?.address || 'N/A'}</p>
-            <p><span class="label">Service Time:</span> ${record.service_time || 'N/A'}</p>
+
+          <div class="document-title">Service Record</div>
+
+          <div class="details-grid">
+            <div class="detail-item"><span class="label">Customer:</span><span class="value">${customerName}</span></div>
+            <div class="detail-item"><span class="label">Service Date:</span><span class="value">${format(parseISO(record.service_date), 'MM/dd/yyyy')}</span></div>
+            <div class="detail-item"><span class="label">Address:</span><span class="value">${record.customers?.address || 'N/A'}</span></div>
+            <div class="detail-item"><span class="label">Service Time:</span><span class="value">${record.service_time || 'N/A'}</span></div>
+            <div class="detail-item"><span class="label">Service Type:</span><span class="value">${record.service_type}</span></div>
+            <div class="detail-item"><span class="label">Technician:</span><span class="value">${record.technician_name || 'N/A'}</span></div>
+            <div class="detail-item"><span class="label">Status:</span><span class="value">${record.service_status || 'Completed'}</span></div>
+            <div class="detail-item"><span class="label">Time on Job:</span><span class="value">${timeOnJob}</span></div>
           </div>
 
           ${record.work_performed ? `
             <div class="section">
-              <p class="label">Work Performed:</p>
-              <p>${record.work_performed}</p>
+              <div class="section-title">Work Performed</div>
+              <div class="section-content">${record.work_performed}</div>
             </div>
           ` : ''}
 
           ${record.chemicals_added ? `
             <div class="section">
-              <p class="label">Chemicals Added:</p>
-              <p>${record.chemicals_added}</p>
+              <div class="section-title">Chemicals Added</div>
+              <div class="section-content">${record.chemicals_added}</div>
+            </div>
+          ` : ''}
+
+          ${record.equipment_serviced ? `
+            <div class="section">
+              <div class="section-title">Equipment Serviced</div>
+              <div class="section-content">${record.equipment_serviced}</div>
             </div>
           ` : ''}
 
           ${record.customer_notes ? `
             <div class="section">
-              <p class="label">Customer Notes:</p>
-              <p>${record.customer_notes}</p>
+              <div class="section-title">Customer Notes</div>
+              <div class="section-content">${record.customer_notes}</div>
             </div>
           ` : ''}
 
           ${record.technician_notes ? `
             <div class="section">
-              <p class="label">Technician Notes:</p>
-              <p>${record.technician_notes}</p>
+              <div class="section-title">Technician Notes</div>
+              <div class="section-content">${record.technician_notes}</div>
             </div>
           ` : ''}
+
+          <div class="footer">
+            Finest Pools &amp; Spas LLC &bull; Generated on ${format(new Date(), 'MM/dd/yyyy')}
+          </div>
         </body>
       </html>
     `);
