@@ -29,11 +29,51 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create auth client to verify user
+    const authClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Check admin role
+    const { data: userRoles } = await authClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (!userRoles?.some((r: { role: string }) => r.role === 'admin')) {
+      return new Response(
+        JSON.stringify({ error: 'Admin role required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get batch info from request body
     const { batchNumber = 0, batchSize = 1000, action = 'download' } = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
-    console.log(`Processing batch ${batchNumber} with action: ${action}`);
+    console.log(`Processing batch ${batchNumber} with action: ${action}, user: ${userId}`);
 
-    // Initialize Supabase client
+    // Initialize Supabase service client for bulk operations
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''

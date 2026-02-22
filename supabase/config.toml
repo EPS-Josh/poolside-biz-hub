@@ -42,3 +42,6 @@ verify_jwt = false
 
 [functions.calculate-route-distance]
 verify_jwt = true
+
+[functions.import-pima-assessor-data]
+verify_jwt = false
