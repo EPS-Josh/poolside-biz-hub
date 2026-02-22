@@ -274,9 +274,15 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
                     <span className="font-medium">No customer assigned</span>
                   )}
                   {appointment.customers?.address && (
-                    <span className="text-sm text-gray-500">
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${appointment.customers.address}, ${appointment.customers.city || ''}, ${appointment.customers.state || ''}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       - {appointment.customers.address}, {appointment.customers.city}
-                    </span>
+                    </a>
                   )}
                 </div>
 
