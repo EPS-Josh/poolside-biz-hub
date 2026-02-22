@@ -695,7 +695,18 @@ const TSBs = () => {
                                 <Button 
                                   variant="outline" 
                                   size="sm"
-                                  onClick={() => window.open(attachment.url, '_blank')}
+                                  onClick={async () => {
+                                    // Generate signed URL for private bucket access
+                                    const { data } = await supabase.storage
+                                      .from('tsb-attachments')
+                                      .createSignedUrl(attachment.url, 3600);
+                                    if (data?.signedUrl) {
+                                      window.open(data.signedUrl, '_blank');
+                                    } else {
+                                      // Fallback: try the stored URL directly (for legacy public URLs)
+                                      window.open(attachment.url, '_blank');
+                                    }
+                                  }}
                                 >
                                   View
                                 </Button>
