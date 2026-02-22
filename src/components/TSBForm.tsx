@@ -153,14 +153,11 @@ export function TSBForm({ initialData, onSuccess, onCancel }: TSBFormProps) {
 
         if (error) throw error;
 
-        const { data: publicUrl } = supabase.storage
-          .from('tsb-attachments')
-          .getPublicUrl(filePath);
-
+        // Store the file path for signed URL generation later
         uploadedAttachments.push({
           id: fileId,
           name: file.name,
-          url: publicUrl.publicUrl,
+          url: filePath,
           type: file.type,
           size: file.size
         });
