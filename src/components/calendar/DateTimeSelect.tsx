@@ -2,7 +2,6 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -58,21 +57,22 @@ export const DateTimeSelect: React.FC<DateTimeSelectProps> = ({
         </Popover>
       </div>
 
-      {/* Time Selection */}
+      {/* Time Selection - native select for mobile touch scroll support */}
       <div className="space-y-2">
         <Label htmlFor="time">Time * (Phoenix Time)</Label>
-        <Select value={time} onValueChange={onTimeChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select a time" />
-          </SelectTrigger>
-          <SelectContent className="max-h-[300px] overflow-y-auto z-[9999] pointer-events-auto">
-            {TIME_SLOTS.map(timeSlot => (
-              <SelectItem key={timeSlot} value={timeSlot}>
-                {timeSlot}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <select
+          id="time"
+          value={time}
+          onChange={(e) => onTimeChange(e.target.value)}
+          className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          <option value="" disabled>Select a time</option>
+          {TIME_SLOTS.map(timeSlot => (
+            <option key={timeSlot} value={timeSlot}>
+              {timeSlot}
+            </option>
+          ))}
+        </select>
       </div>
     </>
   );
