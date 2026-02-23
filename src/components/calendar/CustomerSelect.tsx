@@ -99,7 +99,7 @@ export const CustomerSelect: React.FC<CustomerSelectProps> = ({ value, onChange 
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
+        <PopoverContent className="w-full p-0 z-[9999] pointer-events-auto" align="start">
           <Command value={search} onValueChange={setSearch}>
             <CommandInput placeholder="Search by last name..." />
             <CommandList ref={commandListRef} className="max-h-[200px] overflow-y-auto">
