@@ -41,7 +41,7 @@ export const DateTimeSelect: React.FC<DateTimeSelectProps> = ({
               {date ? format(date, "PPP") : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent className="w-auto p-0 z-[9999] pointer-events-auto" align="start">
             <Calendar
               mode="single"
               selected={date}
@@ -65,7 +65,7 @@ export const DateTimeSelect: React.FC<DateTimeSelectProps> = ({
           <SelectTrigger>
             <SelectValue placeholder="Select a time" />
           </SelectTrigger>
-          <SelectContent className="max-h-[300px] overflow-y-auto">
+          <SelectContent className="max-h-[300px] overflow-y-auto z-[9999] pointer-events-auto">
             {TIME_SLOTS.map(timeSlot => (
               <SelectItem key={timeSlot} value={timeSlot}>
                 {timeSlot}
