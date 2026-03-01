@@ -95,40 +95,44 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('Normalized phone:', normalizedPhone);
 
-    // Find customer by phone number using direct query with multiple format matching
-    // This avoids the 1000-row default limit issue when fetching all customers
-    const { data: matchedCustomers, error: customerError } = await supabase
-      .from('customers')
-      .select('id, first_name, phone, sms_opt_in, user_id')
-      .or(`phone.eq.${normalizedPhone},phone.eq.${normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')},phone.eq.${normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')},phone.eq.+1${normalizedPhone},phone.eq.1${normalizedPhone}`)
-      .limit(1);
+    // Find customer by phone number - use RPC or direct query
+    // Build multiple phone format variations for matching
+    const phoneFormats = [
+      normalizedPhone, // 5208694328
+      normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3'), // 520 869 4328
+      normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3'), // 520-869-4328
+      normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3'), // (520) 869-4328
+      normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1.$2.$3'), // 520.869.4328
+    ];
+    
+    console.log('Searching for phone formats:', phoneFormats);
+    
+    let customer: any = null;
+    let customerError: any = null;
 
-    if (customerError) {
-      console.error('Error finding customer:', customerError);
-      return new Response('Error processing message', { status: 500, headers: corsHeaders });
+    // Try each format directly
+    for (const fmt of phoneFormats) {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, first_name, phone, sms_opt_in, user_id')
+        .eq('phone', fmt)
+        .limit(1);
+      
+      if (error) {
+        console.error('Error querying with format', fmt, ':', error);
+        customerError = error;
+        continue;
+      }
+      
+      if (data && data.length > 0) {
+        customer = data[0];
+        console.log('Found customer with format:', fmt);
+        break;
+      }
     }
 
-    let customer = matchedCustomers?.[0] || null;
-
-    // Fallback: if direct query didn't match, do a broader search
-    if (!customer) {
-      console.log('Direct query found no match, trying broader search...');
-      const { data: allCustomers, error: fallbackError, count } = await supabase
-        .from('customers')
-        .select('id, first_name, phone, sms_opt_in, user_id', { count: 'exact' })
-        .not('phone', 'is', null)
-        .limit(5000);
-
-      console.log('Fallback search returned:', allCustomers?.length, 'customers, count:', count, 'error:', fallbackError);
-
-      if (!fallbackError && allCustomers) {
-        customer = allCustomers.find(c => {
-          const customerNormalized = c.phone!.replace(/\D/g, '');
-          return customerNormalized === normalizedPhone || 
-                 customerNormalized === `1${normalizedPhone}` ||
-                 `1${customerNormalized}` === normalizedPhone;
-        }) || null;
-      }
+    if (customerError && !customer) {
+      console.error('All phone queries failed:', customerError);
     }
 
     console.log('Found customer:', customer ? `${customer.first_name} (${customer.id})` : 'none');
