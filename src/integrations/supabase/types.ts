@@ -594,8 +594,10 @@ export type Database = {
           phone: string | null
           phone_verified: boolean | null
           pima_county_resident: boolean | null
+          previous_email: string | null
           previous_first_name: string | null
           previous_last_name: string | null
+          previous_phone: string | null
           sms_opt_in: boolean | null
           sms_opt_in_date: string | null
           state: string | null
@@ -633,8 +635,10 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean | null
           pima_county_resident?: boolean | null
+          previous_email?: string | null
           previous_first_name?: string | null
           previous_last_name?: string | null
+          previous_phone?: string | null
           sms_opt_in?: boolean | null
           sms_opt_in_date?: string | null
           state?: string | null
@@ -672,8 +676,10 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean | null
           pima_county_resident?: boolean | null
+          previous_email?: string | null
           previous_first_name?: string | null
           previous_last_name?: string | null
+          previous_phone?: string | null
           sms_opt_in?: boolean | null
           sms_opt_in_date?: string | null
           state?: string | null

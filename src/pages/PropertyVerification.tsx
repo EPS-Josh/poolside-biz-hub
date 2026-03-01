@@ -1226,14 +1226,18 @@ export default function PropertyVerification() {
         .update({
           previous_first_name: matchingCustomer.first_name,
           previous_last_name: matchingCustomer.last_name,
+          previous_email: matchingCustomer.email || null,
+          previous_phone: matchingCustomer.phone || null,
           first_name: firstName,
           last_name: lastName,
+          email: null,
+          phone: null,
           owner_changed_date: new Date().toISOString(),
           owner_changed_by: user.id,
           owner_verified_at: new Date().toISOString(),
           owner_verified_by: user.id,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', matchingCustomer.id);
 
       if (error) throw error;
@@ -1940,8 +1944,10 @@ export default function PropertyVerification() {
                         {customer.address || 'No address on file'}
                       </div>
                       {statsDialogFilter === 'not_original_owner' && customer.previous_first_name && (
-                        <div className="text-xs text-muted-foreground">
-                          Previous: {customer.previous_first_name} {customer.previous_last_name}
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          <div>Previous: {customer.previous_first_name} {customer.previous_last_name}</div>
+                          {(customer as any).previous_email && <div>Email: {(customer as any).previous_email}</div>}
+                          {(customer as any).previous_phone && <div>Phone: {(customer as any).previous_phone}</div>}
                         </div>
                       )}
                     </div>
