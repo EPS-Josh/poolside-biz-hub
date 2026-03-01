@@ -402,6 +402,18 @@ const CustomerDetails = () => {
                           })}
                         </p>
                       </div>
+                      {(customer as any).previous_email && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Previous Email</p>
+                          <p className="font-medium">{(customer as any).previous_email}</p>
+                        </div>
+                      )}
+                      {(customer as any).previous_phone && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-1">Previous Phone</p>
+                          <p className="font-medium">{(customer as any).previous_phone}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="mt-3 pt-3 border-t border-muted">
                       <p className="text-sm text-muted-foreground">
