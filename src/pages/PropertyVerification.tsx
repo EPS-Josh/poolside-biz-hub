@@ -66,6 +66,7 @@ export default function PropertyVerification() {
   const [pendingCustomer, setPendingCustomer] = useState<any>(null);
   const [updatingMailingFor, setUpdatingMailingFor] = useState<string | null>(null);
   const [showSkippedRecords, setShowSkippedRecords] = useState(false);
+  const [statsDialogFilter, setStatsDialogFilter] = useState<'total' | 'not_original_owner' | 'not_verified' | null>(null);
 
   // Filter customers - main list only shows Pima County residents
   const pimaCountyCustomers = customers.filter(customer => customer.pima_county_resident !== false);
@@ -1305,6 +1306,7 @@ export default function PropertyVerification() {
                 title="Total Customers"
                 value={customers.length}
                 icon={Users}
+                onClick={() => setStatsDialogFilter('total')}
               />
               <MetricsCard
                 title="Customers Verified"
@@ -1316,11 +1318,13 @@ export default function PropertyVerification() {
                 title="Not Original Owner"
                 value={customers.filter(c => c.previous_first_name || c.previous_last_name).length}
                 icon={UserX}
+                onClick={() => setStatsDialogFilter('not_original_owner')}
               />
               <MetricsCard
                 title="Not Verified"
                 value={customers.filter(c => !c.owner_verified_at).length}
                 icon={UserSearch}
+                onClick={() => setStatsDialogFilter('not_verified')}
               />
             </div>
           </div>
@@ -1898,6 +1902,64 @@ export default function PropertyVerification() {
 
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowSkippedRecords(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          {/* Customer Stats Dialog */}
+          <Dialog open={!!statsDialogFilter} onOpenChange={(open) => !open && setStatsDialogFilter(null)}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {statsDialogFilter === 'total' && 'All Customers'}
+                  {statsDialogFilter === 'not_original_owner' && 'Not Original Owner'}
+                  {statsDialogFilter === 'not_verified' && 'Not Verified Customers'}
+                </DialogTitle>
+                <DialogDescription>
+                  {statsDialogFilter === 'total' && `${customers.length} total customers`}
+                  {statsDialogFilter === 'not_original_owner' && `${customers.filter(c => c.previous_first_name || c.previous_last_name).length} customers with a previous owner on record`}
+                  {statsDialogFilter === 'not_verified' && `${customers.filter(c => !c.owner_verified_at).length} customers not yet verified`}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                {(statsDialogFilter === 'total' ? customers :
+                  statsDialogFilter === 'not_original_owner' ? customers.filter(c => c.previous_first_name || c.previous_last_name) :
+                  statsDialogFilter === 'not_verified' ? customers.filter(c => !c.owner_verified_at) :
+                  []
+                ).map((customer) => (
+                  <div
+                    key={customer.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        {customer.first_name} {customer.last_name}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {customer.address || 'No address on file'}
+                      </div>
+                      {statsDialogFilter === 'not_original_owner' && customer.previous_first_name && (
+                        <div className="text-xs text-muted-foreground">
+                          Previous: {customer.previous_first_name} {customer.previous_last_name}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setStatsDialogFilter(null);
+                        navigate(`/customer/${customer.id}`);
+                      }}
+                    >
+                      View
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setStatsDialogFilter(null)}>
                   Close
                 </Button>
               </DialogFooter>
