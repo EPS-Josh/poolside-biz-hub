@@ -93,33 +93,41 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('Normalized phone:', normalizedPhone);
 
-    // Find customer by phone number - search using multiple formats
-    // Database may store phones as "520 904 7410", "520-904-7410", "5209047410", etc.
-    const { data: allCustomers, error: customerError } = await supabase
+    // Find customer by phone number using direct query with multiple format matching
+    // This avoids the 1000-row default limit issue when fetching all customers
+    const { data: matchedCustomers, error: customerError } = await supabase
       .from('customers')
-      .select('id, first_name, phone, sms_opt_in, user_id');
+      .select('id, first_name, phone, sms_opt_in, user_id')
+      .or(`phone.eq.${normalizedPhone},phone.eq.${normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')},phone.eq.${normalizedPhone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')},phone.eq.+1${normalizedPhone},phone.eq.1${normalizedPhone}`)
+      .limit(1);
 
     if (customerError) {
       console.error('Error finding customer:', customerError);
       return new Response('Error processing message', { status: 500, headers: corsHeaders });
     }
 
-    // Find customer by comparing normalized phone numbers
-    const customer = allCustomers?.find(c => {
-      if (!c.phone) return false;
-      const customerNormalized = c.phone.replace(/\D/g, '');
-      // Handle both with and without country code
-      return customerNormalized === normalizedPhone || 
-             customerNormalized === `1${normalizedPhone}` ||
-             `1${customerNormalized}` === normalizedPhone;
-    });
+    let customer = matchedCustomers?.[0] || null;
+
+    // Fallback: if direct query didn't match, do a broader search
+    if (!customer) {
+      console.log('Direct query found no match, trying broader search...');
+      const { data: allCustomers, error: fallbackError } = await supabase
+        .from('customers')
+        .select('id, first_name, phone, sms_opt_in, user_id')
+        .not('phone', 'is', null)
+        .limit(5000);
+
+      if (!fallbackError && allCustomers) {
+        customer = allCustomers.find(c => {
+          const customerNormalized = c.phone!.replace(/\D/g, '');
+          return customerNormalized === normalizedPhone || 
+                 customerNormalized === `1${normalizedPhone}` ||
+                 `1${customerNormalized}` === normalizedPhone;
+        }) || null;
+      }
+    }
 
     console.log('Found customer:', customer ? `${customer.first_name} (${customer.id})` : 'none');
-
-    if (customerError) {
-      console.error('Error finding customer:', customerError);
-      return new Response('Error processing message', { status: 500, headers: corsHeaders });
-    }
 
     let responseMessage = '';
 
