@@ -74,7 +74,9 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log('Twilio signature validated successfully');
     
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
 
     // Parse incoming SMS data from Twilio
     const from = params['From']; // Customer's phone number
@@ -111,11 +113,13 @@ const handler = async (req: Request): Promise<Response> => {
     // Fallback: if direct query didn't match, do a broader search
     if (!customer) {
       console.log('Direct query found no match, trying broader search...');
-      const { data: allCustomers, error: fallbackError } = await supabase
+      const { data: allCustomers, error: fallbackError, count } = await supabase
         .from('customers')
-        .select('id, first_name, phone, sms_opt_in, user_id')
+        .select('id, first_name, phone, sms_opt_in, user_id', { count: 'exact' })
         .not('phone', 'is', null)
         .limit(5000);
+
+      console.log('Fallback search returned:', allCustomers?.length, 'customers, count:', count, 'error:', fallbackError);
 
       if (!fallbackError && allCustomers) {
         customer = allCustomers.find(c => {
