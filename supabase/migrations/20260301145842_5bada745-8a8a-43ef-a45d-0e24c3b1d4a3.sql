@@ -1,0 +1,1 @@
+UPDATE customers SET sms_opt_in = true, sms_opt_in_date = now(), phone_verified = true WHERE id = '965c9f50-e059-4ca6-8d57-8112138ad02d';
