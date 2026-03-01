@@ -208,16 +208,15 @@ const handler = async (req: Request): Promise<Response> => {
     else {
       console.log(`Received non-keyword message from ${from}: ${body}`);
       // Log the incoming message for staff to review
-      if (customer) {
-        await supabase.from('sms_logs').insert({
-          user_id: customer.user_id,
-          customer_id: customer.id,
-          phone_number: from,
-          message_content: `INBOUND: ${body}`,
-          status: 'received',
-          message_sid: messageSid
-        });
-      }
+      const logUserId = customer?.user_id || '8d336e89-2638-4474-8d2a-c7b20507d227'; // fallback to admin
+      await supabase.from('sms_logs').insert({
+        user_id: logUserId,
+        customer_id: customer?.id || null,
+        phone_number: from,
+        message_content: `INBOUND: ${body}`,
+        status: 'received',
+        message_sid: messageSid
+      });
       
       // Return empty TwiML (no auto-response)
       return new Response(
@@ -229,17 +228,16 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Log the interaction
-    if (customer) {
-      await supabase.from('sms_logs').insert({
-        user_id: customer.user_id,
-        customer_id: customer.id,
-        phone_number: from,
-        message_content: `INBOUND: ${body}`,
-        status: 'received',
-        message_sid: messageSid
-      });
-    }
+    // Log the interaction (always log, even if no customer match)
+    const logUserId = customer?.user_id || '8d336e89-2638-4474-8d2a-c7b20507d227'; // fallback to admin
+    await supabase.from('sms_logs').insert({
+      user_id: logUserId,
+      customer_id: customer?.id || null,
+      phone_number: from,
+      message_content: `INBOUND: ${body}`,
+      status: 'received',
+      message_sid: messageSid
+    });
 
     // Return TwiML response to send message back to customer
     // Use escapeXml to ensure special characters don't break XML parsing
