@@ -297,12 +297,8 @@ export const SplashPhotoManager: React.FC = () => {
     }
   };
 
-  const filteredCustomerPhotos = customerPhotos.filter(p => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    const name = p.customers ? `${p.customers.first_name} ${p.customers.last_name}`.toLowerCase() : '';
-    return name.includes(term) || (p.description || '').toLowerCase().includes(term) || p.file_name.toLowerCase().includes(term);
-  });
+  // Photos are already filtered server-side
+  const filteredCustomerPhotos = customerPhotos;
 
   return (
     <>
@@ -423,7 +419,7 @@ export const SplashPhotoManager: React.FC = () => {
           <Input
             placeholder="Search by customer name or description..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
           />
           <ScrollArea className="h-[400px]">
             {loadingCustomerPhotos ? (
