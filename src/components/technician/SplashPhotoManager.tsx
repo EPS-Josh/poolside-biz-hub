@@ -170,23 +170,73 @@ export const SplashPhotoManager: React.FC = () => {
     setSelectedIds(new Set());
     setSearchTerm('');
     setLoadingCustomerPhotos(true);
+    await fetchCustomerPhotos('');
+    setLoadingCustomerPhotos(false);
+  };
 
-    const { data, error } = await supabase
+  const fetchCustomerPhotos = async (term: string) => {
+    let query = supabase
       .from('customer_photos')
       .select('id, file_path, file_name, description, customer_id, customers(first_name, last_name)')
       .order('created_at', { ascending: false })
       .limit(200);
 
+    if (term.trim()) {
+      // Search by file_name or description on the photos table
+      query = query.or(`file_name.ilike.%${term}%,description.ilike.%${term}%`);
+    }
+
+    const { data, error } = await query;
+
     if (!error && data) {
+      let results = data as any[];
+      // Also filter by customer name client-side since we can't ilike on joined table
+      if (term.trim()) {
+        const lowerTerm = term.toLowerCase();
+        // Include photos that matched the DB filter OR match customer name
+        const allData = await supabase
+          .from('customer_photos')
+          .select('id, file_path, file_name, description, customer_id, customers(first_name, last_name)')
+          .order('created_at', { ascending: false })
+          .limit(1000);
+        
+        if (!allData.error && allData.data) {
+          const nameMatches = (allData.data as any[]).filter(p => {
+            if (!p.customers) return false;
+            const name = `${p.customers.first_name} ${p.customers.last_name}`.toLowerCase();
+            return name.includes(lowerTerm);
+          });
+          // Merge, deduplicate
+          const ids = new Set(results.map(r => r.id));
+          for (const m of nameMatches) {
+            if (!ids.has(m.id)) {
+              results.push(m);
+              ids.add(m.id);
+            }
+          }
+        }
+      }
+
       const photosWithUrls = await Promise.all(
-        data.map(async (p: any) => {
+        results.map(async (p: any) => {
           const url = await getCustomerPhotoUrl(p.file_path);
           return { ...p, signedUrl: url };
         })
       );
       setCustomerPhotos(photosWithUrls);
     }
-    setLoadingCustomerPhotos(false);
+  };
+
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(async () => {
+      setLoadingCustomerPhotos(true);
+      await fetchCustomerPhotos(value);
+      setLoadingCustomerPhotos(false);
+    }, 400);
   };
 
   const toggleSelection = (id: string) => {
@@ -247,12 +297,8 @@ export const SplashPhotoManager: React.FC = () => {
     }
   };
 
-  const filteredCustomerPhotos = customerPhotos.filter(p => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    const name = p.customers ? `${p.customers.first_name} ${p.customers.last_name}`.toLowerCase() : '';
-    return name.includes(term) || (p.description || '').toLowerCase().includes(term) || p.file_name.toLowerCase().includes(term);
-  });
+  // Photos are already filtered server-side
+  const filteredCustomerPhotos = customerPhotos;
 
   return (
     <>
@@ -373,7 +419,7 @@ export const SplashPhotoManager: React.FC = () => {
           <Input
             placeholder="Search by customer name or description..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
           />
           <ScrollArea className="h-[400px]">
             {loadingCustomerPhotos ? (
