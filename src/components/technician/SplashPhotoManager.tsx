@@ -275,9 +275,10 @@ export const SplashPhotoManager: React.FC = () => {
     try {
       const selected = customerPhotos.filter(p => selectedIds.has(p.id));
       for (const photo of selected) {
+        const relativePath = extractStoragePath(photo.file_path);
         const { data: fileData, error: downloadError } = await supabase.storage
           .from('customer-photos')
-          .download(photo.file_path);
+          .download(relativePath);
         if (downloadError || !fileData) throw downloadError || new Error('Download failed');
 
         // Apply watermark
