@@ -17,6 +17,7 @@ import { useTechnicianAppointments, TechnicianAppointment } from '@/hooks/useTec
 import { TechnicianAppointmentCard } from '@/components/technician/TechnicianAppointmentCard';
 import { TechnicianServiceRecordSheet } from '@/components/technician/TechnicianServiceRecordSheet';
 import { OfflineSyncBanner } from '@/components/technician/OfflineSyncBanner';
+import { SplashPhotoManager } from '@/components/technician/SplashPhotoManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -264,6 +265,9 @@ const TechnicianDashboard: React.FC = () => {
             />
           ))}
         </div>
+
+        {/* Splash Photo Manager */}
+        <SplashPhotoManager />
 
         {/* Offline cache info */}
         {isOffline && lastCachedAt && (

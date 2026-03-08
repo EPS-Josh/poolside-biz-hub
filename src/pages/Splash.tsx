@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, Calendar, Shield, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ServiceRequestForm } from '@/components/ServiceRequestForm';
+import { SplashPhotoCarousel } from '@/components/SplashPhotoCarousel';
 
 const Splash = () => {
   const navigate = useNavigate();
@@ -159,11 +160,7 @@ const Splash = () => {
                 </div>
               </div>
               <div className="relative">
-                <img 
-                  src="/lovable-uploads/4b8a1bc2-18f7-41c2-8f2c-7dd1d22ec65a.png"
-                  alt="Tucson infinity pool with desert background – Finest Pools & Spas"
-                  className="rounded-lg shadow-lg"
-                />
+                <SplashPhotoCarousel />
               </div>
             </div>
           </div>
