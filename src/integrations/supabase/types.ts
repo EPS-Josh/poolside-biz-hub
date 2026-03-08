@@ -1583,6 +1583,36 @@ export type Database = {
           },
         ]
       }
+      splash_photos: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number | null
+          file_name: string
+          file_path: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          file_name: string
+          file_path: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       supplier_prices: {
         Row: {
           created_at: string | null
