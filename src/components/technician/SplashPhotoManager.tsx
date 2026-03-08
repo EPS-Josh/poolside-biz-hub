@@ -69,8 +69,17 @@ export const SplashPhotoManager: React.FC = () => {
     return data.publicUrl;
   };
 
+  const extractStoragePath = (filePath: string) => {
+    // file_path may be a full URL or a relative path
+    const marker = '/customer-photos/';
+    const idx = filePath.indexOf(marker);
+    if (idx !== -1) return filePath.substring(idx + marker.length);
+    return filePath;
+  };
+
   const getCustomerPhotoUrl = async (filePath: string) => {
-    const { data } = await supabase.storage.from('customer-photos').createSignedUrl(filePath, 3600);
+    const relativePath = extractStoragePath(filePath);
+    const { data } = await supabase.storage.from('customer-photos').createSignedUrl(relativePath, 3600);
     return data?.signedUrl || '';
   };
 
