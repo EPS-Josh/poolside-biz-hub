@@ -175,46 +175,54 @@ export const SplashPhotoManager: React.FC = () => {
   };
 
   const fetchCustomerPhotos = async (term: string) => {
-    let query = supabase
-      .from('customer_photos')
-      .select('id, file_path, file_name, description, customer_id, customers(first_name, last_name)')
-      .order('created_at', { ascending: false })
-      .limit(200);
+    try {
+      let results: any[] = [];
 
-    if (term.trim()) {
-      // Search by file_name or description on the photos table
-      query = query.or(`file_name.ilike.%${term}%,description.ilike.%${term}%`);
-    }
-
-    const { data, error } = await query;
-
-    if (!error && data) {
-      let results = data as any[];
-      // Also filter by customer name client-side since we can't ilike on joined table
       if (term.trim()) {
-        const lowerTerm = term.toLowerCase();
-        // Include photos that matched the DB filter OR match customer name
-        const allData = await supabase
+        // First, find customer IDs matching the search name
+        const { data: matchingCustomers } = await supabase
+          .from('customers')
+          .select('id')
+          .or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%`);
+
+        const matchingCustomerIds = (matchingCustomers || []).map(c => c.id);
+
+        // Fetch photos by matching customer IDs
+        if (matchingCustomerIds.length > 0) {
+          const { data: customerNamePhotos } = await supabase
+            .from('customer_photos')
+            .select('id, file_path, file_name, description, customer_id, customers(first_name, last_name)')
+            .in('customer_id', matchingCustomerIds)
+            .order('created_at', { ascending: false })
+            .limit(200);
+          if (customerNamePhotos) results = customerNamePhotos as any[];
+        }
+
+        // Also fetch photos matching file_name or description
+        const { data: textMatchPhotos } = await supabase
           .from('customer_photos')
           .select('id, file_path, file_name, description, customer_id, customers(first_name, last_name)')
+          .or(`file_name.ilike.%${term}%,description.ilike.%${term}%`)
           .order('created_at', { ascending: false })
-          .limit(1000);
-        
-        if (!allData.error && allData.data) {
-          const nameMatches = (allData.data as any[]).filter(p => {
-            if (!p.customers) return false;
-            const name = `${p.customers.first_name} ${p.customers.last_name}`.toLowerCase();
-            return name.includes(lowerTerm);
-          });
-          // Merge, deduplicate
-          const ids = new Set(results.map(r => r.id));
-          for (const m of nameMatches) {
-            if (!ids.has(m.id)) {
-              results.push(m);
-              ids.add(m.id);
+          .limit(200);
+
+        if (textMatchPhotos) {
+          const existingIds = new Set(results.map(r => r.id));
+          for (const p of textMatchPhotos) {
+            if (!existingIds.has(p.id)) {
+              results.push(p);
+              existingIds.add(p.id);
             }
           }
         }
+      } else {
+        // No search term - load recent photos
+        const { data } = await supabase
+          .from('customer_photos')
+          .select('id, file_path, file_name, description, customer_id, customers(first_name, last_name)')
+          .order('created_at', { ascending: false })
+          .limit(200);
+        if (data) results = data as any[];
       }
 
       const photosWithUrls = await Promise.all(
@@ -224,6 +232,8 @@ export const SplashPhotoManager: React.FC = () => {
         })
       );
       setCustomerPhotos(photosWithUrls);
+    } catch (err) {
+      console.error('Error fetching customer photos:', err);
     }
   };
 
