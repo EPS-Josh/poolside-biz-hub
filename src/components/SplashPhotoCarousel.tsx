@@ -9,6 +9,8 @@ interface SplashPhoto {
 }
 
 const FALLBACK_IMAGE = '/lovable-uploads/4b8a1bc2-18f7-41c2-8f2c-7dd1d22ec65a.png';
+const LOGO_LIGHT = '/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png';
+const LOGO_DARK = '/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png';
 const ROTATE_INTERVAL = 5000;
 
 export const SplashPhotoCarousel: React.FC = () => {
@@ -61,6 +63,8 @@ export const SplashPhotoCarousel: React.FC = () => {
     );
   }
 
+  const currentPhoto = photos[currentIndex];
+
   return (
     <div className="relative rounded-lg shadow-lg overflow-hidden aspect-[4/3]">
       {photos.map((photo, index) => (
@@ -74,9 +78,28 @@ export const SplashPhotoCarousel: React.FC = () => {
           )}
         />
       ))}
+
+      {/* Company logo overlay - bottom right */}
+      <div className="absolute bottom-3 right-3 pointer-events-none">
+        <img
+          src={LOGO_DARK}
+          alt="Finest Pools & Spas"
+          className="h-8 w-auto opacity-70 drop-shadow-lg"
+        />
+      </div>
+
+      {/* Caption overlay - bottom left */}
+      {currentPhoto?.description && (
+        <div className="absolute bottom-0 left-0 right-20 bg-gradient-to-t from-black/70 to-transparent px-4 py-3 pointer-events-none">
+          <p className="text-white text-sm font-medium drop-shadow-md">
+            {currentPhoto.description}
+          </p>
+        </div>
+      )}
+
       {/* Dots indicator */}
       {photos.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
           {photos.map((_, i) => (
             <button
               key={i}

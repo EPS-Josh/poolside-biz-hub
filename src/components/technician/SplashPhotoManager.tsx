@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ImagePlus, Trash2, Loader2, Image as ImageIcon, FolderOpen, Check } from 'lucide-react';
+import { ImagePlus, Trash2, Loader2, Image as ImageIcon, FolderOpen, Check, Pencil } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompression';
+import { applyWatermark } from '@/utils/watermarkUtils';
 import { cn } from '@/lib/utils';
 
 interface SplashPhoto {
@@ -27,6 +28,7 @@ interface CustomerPhoto {
   description: string | null;
   customer_id: string;
   customers?: { first_name: string; last_name: string } | null;
+  signedUrl?: string;
 }
 
 export const SplashPhotoManager: React.FC = () => {
@@ -36,6 +38,11 @@ export const SplashPhotoManager: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Caption editing
+  const [editingCaptionId, setEditingCaptionId] = useState<string | null>(null);
+  const [captionValue, setCaptionValue] = useState('');
+  const [savingCaption, setSavingCaption] = useState(false);
 
   // Customer photos picker state
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -77,6 +84,7 @@ export const SplashPhotoManager: React.FC = () => {
         let fileToUpload: File = file;
         if (file.type.startsWith('image/')) {
           fileToUpload = await compressImage(file);
+          fileToUpload = await applyWatermark(fileToUpload);
         }
 
         const ext = fileToUpload.name.split('.').pop();
@@ -97,7 +105,7 @@ export const SplashPhotoManager: React.FC = () => {
         if (dbError) throw dbError;
       }
 
-      toast({ title: 'Photos uploaded', description: 'Splash page photos updated.' });
+      toast({ title: 'Photos uploaded', description: 'Splash page photos updated with watermark.' });
       fetchPhotos();
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -131,6 +139,31 @@ export const SplashPhotoManager: React.FC = () => {
     }
   };
 
+  // Caption editing
+  const startEditCaption = (photo: SplashPhoto) => {
+    setEditingCaptionId(photo.id);
+    setCaptionValue(photo.description || '');
+  };
+
+  const saveCaption = async () => {
+    if (!editingCaptionId) return;
+    setSavingCaption(true);
+    try {
+      const { error } = await supabase
+        .from('splash_photos')
+        .update({ description: captionValue || null })
+        .eq('id', editingCaptionId);
+      if (error) throw error;
+      toast({ title: 'Caption saved' });
+      setEditingCaptionId(null);
+      fetchPhotos();
+    } catch (err: any) {
+      toast({ title: 'Failed to save caption', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingCaption(false);
+    }
+  };
+
   // Open picker and load customer photos
   const openCustomerPhotoPicker = async () => {
     setPickerOpen(true);
@@ -145,7 +178,6 @@ export const SplashPhotoManager: React.FC = () => {
       .limit(200);
 
     if (!error && data) {
-      // Generate signed URLs for previews
       const photosWithUrls = await Promise.all(
         data.map(async (p: any) => {
           const url = await getCustomerPhotoUrl(p.file_path);
@@ -166,7 +198,7 @@ export const SplashPhotoManager: React.FC = () => {
     });
   };
 
-  // Copy selected customer photos to splash-photos bucket
+  // Copy selected customer photos to splash-photos bucket (with watermark)
   const handleAddFromCustomer = async () => {
     if (selectedIds.size === 0) return;
     setAddingFromCustomer(true);
@@ -174,21 +206,22 @@ export const SplashPhotoManager: React.FC = () => {
     try {
       const selected = customerPhotos.filter(p => selectedIds.has(p.id));
       for (const photo of selected) {
-        // Download from customer-photos bucket
         const { data: fileData, error: downloadError } = await supabase.storage
           .from('customer-photos')
           .download(photo.file_path);
         if (downloadError || !fileData) throw downloadError || new Error('Download failed');
 
-        // Upload to splash-photos bucket
+        // Apply watermark
         const ext = photo.file_name.split('.').pop() || 'jpg';
+        const tempFile = new File([fileData], photo.file_name, { type: fileData.type || 'image/jpeg' });
+        const watermarked = await applyWatermark(tempFile);
+
         const newPath = `${crypto.randomUUID()}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from('splash-photos')
-          .upload(newPath, fileData);
+          .upload(newPath, watermarked);
         if (uploadError) throw uploadError;
 
-        // Insert DB record
         const customerName = photo.customers
           ? `${photo.customers.first_name} ${photo.customers.last_name}`
           : '';
@@ -203,7 +236,7 @@ export const SplashPhotoManager: React.FC = () => {
         if (dbError) throw dbError;
       }
 
-      toast({ title: `${selectedIds.size} photo(s) added to splash page` });
+      toast({ title: `${selectedIds.size} photo(s) added with watermark` });
       setPickerOpen(false);
       fetchPhotos();
     } catch (err: any) {
@@ -229,6 +262,9 @@ export const SplashPhotoManager: React.FC = () => {
             <ImageIcon className="h-4 w-4" />
             Splash Page Photos
           </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Photos are automatically watermarked with the company name &amp; logo.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Upload buttons */}
@@ -272,14 +308,42 @@ export const SplashPhotoManager: React.FC = () => {
               No splash photos yet. The default image will be shown.
             </p>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {photos.map((photo) => (
-                <div key={photo.id} className="relative group rounded-md overflow-hidden aspect-square">
-                  <img
-                    src={getPublicUrl(photo.file_path)}
-                    alt={photo.description || photo.file_name}
-                    className="w-full h-full object-cover"
-                  />
+                <div key={photo.id} className="relative group rounded-md overflow-hidden border border-border">
+                  <div className="aspect-square">
+                    <img
+                      src={getPublicUrl(photo.file_path)}
+                      alt={photo.description || photo.file_name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* Caption display/edit */}
+                  <div className="p-1.5 bg-card">
+                    {editingCaptionId === photo.id ? (
+                      <div className="flex gap-1">
+                        <Input
+                          value={captionValue}
+                          onChange={e => setCaptionValue(e.target.value)}
+                          placeholder="Add caption..."
+                          className="h-7 text-xs"
+                          onKeyDown={e => e.key === 'Enter' && saveCaption()}
+                        />
+                        <Button size="sm" className="h-7 px-2 text-xs" onClick={saveCaption} disabled={savingCaption}>
+                          {savingCaption ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => startEditCaption(photo)}
+                        className="w-full flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+                      >
+                        <Pencil className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{photo.description || 'Add caption...'}</span>
+                      </button>
+                    )}
+                  </div>
+                  {/* Delete button */}
                   <Button
                     variant="destructive"
                     size="icon"
