@@ -51,6 +51,7 @@ import HistoricalMileage from "./pages/HistoricalMileage";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import DailyRoutes from "./pages/DailyRoutes";
 import PhotoGallery from "./pages/PhotoGallery";
+import SplashPhotos from "./pages/SplashPhotos";
 
 const queryClient = new QueryClient();
 
@@ -122,6 +123,7 @@ const App = () => (
             <Route path="/technician" element={<TechnicianDashboard />} />
             <Route path="/daily-routes" element={<DailyRoutes />} />
             <Route path="/photo-gallery" element={<PhotoGallery />} />
+            <Route path="/splash-photos" element={<SplashPhotos />} />
             <Route path="/cleaning-pricing" element={<CleaningPricing />} />
             <Route path="/accountant" element={
               <ProtectedRoute excludedRoles={['guest']}>

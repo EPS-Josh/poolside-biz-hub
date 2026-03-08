@@ -232,6 +232,14 @@ const getDefaultMenuSections = (): MenuSection[] => [
         color: "bg-amber-500",
         route: '/mileage-calculator',
       },
+      {
+        id: 'splash-photos',
+        title: "Splash Page Photos",
+        description: "Manage rotating photos on the splash page",
+        icon: ImageIcon,
+        color: "bg-pink-500",
+        route: '/splash-photos',
+      },
     ]
   }
 ];
