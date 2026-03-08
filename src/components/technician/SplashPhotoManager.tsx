@@ -174,6 +174,24 @@ export const SplashPhotoManager: React.FC = () => {
     }
   };
 
+  // Drag and drop reorder
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination || result.source.index === result.destination.index) return;
+    const reordered = Array.from(photos);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    setPhotos(reordered);
+    try {
+      const updates = reordered.map((photo, index) =>
+        supabase.from('splash_photos').update({ display_order: index }).eq('id', photo.id)
+      );
+      await Promise.all(updates);
+    } catch (err: any) {
+      toast({ title: 'Failed to reorder', description: err.message, variant: 'destructive' });
+      fetchPhotos();
+    }
+  };
+
   // Open picker and load customer photos
   const openCustomerPhotoPicker = async () => {
     setPickerOpen(true);
