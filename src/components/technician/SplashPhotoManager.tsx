@@ -311,7 +311,7 @@ export const SplashPhotoManager: React.FC = () => {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <ScrollArea className="flex-1 min-h-0">
+          <ScrollArea className="h-[400px]">
             {loadingCustomerPhotos ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
