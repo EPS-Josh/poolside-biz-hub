@@ -69,8 +69,17 @@ export const SplashPhotoManager: React.FC = () => {
     return data.publicUrl;
   };
 
+  const extractStoragePath = (filePath: string) => {
+    // file_path may be a full URL or a relative path
+    const marker = '/customer-photos/';
+    const idx = filePath.indexOf(marker);
+    if (idx !== -1) return filePath.substring(idx + marker.length);
+    return filePath;
+  };
+
   const getCustomerPhotoUrl = async (filePath: string) => {
-    const { data } = await supabase.storage.from('customer-photos').createSignedUrl(filePath, 3600);
+    const relativePath = extractStoragePath(filePath);
+    const { data } = await supabase.storage.from('customer-photos').createSignedUrl(relativePath, 3600);
     return data?.signedUrl || '';
   };
 
@@ -266,9 +275,10 @@ export const SplashPhotoManager: React.FC = () => {
     try {
       const selected = customerPhotos.filter(p => selectedIds.has(p.id));
       for (const photo of selected) {
+        const relativePath = extractStoragePath(photo.file_path);
         const { data: fileData, error: downloadError } = await supabase.storage
           .from('customer-photos')
-          .download(photo.file_path);
+          .download(relativePath);
         if (downloadError || !fileData) throw downloadError || new Error('Download failed');
 
         // Apply watermark
