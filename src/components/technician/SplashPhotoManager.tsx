@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ImagePlus, Trash2, Loader2, Image as ImageIcon, FolderOpen, Check, Pencil } from 'lucide-react';
+import { ImagePlus, Trash2, Loader2, Image as ImageIcon, FolderOpen, Check, Pencil, GripVertical } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompression';
 import { applyWatermark } from '@/utils/watermarkUtils';
 import { cn } from '@/lib/utils';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
 interface SplashPhoto {
   id: string;
