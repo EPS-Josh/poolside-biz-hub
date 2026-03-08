@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ImagePlus, Trash2, Loader2, Image as ImageIcon, FolderOpen, Check, Pencil } from 'lucide-react';
+import { ImagePlus, Trash2, Loader2, Image as ImageIcon, FolderOpen, Check, Pencil, GripVertical } from 'lucide-react';
 import { compressImage } from '@/utils/imageCompression';
 import { applyWatermark } from '@/utils/watermarkUtils';
 import { cn } from '@/lib/utils';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
 interface SplashPhoto {
   id: string;
@@ -170,6 +171,24 @@ export const SplashPhotoManager: React.FC = () => {
       toast({ title: 'Failed to save caption', description: err.message, variant: 'destructive' });
     } finally {
       setSavingCaption(false);
+    }
+  };
+
+  // Drag and drop reorder
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination || result.source.index === result.destination.index) return;
+    const reordered = Array.from(photos);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+    setPhotos(reordered);
+    try {
+      const updates = reordered.map((photo, index) =>
+        supabase.from('splash_photos').update({ display_order: index }).eq('id', photo.id)
+      );
+      await Promise.all(updates);
+    } catch (err: any) {
+      toast({ title: 'Failed to reorder', description: err.message, variant: 'destructive' });
+      fetchPhotos();
     }
   };
 
@@ -374,58 +393,86 @@ export const SplashPhotoManager: React.FC = () => {
               No splash photos yet. The default image will be shown.
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {photos.map((photo) => (
-                <div key={photo.id} className="relative group rounded-md overflow-hidden border border-border">
-                  <div className="aspect-square">
-                    <img
-                      src={getPublicUrl(photo.file_path)}
-                      alt={photo.description || photo.file_name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  {/* Caption display/edit */}
-                  <div className="p-1.5 bg-card">
-                    {editingCaptionId === photo.id ? (
-                      <div className="flex gap-1">
-                        <Input
-                          value={captionValue}
-                          onChange={e => setCaptionValue(e.target.value)}
-                          placeholder="Add caption..."
-                          className="h-7 text-xs"
-                          onKeyDown={e => e.key === 'Enter' && saveCaption()}
-                        />
-                        <Button size="sm" className="h-7 px-2 text-xs" onClick={saveCaption} disabled={savingCaption}>
-                          {savingCaption ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
-                        </Button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => startEditCaption(photo)}
-                        className="w-full flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
-                      >
-                        <Pencil className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{photo.description || 'Add caption...'}</span>
-                      </button>
-                    )}
-                  </div>
-                  {/* Delete button */}
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => handleDelete(photo)}
-                    disabled={deletingId === photo.id}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="splash-photos" direction="horizontal">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-3"
                   >
-                    {deletingId === photo.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
+                    {photos.map((photo, index) => (
+                      <Draggable key={photo.id} draggableId={photo.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={cn(
+                              "relative group rounded-md overflow-hidden border border-border",
+                              snapshot.isDragging && "ring-2 ring-primary shadow-lg z-10"
+                            )}
+                          >
+                            <div
+                              {...provided.dragHandleProps}
+                              className="absolute top-1 left-1 z-10 bg-black/50 text-white rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab"
+                            >
+                              <GripVertical className="h-4 w-4" />
+                            </div>
+                            <div className="aspect-square">
+                              <img
+                                src={getPublicUrl(photo.file_path)}
+                                alt={photo.description || photo.file_name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            {/* Caption display/edit */}
+                            <div className="p-1.5 bg-card">
+                              {editingCaptionId === photo.id ? (
+                                <div className="flex gap-1">
+                                  <Input
+                                    value={captionValue}
+                                    onChange={e => setCaptionValue(e.target.value)}
+                                    placeholder="Add caption..."
+                                    className="h-7 text-xs"
+                                    onKeyDown={e => e.key === 'Enter' && saveCaption()}
+                                  />
+                                  <Button size="sm" className="h-7 px-2 text-xs" onClick={saveCaption} disabled={savingCaption}>
+                                    {savingCaption ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+                                  </Button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => startEditCaption(photo)}
+                                  className="w-full flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors text-left"
+                                >
+                                  <Pencil className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">{photo.description || 'Add caption...'}</span>
+                                </button>
+                              )}
+                            </div>
+                            {/* Delete button */}
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDelete(photo)}
+                              disabled={deletingId === photo.id}
+                            >
+                              {deletingId === photo.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3 w-3" />
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           )}
         </CardContent>
       </Card>
