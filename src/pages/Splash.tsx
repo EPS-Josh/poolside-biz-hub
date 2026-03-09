@@ -229,24 +229,29 @@ const Splash = () => {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {[
-                { name: 'Pentair', description: 'Pumps, Filters, Heaters & Automation' },
-                { name: 'A&A Manufacturing', description: 'In-Floor Cleaning Systems' },
-                { name: 'Jandy', description: 'Pool & Spa Equipment' },
-                { name: 'Zodiac', description: 'Pool Equipment & Cleaners' },
-                { name: 'Polaris', description: 'Automatic Pool Cleaners' },
-                { name: 'Caretaker', description: 'In-Floor Cleaning Systems' },
+                { name: 'Pentair', description: 'Pumps, Filters, Heaters & Automation', logo: '/brand-logos/pentair-logo.png' },
+                { name: 'A&A Manufacturing', description: 'In-Floor Cleaning Systems', logo: '/brand-logos/aa-manufacturing-logo.png' },
+                { name: 'Jandy', description: 'Pool & Spa Equipment', logo: '/brand-logos/jandy-logo.png' },
+                { name: 'Zodiac', description: 'Pool Equipment & Cleaners', logo: '/brand-logos/zodiac-logo.png' },
+                { name: 'Polaris', description: 'Automatic Pool Cleaners', logo: '/brand-logos/polaris-logo.png' },
+                { name: 'Caretaker', description: 'In-Floor Cleaning Systems', logo: '/brand-logos/caretaker-logo.png' },
               ].map((brand) => (
                 <div
                   key={brand.name}
                   className="flex flex-col items-center justify-center p-4 rounded-xl bg-background border border-border hover:border-amber-400 hover:shadow-md transition-all text-center"
                 >
-                  <Award className="h-6 w-6 text-amber-500 mb-2" />
+                  <div className="h-16 w-full mb-3 flex items-center justify-center">
+                    <img src={brand.logo} alt={`${brand.name} logo`} className="max-h-full max-w-full object-contain" />
+                  </div>
                   <span className="font-semibold text-foreground text-sm">{brand.name}</span>
                   <span className="text-xs text-muted-foreground mt-1">{brand.description}</span>
                   <Badge variant="secondary" className="mt-2 text-[10px]">Warranty Certified</Badge>
                 </div>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground mt-6 text-center">
+              All logos and trademarks are the property of their respective companies. Finest Pools & Spas is an authorized warranty installer for the above manufacturers.
+            </p>
           </div>
           <div className="bg-card/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center border border-border">
             <h2 className="text-3xl font-bold text-foreground mb-4">
