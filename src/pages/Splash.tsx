@@ -248,8 +248,7 @@ const Splash = () => {
               ))}
             </div>
           </div>
-
-
+          <div className="bg-card/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center border border-border">
             <h2 className="text-3xl font-bold text-foreground mb-4">
               Ready for Crystal Clear Water?
             </h2>
