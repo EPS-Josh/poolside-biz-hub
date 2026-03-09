@@ -212,7 +212,44 @@ const Splash = () => {
             </div>
           </div>
 
-          <div className="bg-card/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center border border-border">
+          {/* Warranty Certifications Section */}
+          <div className="bg-card/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-16 border border-border">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Award className="h-8 w-8 text-amber-500" />
+                <h2 className="text-3xl font-bold text-foreground">
+                  Certified Warranty Installers
+                </h2>
+                <Award className="h-8 w-8 text-amber-500" />
+              </div>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                We are factory-authorized warranty certified installers for the industry's leading manufacturers. 
+                This means professional installation backed by full manufacturer warranties.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {[
+                { name: 'Pentair', description: 'Pumps, Filters, Heaters & Automation' },
+                { name: 'A&A Manufacturing', description: 'In-Floor Cleaning Systems' },
+                { name: 'Jandy', description: 'Pool & Spa Equipment' },
+                { name: 'Zodiac', description: 'Pool Equipment & Cleaners' },
+                { name: 'Polaris', description: 'Automatic Pool Cleaners' },
+                { name: 'Caretaker', description: 'In-Floor Cleaning Systems' },
+              ].map((brand) => (
+                <div
+                  key={brand.name}
+                  className="flex flex-col items-center justify-center p-4 rounded-xl bg-background border border-border hover:border-amber-400 hover:shadow-md transition-all text-center"
+                >
+                  <Award className="h-6 w-6 text-amber-500 mb-2" />
+                  <span className="font-semibold text-foreground text-sm">{brand.name}</span>
+                  <span className="text-xs text-muted-foreground mt-1">{brand.description}</span>
+                  <Badge variant="secondary" className="mt-2 text-[10px]">Warranty Certified</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+
+
             <h2 className="text-3xl font-bold text-foreground mb-4">
               Ready for Crystal Clear Water?
             </h2>
