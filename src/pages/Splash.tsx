@@ -230,7 +230,7 @@ const Splash = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {[
                 { name: 'Pentair', description: 'Pumps, Filters, Heaters & Automation', logo: '/brand-logos/pentair-logo.png' },
-                { name: 'A&A Manufacturing', description: 'In-Floor Cleaning Systems', logo: '/brand-logos/aa-manufacturing-logo.png' },
+                { name: 'A&A Manufacturing', description: 'In-Floor Cleaning Systems', logo: '/brand-logos/aa-manufacturing-logo.webp' },
                 { name: 'Jandy', description: 'Pool & Spa Equipment', logo: '/brand-logos/jandy-logo.png' },
                 { name: 'Zodiac', description: 'Pool Equipment & Cleaners', logo: '/brand-logos/zodiac-logo.png' },
                 { name: 'Polaris', description: 'Automatic Pool Cleaners', logo: '/brand-logos/polaris-logo.png' },
