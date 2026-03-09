@@ -240,7 +240,7 @@ const Splash = () => {
                   key={brand.name}
                   className="flex flex-col items-center justify-center p-4 rounded-xl bg-background border border-border hover:border-amber-400 hover:shadow-md transition-all text-center"
                 >
-                  <div className="h-16 w-full mb-3 flex items-center justify-center">
+                  <div className="h-24 w-full mb-3 flex items-center justify-center">
                     <img src={brand.logo} alt={`${brand.name} logo`} className="max-h-full max-w-full object-contain" />
                   </div>
                   <span className="font-semibold text-foreground text-sm">{brand.name}</span>
