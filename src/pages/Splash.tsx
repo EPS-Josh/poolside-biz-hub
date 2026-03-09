@@ -2,7 +2,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
-import { Users, Calendar, Shield, ArrowRight, Phone, Mail, MapPin } from 'lucide-react';
+import { Users, Calendar, Shield, ArrowRight, Phone, Mail, MapPin, Award } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ServiceRequestForm } from '@/components/ServiceRequestForm';
 import { SplashPhotoCarousel } from '@/components/SplashPhotoCarousel';
