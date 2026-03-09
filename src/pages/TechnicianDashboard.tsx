@@ -266,8 +266,6 @@ const TechnicianDashboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Splash Photo Manager */}
-        <SplashPhotoManager />
 
         {/* Offline cache info */}
         {isOffline && lastCachedAt && (
