@@ -1,0 +1,1 @@
+UPDATE service_records SET customer_id = 'a4daa591-d4f4-4279-bb28-58b0dbb61aeb', updated_at = now() WHERE id = '20885241-b40b-4f82-a068-130be21961f6';
