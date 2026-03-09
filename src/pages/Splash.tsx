@@ -227,7 +227,7 @@ const Splash = () => {
                 <Award className="h-8 w-8 text-amber-500" />
               </div>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                We are factory-authorized warranty certified installers for the industry's leading manufacturers. 
+                We are certified warranty installers for the industry's leading manufacturers. 
                 This means professional installation backed by full manufacturer warranties.
               </p>
             </div>
