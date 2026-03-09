@@ -66,13 +66,19 @@ const Splash = () => {
               <div className="flex-1 flex justify-center items-center">
                 <img 
                   src="/lovable-uploads/7105f4fa-22d9-4992-80aa-e0b6effc3bae.png" 
-                  alt="Finest Pools & Spas LLC Logo" 
+                  alt="Finest Pools & Spas - Professional Pool Service in Tucson, Arizona" 
                   className="h-12 w-auto max-w-lg object-contain dark:hidden"
+                  loading="eager"
+                  width="200"
+                  height="48"
                 />
                 <img 
                   src="/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
-                  alt="Finest Pools & Spas LLC Logo" 
+                  alt="Finest Pools & Spas - Professional Pool Service in Tucson, Arizona" 
                   className="h-12 w-auto max-w-lg object-contain hidden dark:block"
+                  loading="eager"
+                  width="200"
+                  height="48"
                 />
               </div>
               
@@ -88,8 +94,7 @@ const Splash = () => {
 
         {/* Hero Section */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Hero with Pool Image */}
-          <div className="relative rounded-2xl overflow-hidden mb-16">
+          <section aria-label="Hero" className="relative rounded-2xl overflow-hidden mb-16">
             <div 
               className="h-96 bg-cover bg-center relative"
               style={{
@@ -99,12 +104,12 @@ const Splash = () => {
               <div className="absolute inset-0 flex items-center justify-center text-center text-white">
                 <div>
                   <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                    Your Pool,
-                    <span className="text-cyan-400 block">Our Passion</span>
+                    Pool Cleaning &amp; Repair in Tucson, AZ
+                    <span className="text-cyan-400 block">Your Pool, Our Passion</span>
                   </h1>
                   <p className="text-xl mb-8 max-w-3xl mx-auto">
                     Professional pool maintenance services you can trust. 
-                    Serving the community with excellence for over 3 decades.
+                    Serving the Tucson community with excellence for over 35 years.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <ServiceRequestForm>
@@ -126,14 +131,13 @@ const Splash = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* About Section */}
-          <div className="bg-card/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-16 border border-border">
+          <section aria-label="About Finest Pools & Spas" className="bg-card/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 mb-16 border border-border">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-6">
-                  About Finest Pools & Spas
+                  About Finest Pools &amp; Spas
                 </h2>
                 <p className="text-muted-foreground mb-4">
                   For over 35 years, Finest Pools & Spas has been the trusted choice for 
@@ -145,37 +149,37 @@ const Splash = () => {
                   enjoyment, handling everything from routine cleaning to complex equipment repairs 
                   with the highest standards of quality and care.
                 </p>
-                <div className="flex flex-col space-y-3">
+                <address className="not-italic flex flex-col space-y-3">
                   <div className="flex items-center space-x-3">
-                    <Phone className="h-5 w-5 text-blue-600" />
+                    <Phone className="h-5 w-5 text-blue-600" aria-hidden="true" />
                     <a href="tel:+15207283002" className="hover:underline">(520) 728-3002</a>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Mail className="h-5 w-5 text-blue-600" />
-                    <span className="text-foreground">info@finestpoolsandspas.com</span>
+                    <Mail className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                    <a href="mailto:info@finestpoolsandspas.com" className="text-foreground hover:underline">info@finestpoolsandspas.com</a>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-blue-600" />
+                    <MapPin className="h-5 w-5 text-blue-600" aria-hidden="true" />
                     <span className="text-foreground">Serving the Greater Tucson Area</span>
                   </div>
-                </div>
+                </address>
               </div>
               <div className="relative">
                 <SplashPhotoCarousel />
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="mb-16">
+          <section aria-label="Our Services" className="mb-16">
             <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-              Our Professional Services
+              Our Professional Pool Services in Tucson
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {services.map((service, index) => (
                 <Card key={index} className="text-center hover:shadow-lg transition-shadow bg-card/90 backdrop-blur-sm">
                   <CardHeader>
                     <div className="mx-auto w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
-                      <service.icon className="h-6 w-6 text-blue-600" />
+                      <service.icon className="h-6 w-6 text-blue-600" aria-hidden="true" />
                     </div>
                     <CardTitle className="text-lg">{service.title}</CardTitle>
                   </CardHeader>
@@ -185,7 +189,7 @@ const Splash = () => {
                 </Card>
               ))}
             </div>
-          </div>
+          </section>
 
           <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl shadow-xl p-8 mb-16 text-white">
             <div className="text-center mb-8">
@@ -241,7 +245,7 @@ const Splash = () => {
                   className="flex flex-col items-center justify-center p-4 rounded-xl bg-background border border-border hover:border-amber-400 hover:shadow-md transition-all text-center"
                 >
                   <div className="h-24 w-full mb-3 flex items-center justify-center">
-                    <img src={brand.logo} alt={`${brand.name} logo`} className="max-h-full max-w-full object-contain" />
+                    <img src={brand.logo} alt={`${brand.name} - certified warranty installer for pool equipment`} className="max-h-full max-w-full object-contain" loading="lazy" />
                   </div>
                   <span className="font-semibold text-foreground text-sm">{brand.name}</span>
                   <span className="text-xs text-muted-foreground mt-1">{brand.description}</span>
@@ -290,8 +294,9 @@ const Splash = () => {
                 <div className="flex items-center space-x-3 mb-4">
                   <img 
                     src="/lovable-uploads/53f22dfe-4ebf-46fa-bb95-1a316a61d772.png" 
-                    alt="Finest Pools & Spas LLC Logo" 
+                    alt="Finest Pools & Spas LLC - Tucson Pool Service" 
                     className="h-16 w-auto"
+                    loading="lazy"
                   />
                 </div>
                 <p className="text-gray-400">
@@ -318,7 +323,7 @@ const Splash = () => {
               </div>
             </div>
             <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-              <p>© 2025 Finest Pools & Spas LLC. Keeping your pool perfect, one service at a time.</p>
+              <p>&copy; {new Date().getFullYear()} Finest Pools &amp; Spas LLC. Keeping your pool perfect, one service at a time.</p>
               <div className="flex justify-center gap-4 mt-4">
                 <button 
                   onClick={() => navigate('/privacy-policy')}
