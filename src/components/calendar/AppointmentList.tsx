@@ -57,6 +57,7 @@ export const AppointmentList: React.FC<AppointmentListProps> = ({ limit, dateFil
             last_name,
             address,
             city,
+            state,
             phone,
             sms_opt_in,
             customer_service_details (
