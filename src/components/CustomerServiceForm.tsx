@@ -343,12 +343,13 @@ export const CustomerServiceForm = ({ customerId }: CustomerServiceFormProps) =>
                   <Label htmlFor="service_frequency">Service Frequency</Label>
                   <Select
                     value={details.service_frequency || ''}
-                    onValueChange={(value) => updateField('service_frequency', value)}
+                    onValueChange={(value) => updateField('service_frequency', value === 'none' ? null : value)}
                   >
                     <SelectTrigger id="service_frequency">
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
                       <SelectItem value="Weekly">Weekly</SelectItem>
                       <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
                       <SelectItem value="Monthly">Monthly</SelectItem>
