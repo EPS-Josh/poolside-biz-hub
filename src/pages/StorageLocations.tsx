@@ -328,8 +328,8 @@ const StorageLocations = () => {
                 )}
               </div>
             </div>
-          )
-          </div>
+          )}
+
 
           {/* Add/Edit Dialog */}
           <Dialog open={isAddDialogOpen} onOpenChange={(open) => { if (!open) resetForm(); }}>
