@@ -539,22 +539,8 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                <SelectItem value="Sanitizers & Water Quality">Sanitizers & Water Quality</SelectItem>
-                <SelectItem value="Lighting">Lighting</SelectItem>
-                <SelectItem value="Heaters & Heat Pumps">Heaters & Heat Pumps</SelectItem>
-                <SelectItem value="Automation">Automation</SelectItem>
-                <SelectItem value="Maintenance & Safety Equipment">Maintenance & Safety Equipment</SelectItem>
-                <SelectItem value="Water Features">Water Features</SelectItem>
-                <SelectItem value="Automatic Pool Cleaners">Automatic Pool Cleaners</SelectItem>
-                <SelectItem value="White Goods">White Goods</SelectItem>
-                <SelectItem value="Valves">Valves</SelectItem>
-                <SelectItem value="Misc">Misc</SelectItem>
-                {uniqueValues.solutions.filter(s => 
-                  !['Sanitizers & Water Quality', 'Lighting', 'Heaters & Heat Pumps', 
-                    'Automation', 'Maintenance & Safety Equipment', 'Water Features', 
-                    'Automatic Pool Cleaners', 'White Goods', 'Valves', 'Misc', 'Skimmer', 'Auto Fill'].includes(s!)
-                ).map(s => (
-                  <SelectItem key={s} value={s!}>{s}</SelectItem>
+                {uniqueValues.solutions.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -567,13 +553,7 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                <SelectItem value="Parts">Parts</SelectItem>
-                <SelectItem value="FG">FG</SelectItem>
-                <SelectItem value="ACC">ACC</SelectItem>
-                <SelectItem value="Consumables">Consumables</SelectItem>
-                {uniqueValues.types.filter(t => 
-                  !['Parts', 'FG', 'ACC', 'Consumables', 'PARTS'].includes(t!)
-                ).map(t => (
+                {uniqueValues.types.map(t => (
                   <SelectItem key={t} value={t!}>{t}</SelectItem>
                 ))}
               </SelectContent>
