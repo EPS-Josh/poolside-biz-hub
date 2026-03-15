@@ -107,6 +107,11 @@ const Inventory = () => {
     },
   });
 
+  const formVal = (fd: FormData, key: string): string | null => {
+    const v = fd.get(key) as string;
+    return (!v || v === 'none') ? null : v;
+  };
+
   const addItemMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { data: { user } } = await supabase.auth.getUser();
