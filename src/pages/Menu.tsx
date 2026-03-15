@@ -257,7 +257,7 @@ const getDefaultMenuSections = (): MenuSection[] => [
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Calendar, Package, ClipboardList, Bell, FileText, DollarSign, BarChart3,
   Users, MessageSquare, Droplets, MapPin, UserCheck, Building, TrendingUp,
-  Calculator, Car, Route, Wrench, ImageIcon
+  Calculator, Car, Route, Wrench, ImageIcon, Hash
 };
 
 const getIconForItem = (itemId: string, defaultSections: MenuSection[]): React.ComponentType<{ className?: string }> => {
