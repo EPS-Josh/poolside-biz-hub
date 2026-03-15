@@ -250,7 +250,7 @@ const FpsItemMatrix = () => {
     const total = inventoryItems.length;
     const withFps = inventoryItems.filter(i => i.fps_item_number).length;
     const withoutFps = inventoryItems.filter(i => i.item_number && !i.fps_item_number).length;
-    const noMfgNum = inventoryItems.filter(i => !i.item_number).length;
+    const noMfgNum = inventoryItems.filter(i => !i.item_number || i.item_number.trim() === '' || i.item_number.toUpperCase() === 'UNK').length;
     return { total, withFps, withoutFps, noMfgNum, conflicts: conflicts.length };
   }, [inventoryItems, conflicts]);
 
