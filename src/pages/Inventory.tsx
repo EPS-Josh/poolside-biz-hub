@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, MoreHorizontal, History, Building2, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Package, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, MoreHorizontal, History, Building2, Upload, Warehouse } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 import { InventoryHistory } from "@/components/InventoryHistory";
@@ -867,6 +867,10 @@ const Inventory = () => {
               <p className="text-muted-foreground">Track and manage your inventory items</p>
             </div>
             <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => navigate("/inventory/storage-locations")}>
+                <Warehouse className="mr-2 h-4 w-4" />
+                Storage
+              </Button>
               <Button variant="outline" onClick={() => navigate("/inventory/suppliers")}>
                 <Building2 className="mr-2 h-4 w-4" />
                 Suppliers

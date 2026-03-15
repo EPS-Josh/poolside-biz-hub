@@ -53,6 +53,7 @@ import DailyRoutes from "./pages/DailyRoutes";
 import PhotoGallery from "./pages/PhotoGallery";
 import SplashPhotos from "./pages/SplashPhotos";
 import FpsItemMatrix from "./pages/FpsItemMatrix";
+import StorageLocations from "./pages/StorageLocations";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/inventory/suppliers" element={<SupplierManagement />} />
+            <Route path="/inventory/storage-locations" element={<StorageLocations />} />
             <Route path="/inventory/price-entry" element={<SupplierPriceEntry />} />
             <Route path="/inventory/price-comparison" element={<SupplierPriceComparison />} />
             <Route path="/inventory/pool360-import" element={<Pool360Import />} />
