@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 import { InventoryHistory } from "@/components/InventoryHistory";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface InventoryItem {
   id: string;
@@ -65,10 +65,11 @@ type SortField = keyof InventoryItem;
 type SortDirection = 'asc' | 'desc';
 
 const Inventory = () => {
+  const [searchParams] = useSearchParams();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [historyItem, setHistoryItem] = useState<InventoryItem | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || "");
   const [sortField, setSortField] = useState<SortField>('fps_item_number');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filters, setFilters] = useState({

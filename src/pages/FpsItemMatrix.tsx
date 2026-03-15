@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +41,7 @@ interface InventoryItem {
 
 const FpsItemMatrix = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [newMfgName, setNewMfgName] = useState('');
@@ -370,7 +372,16 @@ const FpsItemMatrix = () => {
                           <TableBody>
                             {filteredItems.map(item => (
                               <TableRow key={item.id}>
-                                <TableCell className="font-mono text-sm">{item.item_number || '—'}</TableCell>
+                                <TableCell className="font-mono text-sm">
+                                  {item.item_number ? (
+                                    <button
+                                      className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors cursor-pointer"
+                                      onClick={() => navigate(`/inventory?search=${encodeURIComponent(item.item_number!)}`)}
+                                    >
+                                      {item.item_number}
+                                    </button>
+                                  ) : '—'}
+                                </TableCell>
                                 <TableCell>
                                   {item.fps_item_number ? (
                                     <Badge variant="secondary" className="font-mono">{item.fps_item_number}</Badge>
