@@ -467,7 +467,20 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {uniqueValues.solutions.map(s => (
+                <SelectItem value="Sanitizers & Water Quality">Sanitizers & Water Quality</SelectItem>
+                <SelectItem value="Lighting">Lighting</SelectItem>
+                <SelectItem value="Heaters & Heat Pumps">Heaters & Heat Pumps</SelectItem>
+                <SelectItem value="Automation">Automation</SelectItem>
+                <SelectItem value="Maintenance & Safety Equipment">Maintenance & Safety Equipment</SelectItem>
+                <SelectItem value="Water Features">Water Features</SelectItem>
+                <SelectItem value="Automatic Pool Cleaners">Automatic Pool Cleaners</SelectItem>
+                <SelectItem value="White Goods">White Goods</SelectItem>
+                <SelectItem value="Valves">Valves</SelectItem>
+                {uniqueValues.solutions.filter(s => 
+                  !['Sanitizers & Water Quality', 'Lighting', 'Heaters & Heat Pumps', 
+                    'Automation', 'Maintenance & Safety Equipment', 'Water Features', 
+                    'Automatic Pool Cleaners', 'White Goods', 'Valves'].includes(s!)
+                ).map(s => (
                   <SelectItem key={s} value={s!}>{s}</SelectItem>
                 ))}
               </SelectContent>
