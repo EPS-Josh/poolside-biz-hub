@@ -494,7 +494,13 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {uniqueValues.types.map(t => (
+                <SelectItem value="Parts">Parts</SelectItem>
+                <SelectItem value="FG">FG</SelectItem>
+                <SelectItem value="ACC">ACC</SelectItem>
+                <SelectItem value="Consumables">Consumables</SelectItem>
+                {uniqueValues.types.filter(t => 
+                  !['Parts', 'FG', 'ACC', 'Consumables', 'PARTS'].includes(t!)
+                ).map(t => (
                   <SelectItem key={t} value={t!}>{t}</SelectItem>
                 ))}
               </SelectContent>
