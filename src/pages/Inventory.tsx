@@ -18,6 +18,7 @@ import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 import { InventoryHistory } from "@/components/InventoryHistory";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { ItemStorageLocations } from "@/components/inventory/ItemStorageLocations";
 
 interface InventoryItem {
   id: string;
@@ -840,6 +841,11 @@ const Inventory = () => {
           />
         </div>
       </div>
+      
+      {/* Storage Locations - only show for existing items */}
+      {item && (
+        <ItemStorageLocations itemId={item.id} />
+      )}
       
       <div className="flex justify-end space-x-2 pt-4 border-t">
         <Button type="button" variant="outline" onClick={() => {
