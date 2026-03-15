@@ -50,6 +50,7 @@ const FpsItemMatrix = () => {
   const [newSolCode, setNewSolCode] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNoMfgOnly, setShowNoMfgOnly] = useState(false);
+  const [showNeedFpsOnly, setShowNeedFpsOnly] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [addMfgOpen, setAddMfgOpen] = useState(false);
   const [addSolOpen, setAddSolOpen] = useState(false);
@@ -259,7 +260,9 @@ const FpsItemMatrix = () => {
   // Filtered items for preview
   const filteredItems = React.useMemo(() => {
     let items = inventoryItems;
-    if (showNoMfgOnly) {
+    if (showNeedFpsOnly) {
+      items = items.filter(i => i.item_number && !i.fps_item_number);
+    } else if (showNoMfgOnly) {
       items = items.filter(i => !i.item_number || i.item_number.trim() === '' || (i.fps_item_number && i.fps_item_number.toUpperCase().startsWith('UNK')));
     }
     if (!searchTerm) return items.slice(0, 100);
@@ -272,7 +275,7 @@ const FpsItemMatrix = () => {
         (i.description?.toLowerCase().includes(term))
       )
       .slice(0, 100);
-  }, [inventoryItems, searchTerm, showNoMfgOnly]);
+  }, [inventoryItems, searchTerm, showNoMfgOnly, showNeedFpsOnly]);
 
   return (
     <ProtectedRoute excludedRoles={['guest']}>
@@ -300,16 +303,25 @@ const FpsItemMatrix = () => {
                 <div className="text-xs text-muted-foreground">Have FPS #</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card
+              className={`cursor-pointer transition-colors hover:border-primary ${showNeedFpsOnly ? 'border-primary ring-2 ring-primary/20' : ''}`}
+              onClick={() => {
+                setShowNeedFpsOnly(!showNeedFpsOnly);
+                setShowNoMfgOnly(false);
+                setActiveTab('overview');
+              }}
+            >
               <CardContent className="pt-4 pb-4">
                 <div className="text-2xl font-bold text-amber-600">{stats.withoutFps}</div>
                 <div className="text-xs text-muted-foreground">Need FPS #</div>
+                {showNeedFpsOnly && <div className="text-xs text-primary mt-1">Filtered ✓</div>}
               </CardContent>
             </Card>
             <Card 
               className={`cursor-pointer transition-colors hover:border-primary ${showNoMfgOnly ? 'border-primary ring-2 ring-primary/20' : ''}`}
               onClick={() => {
                 setShowNoMfgOnly(!showNoMfgOnly);
+                setShowNeedFpsOnly(false);
                 setActiveTab('overview');
               }}
             >
