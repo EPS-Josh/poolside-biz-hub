@@ -479,7 +479,7 @@ const Inventory = () => {
                 {uniqueValues.solutions.filter(s => 
                   !['Sanitizers & Water Quality', 'Lighting', 'Heaters & Heat Pumps', 
                     'Automation', 'Maintenance & Safety Equipment', 'Water Features', 
-                    'Automatic Pool Cleaners', 'White Goods', 'Valves'].includes(s!)
+                    'Automatic Pool Cleaners', 'White Goods', 'Valves', 'Skimmer', 'Auto Fill'].includes(s!)
                 ).map(s => (
                   <SelectItem key={s} value={s!}>{s}</SelectItem>
                 ))}
