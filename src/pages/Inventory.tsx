@@ -842,6 +842,11 @@ const Inventory = () => {
         </div>
       </div>
       
+      {/* Storage Locations - only show for existing items */}
+      {item && (
+        <ItemStorageLocations itemId={item.id} />
+      )}
+      
       <div className="flex justify-end space-x-2 pt-4 border-t">
         <Button type="button" variant="outline" onClick={() => {
           setIsAddDialogOpen(false);
