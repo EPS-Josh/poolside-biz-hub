@@ -735,6 +735,60 @@ export type Database = {
         }
         Relationships: []
       }
+      fps_manufacturer_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          manufacturer_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          manufacturer_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          manufacturer_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fps_solution_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          solution_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          solution_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          solution_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       inventory_items: {
         Row: {
           category: string | null
