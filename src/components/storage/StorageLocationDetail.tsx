@@ -38,6 +38,7 @@ const TYPE_LABELS: Record<string, string> = {
   cabinet: "Cabinet",
   rack: "Rack",
   tote: "Tote / Bin",
+  column: "Column",
   bin: "Bin Set",
   other: "Other",
 };
