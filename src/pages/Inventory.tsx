@@ -81,6 +81,19 @@ const Inventory = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Fetch manufacturer codes for dropdown
+  const { data: mfgCodes = [] } = useQuery({
+    queryKey: ['fps-manufacturer-codes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fps_manufacturer_codes')
+        .select('id, manufacturer_name, code')
+        .order('manufacturer_name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: inventoryItems = [], isLoading } = useQuery({
     queryKey: ["inventory-items"],
     queryFn: async () => {
