@@ -82,6 +82,7 @@ const App = () => (
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/inventory/suppliers" element={<SupplierManagement />} />
+            <Route path="/inventory/storage-locations" element={<StorageLocations />} />
             <Route path="/inventory/price-entry" element={<SupplierPriceEntry />} />
             <Route path="/inventory/price-comparison" element={<SupplierPriceComparison />} />
             <Route path="/inventory/pool360-import" element={<Pool360Import />} />

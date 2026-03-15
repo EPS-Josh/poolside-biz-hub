@@ -867,6 +867,10 @@ const Inventory = () => {
               <p className="text-muted-foreground">Track and manage your inventory items</p>
             </div>
             <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => navigate("/inventory/storage-locations")}>
+                <Warehouse className="mr-2 h-4 w-4" />
+                Storage
+              </Button>
               <Button variant="outline" onClick={() => navigate("/inventory/suppliers")}>
                 <Building2 className="mr-2 h-4 w-4" />
                 Suppliers
