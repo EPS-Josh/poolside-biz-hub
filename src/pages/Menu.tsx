@@ -93,6 +93,14 @@ const getDefaultMenuSections = (): MenuSection[] => [
         route: '/inventory',
       },
       {
+        id: 'fps-item-matrix',
+        title: "FPS Item # Matrix",
+        description: "Manage FPS item numbering system and codes",
+        icon: Hash,
+        color: "bg-violet-500",
+        route: '/fps-item-matrix',
+      },
+      {
         id: 'service-records',
         title: "Service Records",
         description: "View and manage all service records",
