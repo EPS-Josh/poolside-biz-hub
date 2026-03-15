@@ -52,6 +52,7 @@ const StorageLocations = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"tree" | "floorplan">("floorplan");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<StorageLocation | null>(null);
   const [parentIdForNew, setParentIdForNew] = useState<string | null>(null);
