@@ -476,10 +476,11 @@ const Inventory = () => {
                 <SelectItem value="Automatic Pool Cleaners">Automatic Pool Cleaners</SelectItem>
                 <SelectItem value="White Goods">White Goods</SelectItem>
                 <SelectItem value="Valves">Valves</SelectItem>
+                <SelectItem value="Misc">Misc</SelectItem>
                 {uniqueValues.solutions.filter(s => 
                   !['Sanitizers & Water Quality', 'Lighting', 'Heaters & Heat Pumps', 
                     'Automation', 'Maintenance & Safety Equipment', 'Water Features', 
-                    'Automatic Pool Cleaners', 'White Goods', 'Valves', 'Skimmer', 'Auto Fill'].includes(s!)
+                    'Automatic Pool Cleaners', 'White Goods', 'Valves', 'Misc', 'Skimmer', 'Auto Fill'].includes(s!)
                 ).map(s => (
                   <SelectItem key={s} value={s!}>{s}</SelectItem>
                 ))}
