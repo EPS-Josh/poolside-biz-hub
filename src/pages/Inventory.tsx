@@ -447,7 +447,15 @@ const Inventory = () => {
     const rebuildFps = (mfgName: string, solName: string, mfgItemNum: string) => {
       if (!mfgItemNum) return;
       const mfgCode = mfgCodes.find(m => m.manufacturer_name === mfgName)?.code || 'UNK';
-      const solCode = solCodes.find(s => s.solution_name === solName)?.code || 'GEN';
+      // Flexible solution lookup: exact match, case-insensitive, or partial match
+      const solCode = solCodes.find(s => {
+        const solLower = s.solution_name.toLowerCase();
+        const nameLower = solName.toLowerCase();
+        return s.solution_name === solName || // exact match
+               solLower === nameLower || // case insensitive
+               solLower.startsWith(nameLower) || // "Filter" matches "Filters"
+               nameLower.startsWith(solLower); // "Filters" matches "Filter"
+      })?.code || 'GEN';
       setFpsItemNumber(`${mfgCode}-${solCode}-${mfgItemNum}`);
     };
 
