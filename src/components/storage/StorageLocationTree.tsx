@@ -30,6 +30,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   cabinet: Archive,
   rack: Layers,
   tote: Box,
+  column: Layers,
   bin: Box,
   other: Package,
 };
