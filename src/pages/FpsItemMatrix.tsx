@@ -50,6 +50,7 @@ const FpsItemMatrix = () => {
   const [newSolCode, setNewSolCode] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNoMfgOnly, setShowNoMfgOnly] = useState(false);
+  const [showNeedFpsOnly, setShowNeedFpsOnly] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [addMfgOpen, setAddMfgOpen] = useState(false);
   const [addSolOpen, setAddSolOpen] = useState(false);
