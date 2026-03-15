@@ -15,7 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { StorageLocationTree } from "@/components/storage/StorageLocationTree";
 import { StorageLocationDetail } from "@/components/storage/StorageLocationDetail";
-import { Plus, Warehouse, ArrowLeft } from "lucide-react";
+import { FloorPlanCanvas } from "@/components/storage/FloorPlanCanvas";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Warehouse, ArrowLeft, LayoutGrid, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface StorageLocation {
@@ -50,6 +52,7 @@ const StorageLocations = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"tree" | "floorplan">("floorplan");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<StorageLocation | null>(null);
   const [parentIdForNew, setParentIdForNew] = useState<string | null>(null);
@@ -205,67 +208,128 @@ const StorageLocations = () => {
                 </p>
               </div>
             </div>
-            <Button onClick={() => openAddDialog(null)}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Area
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => openAddDialog(null)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Area
+              </Button>
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "tree" | "floorplan")}>
+                <TabsList className="h-9">
+                  <TabsTrigger value="floorplan" className="text-xs gap-1">
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Floor Plan
+                  </TabsTrigger>
+                  <TabsTrigger value="tree" className="text-xs gap-1">
+                    <List className="h-3.5 w-3.5" />
+                    Tree
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: Tree view */}
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Location Hierarchy</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  {isLoading ? (
-                    <div className="p-4 text-sm text-muted-foreground">Loading...</div>
-                  ) : rootLocations.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground">
-                      No storage locations yet. Click "Add Area" to create one.
-                    </div>
-                  ) : (
-                    <div className="p-2">
-                      <StorageLocationTree
-                        locations={locations}
-                        rootLocations={rootLocations}
-                        getChildren={getChildren}
-                        selectedId={selectedLocationId}
-                        onSelect={setSelectedLocationId}
-                        onAddChild={openAddDialog}
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right: Detail view */}
-            <div className="lg:col-span-2">
-              {selectedLocation ? (
-                <StorageLocationDetail
-                  location={selectedLocation}
-                  allLocations={locations}
-                  getChildren={getChildren}
-                  onEdit={openEditDialog}
-                  onDelete={(id) => {
-                    if (confirm("Delete this location and all its children?")) {
-                      deleteMutation.mutate(id);
-                    }
-                  }}
-                  onAddChild={openAddDialog}
-                />
-              ) : (
+          {viewMode === "floorplan" ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
                 <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                    <Warehouse className="h-12 w-12 mb-3 opacity-40" />
-                    <p className="text-sm">Select a location from the tree to view details</p>
+                  <CardContent className="p-4">
+                    <FloorPlanCanvas
+                      locations={locations}
+                      getChildren={getChildren}
+                      selectedId={selectedLocationId}
+                      onSelect={setSelectedLocationId}
+                      onPositionUpdate={(id, pos) => {
+                        const loc = locations.find(l => l.id === id);
+                        if (loc) {
+                          updateMutation.mutate({
+                            id,
+                            metadata: { ...loc.metadata, floorplan_position: pos },
+                          });
+                        }
+                      }}
+                    />
                   </CardContent>
                 </Card>
-              )}
+              </div>
+              <div className="lg:col-span-1">
+                {selectedLocation ? (
+                  <StorageLocationDetail
+                    location={selectedLocation}
+                    allLocations={locations}
+                    getChildren={getChildren}
+                    onEdit={openEditDialog}
+                    onDelete={(id) => {
+                      if (confirm("Delete this location and all its children?")) {
+                        deleteMutation.mutate(id);
+                      }
+                    }}
+                    onAddChild={openAddDialog}
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                      <Warehouse className="h-12 w-12 mb-3 opacity-40" />
+                      <p className="text-sm">Select a location to view details</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm">Location Hierarchy</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {isLoading ? (
+                      <div className="p-4 text-sm text-muted-foreground">Loading...</div>
+                    ) : rootLocations.length === 0 ? (
+                      <div className="p-4 text-sm text-muted-foreground">
+                        No storage locations yet. Click "Add Area" to create one.
+                      </div>
+                    ) : (
+                      <div className="p-2">
+                        <StorageLocationTree
+                          locations={locations}
+                          rootLocations={rootLocations}
+                          getChildren={getChildren}
+                          selectedId={selectedLocationId}
+                          onSelect={setSelectedLocationId}
+                          onAddChild={openAddDialog}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+              <div className="lg:col-span-2">
+                {selectedLocation ? (
+                  <StorageLocationDetail
+                    location={selectedLocation}
+                    allLocations={locations}
+                    getChildren={getChildren}
+                    onEdit={openEditDialog}
+                    onDelete={(id) => {
+                      if (confirm("Delete this location and all its children?")) {
+                        deleteMutation.mutate(id);
+                      }
+                    }}
+                    onAddChild={openAddDialog}
+                  />
+                ) : (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                      <Warehouse className="h-12 w-12 mb-3 opacity-40" />
+                      <p className="text-sm">Select a location from the tree to view details</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          )}
+
 
           {/* Add/Edit Dialog */}
           <Dialog open={isAddDialogOpen} onOpenChange={(open) => { if (!open) resetForm(); }}>
