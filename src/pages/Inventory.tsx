@@ -353,9 +353,9 @@ const Inventory = () => {
       );
 
       // Column filters
-      const matchesSolution = filters.solution === 'all' || !filters.solution || item.solution?.toLowerCase().includes(filters.solution.toLowerCase());
-      const matchesType = filters.type === 'all' || !filters.type || item.type?.toLowerCase().includes(filters.type.toLowerCase());
-      const matchesStatus = filters.item_status === 'all' || !filters.item_status || item.item_status?.toLowerCase().includes(filters.item_status.toLowerCase());
+      const matchesSolution = filters.solution === 'all' || !filters.solution || item.solution === filters.solution;
+      const matchesType = filters.type === 'all' || !filters.type || item.type === filters.type;
+      const matchesStatus = filters.item_status === 'all' || !filters.item_status || item.item_status === filters.item_status;
       
       // Stock status filter
       let matchesStockStatus = true;
