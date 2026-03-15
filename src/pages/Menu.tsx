@@ -30,6 +30,7 @@ import {
   Calculator,
   Car,
   GripVertical,
+  Hash,
   RotateCcw,
   Loader2,
   Route,
