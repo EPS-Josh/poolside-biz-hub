@@ -107,6 +107,11 @@ const Inventory = () => {
     },
   });
 
+  const formVal = (fd: FormData, key: string): string | null => {
+    const v = fd.get(key) as string;
+    return (!v || v === 'none') ? null : v;
+  };
+
   const addItemMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -118,11 +123,11 @@ const Inventory = () => {
         fps_item_number: formData.get("fpsItemNumber") as string || null,
         name: formData.get("name") as string || null,
         description: formData.get("description") as string || null,
-        solution: formData.get("solution") as string || null,
-        type: formData.get("type") as string || null,
+        solution: formVal(formData, "solution"),
+        type: formVal(formData, "type"),
         pieces_per_part: parseInt(formData.get("piecesPerPart") as string) || null,
         min_order_qty: parseInt(formData.get("minOrderQty") as string) || null,
-        item_status: formData.get("itemStatus") as string || null,
+        item_status: formVal(formData, "itemStatus"),
         list_price: parseFloat(formData.get("listPrice") as string) || null,
         upc: formData.get("upc") as string || null,
         superseded_item: formData.get("supersededItem") as string || null,
@@ -178,11 +183,11 @@ const Inventory = () => {
         fps_item_number: formData.get("fpsItemNumber") as string || null,
         name: formData.get("name") as string || null,
         description: formData.get("description") as string || null,
-        solution: formData.get("solution") as string || null,
-        type: formData.get("type") as string || null,
+        solution: formVal(formData, "solution"),
+        type: formVal(formData, "type"),
         pieces_per_part: parseInt(formData.get("piecesPerPart") as string) || null,
         min_order_qty: parseInt(formData.get("minOrderQty") as string) || null,
-        item_status: formData.get("itemStatus") as string || null,
+        item_status: formVal(formData, "itemStatus"),
         list_price: parseFloat(formData.get("listPrice") as string) || null,
         upc: formData.get("upc") as string || null,
         superseded_item: formData.get("supersededItem") as string || null,
@@ -455,28 +460,46 @@ const Inventory = () => {
         
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="solution">Solution</Label>
-            <Input
-              id="solution"
-              name="solution"
-              defaultValue={item?.solution || ""}
-            />
+            <Label>Solution</Label>
+            <Select name="solution" defaultValue={item?.solution || "none"}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select solution" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {uniqueValues.solutions.map(s => (
+                  <SelectItem key={s} value={s!}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
-            <Input
-              id="type"
-              name="type"
-              defaultValue={item?.type || ""}
-            />
+            <Label>Type</Label>
+            <Select name="type" defaultValue={item?.type || "none"}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {uniqueValues.types.map(t => (
+                  <SelectItem key={t} value={t!}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="itemStatus">Item Status</Label>
-            <Input
-              id="itemStatus"
-              name="itemStatus"
-              defaultValue={item?.item_status || ""}
-            />
+            <Label>Item Status</Label>
+            <Select name="itemStatus" defaultValue={item?.item_status || "none"}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {uniqueValues.statuses.map(s => (
+                  <SelectItem key={s} value={s!}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
