@@ -180,9 +180,12 @@ const FpsItemMatrix = () => {
     const searchText = `${item.name || ''} ${item.description || ''} ${item.category || ''}`.toLowerCase();
     const matchedMfg = mfgCodes.find(m => searchText.includes(m.manufacturer_name.toLowerCase()));
 
-    // Try to match solution
+    // Try to match solution (flexible: handles singular/plural mismatches)
     const solText = (item.solution || item.category || '').toLowerCase();
-    const matchedSol = solCodes.find(s => solText.includes(s.solution_name.toLowerCase()));
+    const matchedSol = solCodes.find(s => {
+      const solLower = s.solution_name.toLowerCase();
+      return solText === solLower || solLower.startsWith(solText) || solText.startsWith(solLower);
+    });
 
     const mfgPart = matchedMfg?.code || 'UNK';
     const solPart = matchedSol?.code || 'GEN';
