@@ -18,6 +18,7 @@ import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 import { InventoryHistory } from "@/components/InventoryHistory";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { ItemStorageLocations } from "@/components/inventory/ItemStorageLocations";
 
 interface InventoryItem {
   id: string;
