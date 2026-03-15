@@ -258,7 +258,7 @@ const FpsItemMatrix = () => {
   const filteredItems = React.useMemo(() => {
     let items = inventoryItems;
     if (showNoMfgOnly) {
-      items = items.filter(i => !i.item_number);
+      items = items.filter(i => !i.item_number || i.item_number.trim() === '' || i.item_number.toUpperCase() === 'UNK');
     }
     if (!searchTerm) return items.slice(0, 100);
     const term = searchTerm.toLowerCase();
