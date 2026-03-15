@@ -95,6 +95,19 @@ const Inventory = () => {
     }
   });
 
+  // Fetch solution codes for FPS auto-generation
+  const { data: solCodes = [] } = useQuery({
+    queryKey: ['fps-solution-codes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fps_solution_codes')
+        .select('id, solution_name, code')
+        .order('solution_name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: inventoryItems = [], isLoading } = useQuery({
     queryKey: ["inventory-items"],
     queryFn: async () => {
@@ -394,7 +407,50 @@ const Inventory = () => {
     stockStatuses: ['In Stock', 'Low Stock', 'Out of Stock']
   };
 
-  const ItemForm = ({ item }: { item?: InventoryItem }) => (
+  const ItemForm = ({ item }: { item?: InventoryItem }) => {
+    // Determine initial manufacturer from item
+    const initialMfg = item ? (mfgCodes.find(m => 
+      item.fps_item_number?.startsWith(m.code) ||
+      item.name?.toLowerCase().includes(m.manufacturer_name.toLowerCase()) ||
+      item.description?.toLowerCase().includes(m.manufacturer_name.toLowerCase())
+    )?.manufacturer_name || '') : '';
+
+    // Determine initial solution
+    const initialSol = item?.solution || '';
+
+    const [selectedMfg, setSelectedMfg] = React.useState(initialMfg);
+    const [selectedSol, setSelectedSol] = React.useState(initialSol);
+    const [fpsItemNumber, setFpsItemNumber] = React.useState(item?.fps_item_number || '');
+    const [itemNumber, setItemNumber] = React.useState(item?.item_number || '');
+
+    // Rebuild FPS Item # when manufacturer, solution, or MFG item # changes
+    const rebuildFps = (mfgName: string, solName: string, mfgItemNum: string) => {
+      if (!mfgItemNum) return;
+      const mfgCode = mfgCodes.find(m => m.manufacturer_name === mfgName)?.code || 'UNK';
+      const solCode = solCodes.find(s => s.solution_name === solName)?.code || 'GEN';
+      setFpsItemNumber(`${mfgCode}-${solCode}-${mfgItemNum}`);
+    };
+
+    const handleMfgChange = (value: string) => {
+      const mfgName = value === 'none' ? '' : value;
+      setSelectedMfg(mfgName);
+      rebuildFps(mfgName, selectedSol, itemNumber);
+    };
+
+    const handleSolChange = (value: string) => {
+      const solName = value === 'none' ? '' : value;
+      setSelectedSol(solName);
+      rebuildFps(selectedMfg, solName, itemNumber);
+    };
+
+    const handleItemNumberChange = (value: string) => {
+      setItemNumber(value);
+      if (selectedMfg) {
+        rebuildFps(selectedMfg, selectedSol, value);
+      }
+    };
+
+    return (
     <form onSubmit={(e) => handleSubmit(e, !!item)} className="space-y-6 max-h-[70vh] overflow-y-auto">
       {/* Basic Info */}
       <div className="space-y-4">
@@ -404,21 +460,15 @@ const Inventory = () => {
           <Input
             id="fpsItemNumber"
             name="fpsItemNumber"
-            defaultValue={item?.fps_item_number || ""}
+            value={fpsItemNumber}
+            onChange={(e) => setFpsItemNumber(e.target.value)}
           />
         </div>
         
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Manufacturer</Label>
-            <Select name="manufacturer" defaultValue={
-              // Try to match existing item to a manufacturer code
-              item ? (mfgCodes.find(m => 
-                item.name?.toLowerCase().includes(m.manufacturer_name.toLowerCase()) ||
-                item.description?.toLowerCase().includes(m.manufacturer_name.toLowerCase()) ||
-                item.fps_item_number?.startsWith(m.code)
-              )?.manufacturer_name || '') : ''
-            }>
+            <Select name="manufacturer" value={selectedMfg || 'none'} onValueChange={handleMfgChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select manufacturer" />
               </SelectTrigger>
@@ -437,7 +487,8 @@ const Inventory = () => {
             <Input
               id="itemNumber"
               name="itemNumber"
-              defaultValue={item?.item_number || ""}
+              value={itemNumber}
+              onChange={(e) => handleItemNumberChange(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -462,7 +513,7 @@ const Inventory = () => {
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Solution</Label>
-            <Select name="solution" defaultValue={item?.solution || "none"}>
+            <Select name="solution" value={selectedSol || 'none'} onValueChange={handleSolChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select solution" />
               </SelectTrigger>
@@ -795,7 +846,8 @@ const Inventory = () => {
         </Button>
       </div>
     </form>
-  );
+    );
+  };
 
   return (
     <ProtectedRoute>
