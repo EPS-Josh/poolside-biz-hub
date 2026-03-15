@@ -52,6 +52,7 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 import DailyRoutes from "./pages/DailyRoutes";
 import PhotoGallery from "./pages/PhotoGallery";
 import SplashPhotos from "./pages/SplashPhotos";
+import FpsItemMatrix from "./pages/FpsItemMatrix";
 
 const queryClient = new QueryClient();
 
