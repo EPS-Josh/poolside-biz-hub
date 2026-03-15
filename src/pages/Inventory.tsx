@@ -400,10 +400,30 @@ const Inventory = () => {
     return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
 
+  const standardSolutions = [
+    'Sanitizers & Water Quality', 'Lighting', 'Heaters & Heat Pumps',
+    'Automation', 'Maintenance & Safety Equipment', 'Water Features',
+    'Automatic Pool Cleaners', 'White Goods', 'Valves', 'In-Floor', 'Misc'
+  ];
+  const standardTypes = ['Parts', 'FG', 'ACC', 'Consumables'];
+  const standardStatuses = ['Discontinued'];
+
   const uniqueValues = {
-    solutions: [...new Set(inventoryItems.map(item => item.solution).filter(Boolean))],
-    types: [...new Set(inventoryItems.map(item => item.type).filter(Boolean))],
-    statuses: [...new Set(inventoryItems.map(item => item.item_status).filter(Boolean))],
+    solutions: [
+      ...standardSolutions,
+      ...[...new Set(inventoryItems.map(item => item.solution).filter(Boolean))]
+        .filter(s => !standardSolutions.includes(s!))
+    ] as string[],
+    types: [
+      ...standardTypes,
+      ...[...new Set(inventoryItems.map(item => item.type).filter(Boolean))]
+        .filter(t => !standardTypes.includes(t!) && t !== 'PARTS')
+    ] as string[],
+    statuses: [
+      ...standardStatuses,
+      ...[...new Set(inventoryItems.map(item => item.item_status).filter(Boolean))]
+        .filter(s => !standardStatuses.includes(s!))
+    ] as string[],
     stockStatuses: ['In Stock', 'Low Stock', 'Out of Stock']
   };
 
