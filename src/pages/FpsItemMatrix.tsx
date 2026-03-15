@@ -260,7 +260,9 @@ const FpsItemMatrix = () => {
   // Filtered items for preview
   const filteredItems = React.useMemo(() => {
     let items = inventoryItems;
-    if (showNoMfgOnly) {
+    if (showNeedFpsOnly) {
+      items = items.filter(i => i.item_number && !i.fps_item_number);
+    } else if (showNoMfgOnly) {
       items = items.filter(i => !i.item_number || i.item_number.trim() === '' || (i.fps_item_number && i.fps_item_number.toUpperCase().startsWith('UNK')));
     }
     if (!searchTerm) return items.slice(0, 100);
