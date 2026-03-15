@@ -301,10 +301,18 @@ const FpsItemMatrix = () => {
                 <div className="text-xs text-muted-foreground">Have FPS #</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card
+              className={`cursor-pointer transition-colors hover:border-primary ${showNeedFpsOnly ? 'border-primary ring-2 ring-primary/20' : ''}`}
+              onClick={() => {
+                setShowNeedFpsOnly(!showNeedFpsOnly);
+                setShowNoMfgOnly(false);
+                setActiveTab('overview');
+              }}
+            >
               <CardContent className="pt-4 pb-4">
                 <div className="text-2xl font-bold text-amber-600">{stats.withoutFps}</div>
                 <div className="text-xs text-muted-foreground">Need FPS #</div>
+                {showNeedFpsOnly && <div className="text-xs text-primary mt-1">Filtered ✓</div>}
               </CardContent>
             </Card>
             <Card 
