@@ -95,6 +95,19 @@ const Inventory = () => {
     }
   });
 
+  // Fetch solution codes for FPS auto-generation
+  const { data: solCodes = [] } = useQuery({
+    queryKey: ['fps-solution-codes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('fps_solution_codes')
+        .select('id, solution_name, code')
+        .order('solution_name');
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: inventoryItems = [], isLoading } = useQuery({
     queryKey: ["inventory-items"],
     queryFn: async () => {
