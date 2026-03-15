@@ -402,7 +402,30 @@ const Inventory = () => {
           />
         </div>
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Manufacturer</Label>
+            <Select name="manufacturer" defaultValue={
+              // Try to match existing item to a manufacturer code
+              item ? (mfgCodes.find(m => 
+                item.name?.toLowerCase().includes(m.manufacturer_name.toLowerCase()) ||
+                item.description?.toLowerCase().includes(m.manufacturer_name.toLowerCase()) ||
+                item.fps_item_number?.startsWith(m.code)
+              )?.manufacturer_name || '') : ''
+            }>
+              <SelectTrigger>
+                <SelectValue placeholder="Select manufacturer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {mfgCodes.map(m => (
+                  <SelectItem key={m.id} value={m.manufacturer_name}>
+                    {m.code} — {m.manufacturer_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="itemNumber">MFG Item #</Label>
             <Input
