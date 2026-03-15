@@ -199,8 +199,3 @@ export const StorageLocationDetail: React.FC<Props> = ({
     </div>
   );
 };
-
-// Helper for className concatenation
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(" ");
-}
