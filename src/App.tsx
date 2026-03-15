@@ -53,6 +53,7 @@ import DailyRoutes from "./pages/DailyRoutes";
 import PhotoGallery from "./pages/PhotoGallery";
 import SplashPhotos from "./pages/SplashPhotos";
 import FpsItemMatrix from "./pages/FpsItemMatrix";
+import StorageLocations from "./pages/StorageLocations";
 
 const queryClient = new QueryClient();
 
