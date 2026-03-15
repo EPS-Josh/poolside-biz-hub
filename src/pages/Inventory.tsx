@@ -846,7 +846,8 @@ const Inventory = () => {
         </Button>
       </div>
     </form>
-  );
+    );
+  };
 
   return (
     <ProtectedRoute>
