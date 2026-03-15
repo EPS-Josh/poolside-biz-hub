@@ -319,6 +319,7 @@ const FpsItemMatrix = () => {
               className={`cursor-pointer transition-colors hover:border-primary ${showNoMfgOnly ? 'border-primary ring-2 ring-primary/20' : ''}`}
               onClick={() => {
                 setShowNoMfgOnly(!showNoMfgOnly);
+                setShowNeedFpsOnly(false);
                 setActiveTab('overview');
               }}
             >
