@@ -256,9 +256,13 @@ const FpsItemMatrix = () => {
 
   // Filtered items for preview
   const filteredItems = React.useMemo(() => {
-    if (!searchTerm) return inventoryItems.slice(0, 100);
+    let items = inventoryItems;
+    if (showNoMfgOnly) {
+      items = items.filter(i => !i.item_number);
+    }
+    if (!searchTerm) return items.slice(0, 100);
     const term = searchTerm.toLowerCase();
-    return inventoryItems
+    return items
       .filter(i =>
         (i.item_number?.toLowerCase().includes(term)) ||
         (i.fps_item_number?.toLowerCase().includes(term)) ||
@@ -266,7 +270,7 @@ const FpsItemMatrix = () => {
         (i.description?.toLowerCase().includes(term))
       )
       .slice(0, 100);
-  }, [inventoryItems, searchTerm]);
+  }, [inventoryItems, searchTerm, showNoMfgOnly]);
 
   return (
     <ProtectedRoute excludedRoles={['guest']}>
