@@ -567,8 +567,7 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                <SelectItem value="Discontinued">Discontinued</SelectItem>
-                {uniqueValues.statuses.filter(s => s !== 'Discontinued').map(s => (
+                {uniqueValues.statuses.map(s => (
                   <SelectItem key={s} value={s!}>{s}</SelectItem>
                 ))}
               </SelectContent>
