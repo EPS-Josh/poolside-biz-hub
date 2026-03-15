@@ -39,6 +39,7 @@ const LOCATION_TYPES = [
   { value: "cabinet", label: "Cabinet" },
   { value: "rack", label: "Rack" },
   { value: "tote", label: "Tote / Bin" },
+  { value: "column", label: "Column" },
   { value: "bin", label: "Bin Set" },
   { value: "other", label: "Other" },
 ];
