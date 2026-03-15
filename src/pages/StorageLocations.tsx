@@ -15,7 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { StorageLocationTree } from "@/components/storage/StorageLocationTree";
 import { StorageLocationDetail } from "@/components/storage/StorageLocationDetail";
-import { Plus, Warehouse, ArrowLeft } from "lucide-react";
+import { FloorPlanCanvas } from "@/components/storage/FloorPlanCanvas";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Warehouse, ArrowLeft, LayoutGrid, List } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface StorageLocation {
