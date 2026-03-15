@@ -275,7 +275,7 @@ const FpsItemMatrix = () => {
         (i.description?.toLowerCase().includes(term))
       )
       .slice(0, 100);
-  }, [inventoryItems, searchTerm, showNoMfgOnly]);
+  }, [inventoryItems, searchTerm, showNoMfgOnly, showNeedFpsOnly]);
 
   return (
     <ProtectedRoute excludedRoles={['guest']}>
