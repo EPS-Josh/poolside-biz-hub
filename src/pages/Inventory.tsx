@@ -353,9 +353,9 @@ const Inventory = () => {
       );
 
       // Column filters
-      const matchesSolution = filters.solution === 'all' || !filters.solution || item.solution?.toLowerCase().includes(filters.solution.toLowerCase());
-      const matchesType = filters.type === 'all' || !filters.type || item.type?.toLowerCase().includes(filters.type.toLowerCase());
-      const matchesStatus = filters.item_status === 'all' || !filters.item_status || item.item_status?.toLowerCase().includes(filters.item_status.toLowerCase());
+      const matchesSolution = filters.solution === 'all' || !filters.solution || item.solution === filters.solution;
+      const matchesType = filters.type === 'all' || !filters.type || item.type === filters.type;
+      const matchesStatus = filters.item_status === 'all' || !filters.item_status || item.item_status === filters.item_status;
       
       // Stock status filter
       let matchesStockStatus = true;
@@ -400,10 +400,30 @@ const Inventory = () => {
     return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
 
+  const standardSolutions = [
+    'Sanitizers & Water Quality', 'Lighting', 'Heaters & Heat Pumps',
+    'Automation', 'Maintenance & Safety Equipment', 'Water Features',
+    'Automatic Pool Cleaners', 'White Goods', 'Valves', 'In-Floor', 'Misc'
+  ];
+  const standardTypes = ['Parts', 'FG', 'ACC', 'Consumables'];
+  const standardStatuses = ['Discontinued'];
+
   const uniqueValues = {
-    solutions: [...new Set(inventoryItems.map(item => item.solution).filter(Boolean))],
-    types: [...new Set(inventoryItems.map(item => item.type).filter(Boolean))],
-    statuses: [...new Set(inventoryItems.map(item => item.item_status).filter(Boolean))],
+    solutions: [
+      ...standardSolutions,
+      ...[...new Set(inventoryItems.map(item => item.solution).filter(Boolean))]
+        .filter(s => !standardSolutions.includes(s!))
+    ] as string[],
+    types: [
+      ...standardTypes,
+      ...[...new Set(inventoryItems.map(item => item.type).filter(Boolean))]
+        .filter(t => !standardTypes.includes(t!) && t !== 'PARTS')
+    ] as string[],
+    statuses: [
+      ...standardStatuses,
+      ...[...new Set(inventoryItems.map(item => item.item_status).filter(Boolean))]
+        .filter(s => !standardStatuses.includes(s!))
+    ] as string[],
     stockStatuses: ['In Stock', 'Low Stock', 'Out of Stock']
   };
 
@@ -519,22 +539,8 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                <SelectItem value="Sanitizers & Water Quality">Sanitizers & Water Quality</SelectItem>
-                <SelectItem value="Lighting">Lighting</SelectItem>
-                <SelectItem value="Heaters & Heat Pumps">Heaters & Heat Pumps</SelectItem>
-                <SelectItem value="Automation">Automation</SelectItem>
-                <SelectItem value="Maintenance & Safety Equipment">Maintenance & Safety Equipment</SelectItem>
-                <SelectItem value="Water Features">Water Features</SelectItem>
-                <SelectItem value="Automatic Pool Cleaners">Automatic Pool Cleaners</SelectItem>
-                <SelectItem value="White Goods">White Goods</SelectItem>
-                <SelectItem value="Valves">Valves</SelectItem>
-                <SelectItem value="Misc">Misc</SelectItem>
-                {uniqueValues.solutions.filter(s => 
-                  !['Sanitizers & Water Quality', 'Lighting', 'Heaters & Heat Pumps', 
-                    'Automation', 'Maintenance & Safety Equipment', 'Water Features', 
-                    'Automatic Pool Cleaners', 'White Goods', 'Valves', 'Misc', 'Skimmer', 'Auto Fill'].includes(s!)
-                ).map(s => (
-                  <SelectItem key={s} value={s!}>{s}</SelectItem>
+                {uniqueValues.solutions.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -547,13 +553,7 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                <SelectItem value="Parts">Parts</SelectItem>
-                <SelectItem value="FG">FG</SelectItem>
-                <SelectItem value="ACC">ACC</SelectItem>
-                <SelectItem value="Consumables">Consumables</SelectItem>
-                {uniqueValues.types.filter(t => 
-                  !['Parts', 'FG', 'ACC', 'Consumables', 'PARTS'].includes(t!)
-                ).map(t => (
+                {uniqueValues.types.map(t => (
                   <SelectItem key={t} value={t!}>{t}</SelectItem>
                 ))}
               </SelectContent>
@@ -567,8 +567,7 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                <SelectItem value="Discontinued">Discontinued</SelectItem>
-                {uniqueValues.statuses.filter(s => s !== 'Discontinued').map(s => (
+                {uniqueValues.statuses.map(s => (
                   <SelectItem key={s} value={s!}>{s}</SelectItem>
                 ))}
               </SelectContent>
