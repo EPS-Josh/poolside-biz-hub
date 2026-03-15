@@ -41,6 +41,7 @@ interface InventoryItem {
 
 const FpsItemMatrix = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [newMfgName, setNewMfgName] = useState('');
