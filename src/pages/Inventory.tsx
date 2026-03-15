@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import InventoryBulkUpload from "@/components/InventoryBulkUpload";
 import { InventoryHistory } from "@/components/InventoryHistory";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface InventoryItem {
   id: string;
