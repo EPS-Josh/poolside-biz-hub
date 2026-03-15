@@ -52,6 +52,7 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 import DailyRoutes from "./pages/DailyRoutes";
 import PhotoGallery from "./pages/PhotoGallery";
 import SplashPhotos from "./pages/SplashPhotos";
+import FpsItemMatrix from "./pages/FpsItemMatrix";
 
 const queryClient = new QueryClient();
 
@@ -125,6 +126,11 @@ const App = () => (
             <Route path="/photo-gallery" element={<PhotoGallery />} />
             <Route path="/splash-photos" element={<SplashPhotos />} />
             <Route path="/cleaning-pricing" element={<CleaningPricing />} />
+            <Route path="/fps-item-matrix" element={
+              <ProtectedRoute excludedRoles={['guest']}>
+                <FpsItemMatrix />
+              </ProtectedRoute>
+            } />
             <Route path="/accountant" element={
               <ProtectedRoute excludedRoles={['guest']}>
                 <Accountant />
