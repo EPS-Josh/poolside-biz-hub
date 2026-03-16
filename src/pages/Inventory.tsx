@@ -715,19 +715,8 @@ const Inventory = () => {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="fpsSalesPrice">FPS Sales Price</Label>
-            <Input
-              id="fpsSalesPrice"
-              name="fpsSalesPrice"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue={item?.fps_sales_price || ""}
-            />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="markupPercentage">% Markup</Label>
-            <Select name="markupPercentage" defaultValue={item?.markup_percentage?.toString() || ""}>
+            <Select name="markupPercentage" value={markupPercentage} onValueChange={handleMarkupChange}>
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Select markup" />
               </SelectTrigger>
@@ -738,6 +727,18 @@ const Inventory = () => {
                 <SelectItem value="1.5">1.5</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fpsSalesPrice">FPS Sales Price (Cost × Markup)</Label>
+            <Input
+              id="fpsSalesPrice"
+              name="fpsSalesPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              value={fpsSalesPrice}
+              onChange={(e) => setFpsSalesPrice(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="lowStockThreshold">Low Stock Alert</Label>
