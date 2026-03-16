@@ -677,14 +677,27 @@ const Inventory = () => {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="listPrice">List Price</Label>
+            <Label htmlFor="costPrice">Cost Price</Label>
+            <Input
+              id="costPrice"
+              name="costPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              value={costPrice}
+              onChange={(e) => handleCostPriceChange(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="listPrice">List Price (Cost × 2)</Label>
             <Input
               id="listPrice"
               name="listPrice"
               type="number"
               step="0.01"
               min="0"
-              defaultValue={item?.list_price || ""}
+              value={listPrice}
+              onChange={(e) => setListPrice(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -696,17 +709,6 @@ const Inventory = () => {
               step="0.01"
               min="0"
               defaultValue={item?.unit_price || ""}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="costPrice">Cost Price</Label>
-            <Input
-              id="costPrice"
-              name="costPrice"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue={item?.cost_price || ""}
             />
           </div>
         </div>
