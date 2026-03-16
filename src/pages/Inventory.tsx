@@ -443,6 +443,10 @@ const Inventory = () => {
     const [selectedSol, setSelectedSol] = React.useState(initialSol);
     const [fpsItemNumber, setFpsItemNumber] = React.useState(item?.fps_item_number || '');
     const [itemNumber, setItemNumber] = React.useState(item?.item_number || '');
+    const [costPrice, setCostPrice] = React.useState(item?.cost_price?.toString() || '');
+    const [listPrice, setListPrice] = React.useState(item?.list_price?.toString() || '');
+    const [fpsSalesPrice, setFpsSalesPrice] = React.useState(item?.fps_sales_price?.toString() || '');
+    const [markupPercentage, setMarkupPercentage] = React.useState(item?.markup_percentage?.toString() || '');
 
     // Rebuild FPS Item # when manufacturer, solution, or MFG item # changes
     const rebuildFps = (mfgName: string, solName: string, mfgItemNum: string) => {
@@ -458,6 +462,34 @@ const Inventory = () => {
                nameLower.startsWith(solLower); // "Filters" matches "Filter"
       })?.code || 'GEN';
       setFpsItemNumber(`${mfgCode}-${solCode}-${mfgItemNum}`);
+    };
+
+    const handleCostPriceChange = (value: string) => {
+      setCostPrice(value);
+      const cost = parseFloat(value);
+      if (!isNaN(cost) && cost > 0) {
+        // List Price = Cost × 2
+        setListPrice((cost * 2).toFixed(2));
+        
+        // FPS Sales Price = Cost × Markup Rate
+        if (markupPercentage) {
+          const markup = parseFloat(markupPercentage);
+          if (!isNaN(markup) && markup > 0) {
+            setFpsSalesPrice((cost * markup).toFixed(2));
+          }
+        }
+      }
+    };
+
+    const handleMarkupChange = (value: string) => {
+      setMarkupPercentage(value);
+      const cost = parseFloat(costPrice);
+      if (!isNaN(cost) && cost > 0 && value) {
+        const markup = parseFloat(value);
+        if (!isNaN(markup) && markup > 0) {
+          setFpsSalesPrice((cost * markup).toFixed(2));
+        }
+      }
     };
 
     const handleMfgChange = (value: string) => {
@@ -677,14 +709,27 @@ const Inventory = () => {
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="listPrice">List Price</Label>
+            <Label htmlFor="costPrice">Cost Price</Label>
+            <Input
+              id="costPrice"
+              name="costPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              value={costPrice}
+              onChange={(e) => handleCostPriceChange(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="listPrice">List Price (Cost × 2)</Label>
             <Input
               id="listPrice"
               name="listPrice"
               type="number"
               step="0.01"
               min="0"
-              defaultValue={item?.list_price || ""}
+              value={listPrice}
+              onChange={(e) => setListPrice(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -698,34 +743,12 @@ const Inventory = () => {
               defaultValue={item?.unit_price || ""}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="costPrice">Cost Price</Label>
-            <Input
-              id="costPrice"
-              name="costPrice"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue={item?.cost_price || ""}
-            />
-          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="fpsSalesPrice">FPS Sales Price</Label>
-            <Input
-              id="fpsSalesPrice"
-              name="fpsSalesPrice"
-              type="number"
-              step="0.01"
-              min="0"
-              defaultValue={item?.fps_sales_price || ""}
-            />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="markupPercentage">% Markup</Label>
-            <Select name="markupPercentage" defaultValue={item?.markup_percentage?.toString() || ""}>
+            <Select name="markupPercentage" value={markupPercentage} onValueChange={handleMarkupChange}>
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Select markup" />
               </SelectTrigger>
@@ -736,6 +759,18 @@ const Inventory = () => {
                 <SelectItem value="1.5">1.5</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fpsSalesPrice">FPS Sales Price (Cost × Markup)</Label>
+            <Input
+              id="fpsSalesPrice"
+              name="fpsSalesPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              value={fpsSalesPrice}
+              onChange={(e) => setFpsSalesPrice(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="lowStockThreshold">Low Stock Alert</Label>
