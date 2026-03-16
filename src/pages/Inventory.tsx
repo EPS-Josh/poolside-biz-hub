@@ -443,6 +443,10 @@ const Inventory = () => {
     const [selectedSol, setSelectedSol] = React.useState(initialSol);
     const [fpsItemNumber, setFpsItemNumber] = React.useState(item?.fps_item_number || '');
     const [itemNumber, setItemNumber] = React.useState(item?.item_number || '');
+    const [costPrice, setCostPrice] = React.useState(item?.cost_price?.toString() || '');
+    const [listPrice, setListPrice] = React.useState(item?.list_price?.toString() || '');
+    const [fpsSalesPrice, setFpsSalesPrice] = React.useState(item?.fps_sales_price?.toString() || '');
+    const [markupPercentage, setMarkupPercentage] = React.useState(item?.markup_percentage?.toString() || '');
 
     // Rebuild FPS Item # when manufacturer, solution, or MFG item # changes
     const rebuildFps = (mfgName: string, solName: string, mfgItemNum: string) => {
@@ -458,6 +462,34 @@ const Inventory = () => {
                nameLower.startsWith(solLower); // "Filters" matches "Filter"
       })?.code || 'GEN';
       setFpsItemNumber(`${mfgCode}-${solCode}-${mfgItemNum}`);
+    };
+
+    const handleCostPriceChange = (value: string) => {
+      setCostPrice(value);
+      const cost = parseFloat(value);
+      if (!isNaN(cost) && cost > 0) {
+        // List Price = Cost × 2
+        setListPrice((cost * 2).toFixed(2));
+        
+        // FPS Sales Price = Cost × Markup Rate
+        if (markupPercentage) {
+          const markup = parseFloat(markupPercentage);
+          if (!isNaN(markup) && markup > 0) {
+            setFpsSalesPrice((cost * markup).toFixed(2));
+          }
+        }
+      }
+    };
+
+    const handleMarkupChange = (value: string) => {
+      setMarkupPercentage(value);
+      const cost = parseFloat(costPrice);
+      if (!isNaN(cost) && cost > 0 && value) {
+        const markup = parseFloat(value);
+        if (!isNaN(markup) && markup > 0) {
+          setFpsSalesPrice((cost * markup).toFixed(2));
+        }
+      }
     };
 
     const handleMfgChange = (value: string) => {
